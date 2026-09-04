@@ -24,7 +24,10 @@
         iconBaseUrl: window.location.origin + "/shared-assets/",
       };
     </script>
-    <link rel="shortcut icon" href="./favicon.png" />
+    <!-- Authany: favicon comes from the deployment resource directory, not the bundle.
+         The SVG switches colour with prefers-color-scheme; the PNG is the fallback. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" href="./index.css" />
     <!-- We need this style element to ensure fabric styles override reset styles in index.css -->
     <!-- See https://github.com/microsoft/fluentui/blob/%40fluentui/merge-styles_v8.6.13/packages/merge-styles/README.md#controlling-where-styles-are-injected -->
