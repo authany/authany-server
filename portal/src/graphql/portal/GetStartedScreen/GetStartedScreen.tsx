@@ -11,32 +11,19 @@ import { useAppAndSecretConfigQuery } from "../query/appAndSecretConfigQuery";
 import HeroLoginCard from "./HeroLoginCard";
 import HeroIntegrateCard from "./HeroIntegrateCard";
 import FeatureCard from "./FeatureCard";
-import ResourceColumn, { ResourceRowProps } from "./ResourceColumn";
 
 import {
-  ChatBubbleIcon,
-  CodeIcon,
-  DiscordLogoIcon,
-  EnvelopeClosedIcon,
   EyeOpenIcon,
   GearIcon,
   LightningBoltIcon,
   LockClosedIcon,
   PersonIcon,
-  ReaderIcon,
-  RocketIcon,
   RulerSquareIcon,
 } from "@radix-ui/react-icons";
 
 import styles from "./GetStartedScreen.module.css";
 
-const DOCS_HOME = "https://docs.authgear.com/";
-const DOCS_QUICKSTART = "https://docs.authgear.com/get-started/start-building";
-const DOCS_API_REFERENCE = "https://docs.authgear.com/reference/apis";
 const DOCS_CUSTOM_UI = "https://docs.authgear.com/customization/custom-ui";
-const MAILTO_SUPPORT = "mailto:support@authgear.com";
-const URL_SALES = "https://www.authgear.com/schedule-demo";
-const URL_DISCORD = "https://discord.gg/Kdn5vcYwAS";
 
 interface GetStartedScreenContentProps {
   publicOrigin: string;
@@ -116,64 +103,6 @@ function GetStartedScreenContent(
     [appID, capture, captureData]
   );
 
-  const contactRows: ResourceRowProps[] = useMemo(
-    () => [
-      {
-        Icon: DiscordLogoIcon,
-        titleMessageID: "GetStartedScreen.get-in-touch.discord.title",
-        descriptionMessageID:
-          "GetStartedScreen.get-in-touch.discord.description",
-        externalHref: URL_DISCORD,
-        onClick: () => capture("getStarted.clicked-discord", captureData),
-      },
-      {
-        Icon: EnvelopeClosedIcon,
-        titleMessageID: "GetStartedScreen.get-in-touch.email.title",
-        descriptionMessageID: "GetStartedScreen.get-in-touch.email.description",
-        externalHref: MAILTO_SUPPORT,
-        onClick: () => capture("getStarted.clicked-email", captureData),
-      },
-      {
-        Icon: ChatBubbleIcon,
-        titleMessageID: "GetStartedScreen.get-in-touch.sales.title",
-        descriptionMessageID: "GetStartedScreen.get-in-touch.sales.description",
-        externalHref: URL_SALES,
-        onClick: () => capture("getStarted.clicked-sales", captureData),
-      },
-    ],
-    [capture, captureData]
-  );
-
-  const resourceRows: ResourceRowProps[] = useMemo(
-    () => [
-      {
-        Icon: ReaderIcon,
-        titleMessageID: "GetStartedScreen.resource.documentation.title",
-        descriptionMessageID:
-          "GetStartedScreen.resource.documentation.description",
-        externalHref: DOCS_HOME,
-        onClick: () => capture("getStarted.clicked-docs", captureData),
-      },
-      {
-        Icon: CodeIcon,
-        titleMessageID: "GetStartedScreen.resource.api-reference.title",
-        descriptionMessageID:
-          "GetStartedScreen.resource.api-reference.description",
-        externalHref: DOCS_API_REFERENCE,
-        onClick: () => capture("getStarted.clicked-api_reference", captureData),
-      },
-      {
-        Icon: RocketIcon,
-        titleMessageID: "GetStartedScreen.resource.quickstart.title",
-        descriptionMessageID:
-          "GetStartedScreen.resource.quickstart.description",
-        externalHref: DOCS_QUICKSTART,
-        onClick: () => capture("getStarted.clicked-quickstart", captureData),
-      },
-    ],
-    [capture, captureData]
-  );
-
   return (
     <ScreenLayoutScrollView>
       <div className={styles.root}>
@@ -197,16 +126,6 @@ function GetStartedScreenContent(
           </div>
         </section>
 
-        <section className={styles.bottomRow}>
-          <ResourceColumn
-            headingMessageID="GetStartedScreen.get-in-touch.heading"
-            rows={contactRows}
-          />
-          <ResourceColumn
-            headingMessageID="GetStartedScreen.resource.heading"
-            rows={resourceRows}
-          />
-        </section>
       </div>
     </ScreenLayoutScrollView>
   );

@@ -332,6 +332,9 @@ const ScreenNav: React.VFC<ScreenNavProps> = function ScreenNav(props) {
           ]
         : []),
 
+      // Authany: the billing screen is the upstream vendor's SaaS subscription
+      // page (Stripe plans, "contact us" mailboxes). It has no backend here, so
+      // it is not offered in the navigation.
       ...(isAuthgearOnce
         ? [
             {
@@ -340,13 +343,7 @@ const ScreenNav: React.VFC<ScreenNavProps> = function ScreenNav(props) {
               url: `/project/${appID}/license`,
             },
           ]
-        : [
-            {
-              type: "link" as const,
-              textKey: "ScreenNav.billing",
-              url: `/project/${appID}/billing`,
-            },
-          ]),
+        : []),
 
       {
         type: "group" as const,

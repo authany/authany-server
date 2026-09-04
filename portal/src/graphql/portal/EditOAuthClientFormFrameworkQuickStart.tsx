@@ -17,7 +17,7 @@ import {
 import { useCopyFeedback } from "../../hook/useCopyFeedback";
 import { produce } from "immer";
 import { Context, FormattedMessage } from "../../intl";
-import ExternalLink from "../../ExternalLink";
+import ExternalLink, { isUpstreamLink } from "../../ExternalLink";
 import PrimaryButton from "../../PrimaryButton";
 import DefaultButton from "../../DefaultButton";
 import { AppSecretConfigFormModel } from "../../hook/useAppSecretConfigForm";
@@ -287,7 +287,10 @@ export function EditOAuthClientFormFrameworkQuickStart<
         <CookieSnippetSection snippet={framework.cookieSnippet} />
       ) : null}
 
-      {framework.starterKit != null ? (
+      {/* Authany: starter kits live in the upstream vendor's GitHub org; hide
+          the section rather than show a tutorial whose buttons lead there. */}
+      {framework.starterKit != null &&
+      !isUpstreamLink(framework.starterKit.repoUrl) ? (
         <StarterKitSection
           starterKit={framework.starterKit}
           frameworkDisplayName={renderToString(framework.displayNameMessageId)}

@@ -2,7 +2,6 @@ import React, { useCallback, useContext, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { Context } from "./intl";
 import {
-  Text,
   CommandButton,
   IconButton,
   Panel,
@@ -18,9 +17,7 @@ import Link from "./Link";
 import styles from "./ScreenHeader.module.css";
 import { useSystemConfig } from "./context/SystemConfigContext";
 import { useBoolean } from "@fluentui/react-hooks";
-import ExternalLink from "./ExternalLink";
 import { useLogout } from "./graphql/portal/Authenticated";
-import { useCapture } from "./gtm_v2";
 import { useSettingsAnchor } from "./hook/authgear";
 import { Logo } from "./components/common/Logo";
 import logoStyles from "./components/common/Logo.module.css";
@@ -124,7 +121,6 @@ interface ScreenNavProps {
 const ScreenHeader: React.VFC<ScreenNavProps> = function ScreenHeader(props) {
   const { showHamburger = true } = props;
   const { renderToString } = useContext(Context);
-  const capture = useCapture();
   const { themes } = useSystemConfig();
   const { appID } = useParams() as { appID: string };
   const { viewer } = useViewerQuery();
@@ -146,26 +142,6 @@ const ScreenHeader: React.VFC<ScreenNavProps> = function ScreenHeader(props) {
       console.error("Osano is not loaded");
     }
   }, []);
-
-  const onClickContactUs = useCallback(() => {
-    capture("header.clicked-contact_us");
-  }, [capture]);
-
-  const onClickDocs = useCallback(() => {
-    capture("header.clicked-docs");
-  }, [capture]);
-
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
-  const scheduleDemoLink = useMemo(() => {
-    const url = new URL("https://www.authgear.com/schedule-demo");
-    if (viewer?.email) {
-      url.searchParams.append("email", viewer.email);
-    }
-    if (viewer?.formattedName) {
-      url.searchParams.append("name", viewer.formattedName);
-    }
-    return url.toString();
-  }, [viewer?.email, viewer?.formattedName]);
 
   const headerStyle = useMemo(
     () => ({
@@ -261,26 +237,7 @@ const ScreenHeader: React.VFC<ScreenNavProps> = function ScreenHeader(props) {
         <DesktopViewHeaderIconSection />
         {appID ? <HeaderAppSection appID={appID} /> : null}
       </div>
-      <div className={styles.links}>
-        <ExternalLink
-          href={scheduleDemoLink}
-          className={styles.link}
-          onClick={onClickContactUs}
-        >
-          <Text variant="small">
-            {renderToString("ScreenHeader.links.schedule-demo")}
-          </Text>
-        </ExternalLink>
-        <ExternalLink
-          href="https://docs.authgear.com/"
-          className={styles.link}
-          onClick={onClickDocs}
-        >
-          <Text variant="small">
-            {renderToString("ScreenHeader.links.documentation")}
-          </Text>
-        </ExternalLink>
-      </div>
+      <div className={styles.links} />
       {viewer != null ? (
         <CommandButton
           className={styles.desktopView}
