@@ -125,7 +125,6 @@ function GetStartedScreenContent(
             ))}
           </div>
         </section>
-
       </div>
     </ScreenLayoutScrollView>
   );

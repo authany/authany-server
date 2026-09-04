@@ -37,30 +37,30 @@ export function AppLocaleProvider({
   systemConfig?: SystemConfig;
   children: React.ReactNode;
 }): React.ReactElement {
+  const translations = systemConfig?.translations;
+
   // Authany i18n: locales available = "en" + whatever translations.json provides.
   const availableLocales = useMemo(() => {
-    const keys = Object.keys(systemConfig?.translations ?? {}).filter(
-      (k) => (systemConfig?.translations[k] ?? undefined) != null
-    );
+    const keys =
+      translations != null
+        ? Object.keys(translations).filter((k) => translations[k] != null)
+        : [];
     return Array.from(new Set(["en", ...keys]));
-  }, [systemConfig]);
+  }, [translations]);
 
-  const [locale, setLocaleState] = useState<string>(() =>
-    pickLocale(availableLocales, navigator.languages ?? [], readStoredLocale())
+  // Only the explicit choice (localStorage) is state. The effective locale is
+  // derived from it, so it re-resolves by itself once the system config (and
+  // thus the locale list) arrives, without syncing state in an effect.
+  const [chosenLocale, setChosenLocale] = useState(readStoredLocale);
+
+  const locale = useMemo(
+    () => pickLocale(availableLocales, navigator.languages, chosenLocale),
+    [availableLocales, chosenLocale]
   );
-
-  useEffect(() => {
-    // Re-evaluate once the system config (and thus the locale list) arrives.
-    setLocaleState((current) =>
-      availableLocales.includes(current)
-        ? current
-        : pickLocale(availableLocales, navigator.languages ?? [], readStoredLocale())
-    );
-  }, [availableLocales]);
 
   const setLocale = useCallback((next: string) => {
     writeStoredLocale(next);
-    setLocaleState(next);
+    setChosenLocale(next);
   }, []);
 
   useEffect(() => {
@@ -69,10 +69,10 @@ export function AppLocaleProvider({
 
   // Fallback chain: bundled en.json → server-side en overrides → chosen locale.
   const messages = useMemo(() => {
-    const en = systemConfig?.translations.en ?? {};
-    const chosen = locale === "en" ? {} : systemConfig?.translations[locale] ?? {};
+    const en = translations?.en ?? {};
+    const chosen = locale === "en" ? {} : translations?.[locale] ?? {};
     return { ...DEFAULT_MESSAGES, ...en, ...chosen };
-  }, [systemConfig, locale]);
+  }, [translations, locale]);
 
   const contextValue = useMemo(
     () => ({ locale, availableLocales, setLocale }),
