@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { Context } from "./intl";
 import {
+  Text,
   CommandButton,
   IconButton,
   Panel,
@@ -17,6 +18,7 @@ import Link from "./Link";
 import styles from "./ScreenHeader.module.css";
 import { useSystemConfig } from "./context/SystemConfigContext";
 import { useBoolean } from "@fluentui/react-hooks";
+import ExternalLink from "./ExternalLink";
 import { useLogout } from "./graphql/portal/Authenticated";
 import { useSettingsAnchor } from "./hook/authgear";
 import { Logo } from "./components/common/Logo";
@@ -237,7 +239,14 @@ const ScreenHeader: React.VFC<ScreenNavProps> = function ScreenHeader(props) {
         <DesktopViewHeaderIconSection />
         {appID ? <HeaderAppSection appID={appID} /> : null}
       </div>
-      <div className={styles.links} />
+      <div className={styles.links}>
+        {/* Authany: header docs link points at our own documentation site */}
+        <ExternalLink href="https://docs.authany.com/" className={styles.link}>
+          <Text variant="small">
+            {renderToString("ScreenHeader.links.documentation")}
+          </Text>
+        </ExternalLink>
+      </div>
       {viewer != null ? (
         <CommandButton
           className={styles.desktopView}
