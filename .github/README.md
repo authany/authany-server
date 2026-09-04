@@ -1,31 +1,55 @@
-# Authany server
+# Authany Server
 
-The identity server behind [Authany](https://authany.com): Authgear's source with Authany-specific changes on top. Upstream is [authgear/authgear-server](https://github.com/authgear/authgear-server) (Apache-2.0; `LICENSE` and `NOTICE` are kept as-is). The upstream README lives at [`README.md`](../README.md) and is left untouched so merges stay clean.
+Authany is a self-hosted identity platform: one deployment, unlimited projects, each project with its own fully isolated user pool, login pages, branding and domain. Think of it as running your own Auth0 for every product, internal tool and customer you have, without per-project deployments and without a vendor's name anywhere your users can see it.
 
-## Branches
+This repository is the server: the Go services, the hosted login/signup UI, the admin console and the platform admin API. Deployment, brand assets, translations and build scripts live in [teomyth/authany-deploy](https://github.com/teomyth/authany-deploy).
 
-- `main` — the upstream release tag currently deployed, plus Authany commits on top. Authany commits are prefixed `[Portal]`, `[AuthUI]`, `[Server]` and end with `(Authany)`.
-- Remote `upstream` — `authgear/authgear-server`. Upstream tags are mirrored here.
+## What it does
 
-Currently based on `2026-08-26.0`.
+**Projects as tenants.** Every project is a separate tenant with its own users, credentials, sessions, settings and admins. A person who signs up for one project does not exist in another. Project admins only see their own projects; platform admins see everything.
 
-## What differs from upstream
+**Domains.** Each project gets `{project}.authanyid.com` and can bring its own domain (TLS is issued on demand). The platform itself runs on `id.authany.com` (platform login), `manage.authany.com` (admin console) and `admin.authany.com` (platform admin API, internal network only).
 
-- `[Portal] Add locale selection and language switcher (Authany)` — the admin console picks its locale from `localStorage` / browser language instead of being hard-wired to English, and gains a Language submenu. Translations themselves are served at runtime through `PORTAL_CUSTOM_RESOURCE_DIRECTORY`.
-- `[Portal] Strip residual upstream vendor links (Authany)` — links to the upstream vendor's site, docs, Discord and mailboxes render as plain text; header contact/docs links, Get Started contact and resource columns, and the Billing nav entry are removed; the Starter Kit section is hidden while it points at upstream example repos.
+**Login methods.** Email or phone with password; passwordless one-time codes over email, SMS and WhatsApp; passkeys (WebAuthn); social and enterprise login through Google, Apple, Facebook, GitHub, LinkedIn, Microsoft Entra ID, Azure AD B2C, ADFS and WeChat; LDAP directories. Multi-factor with TOTP, OTP and recovery codes.
 
-Go services are unmodified; the official images run in production. Only the admin-console frontend built from this repo is deployed, as an override on top of the official portal image.
+**Protocols.** OpenID Connect and OAuth 2.0 for applications (web, SPA, mobile, machine-to-machine), SAML 2.0 identity provider for enterprise apps, a session resolver for reverse-proxy setups, and a GraphQL Admin API per project.
 
-## Build and deploy
+**Security.** Bot protection (Cloudflare Turnstile, reCAPTCHA), rate limits and account lockout, session management across devices, audit log, roles and groups, hooks that can block or observe events (webhooks and TypeScript hooks).
 
-Building, translations, brand assets and deployment live in [teomyth/authany-deploy](https://github.com/teomyth/authany-deploy), which expects this repo checked out at `server/` and runs `i18n/scripts/build.sh`.
+**Customisation.** Per-project branding of the hosted pages (logo, colours, CSS, templates), email and SMS templates, 23 end-user languages, custom UI via the authentication-flow API. The admin console itself is available in English and Simplified Chinese with an in-app switcher.
 
-## Upgrading to a new upstream release
+## Architecture
+
+| Component | Role |
+|---|---|
+| `cmd/authgear`, `pkg/lib`, `pkg/auth` | Core identity server: authentication flows, OAuth/OIDC/SAML, sessions, hooks, the hosted UI |
+| `cmd/portal`, `pkg/portal`, `portal/` | Admin console backend (GraphQL) and the React frontend project admins use |
+| `pkg/siteadmin` | Platform-wide admin API: every project, every collaborator, usage |
+| `authui/` | Frontend assets for the hosted login and account pages |
+| `resources/` | Built-in templates, translations and static assets, overridable per deployment and per project |
+
+Runtime dependencies: PostgreSQL (app, audit and search databases), Redis, S3-compatible object storage. Project configuration is stored in the database and hot-reloaded. Services run as containers behind Caddy with wildcard and on-demand certificates.
+
+Local development, tests and conventions are documented in [`CONTRIBUTING.md`](../CONTRIBUTING.md) and [`AGENTS.md`](../AGENTS.md).
+
+## Branches and releases
+
+- `main` is what production runs: the current base release plus Authany commits on top. Authany commits carry a `[Portal]`, `[AuthUI]` or `[Server]` prefix and end with `(Authany)`.
+- Base release tags (`YYYY-MM-DD.N`) are mirrored in this repository. Currently based on `2026-08-26.0`.
+- Authany changes so far:
+  - `[Portal] Add locale selection and language switcher (Authany)` — the admin console picks its locale from `localStorage` / browser language and offers a Language submenu; translations are loaded at runtime from the deployment's resource directory.
+  - `[Portal] Strip residual upstream vendor links (Authany)` — external links to the base project's website, docs, community and mailboxes render as plain text; header contact/docs links, the Get Started contact and resource columns, the Billing nav entry and the Starter Kit section are removed.
+
+Taking a new base release:
 
 ```bash
 git fetch upstream --tags
-git merge <tag>            # e.g. 2026-09-30.0; conflicts, if any, are confined to the portal files touched above
+git merge <tag>                # conflicts, if any, are confined to the portal files touched above
 git push origin main --tags
 ```
 
-Then rebuild and redeploy from authany-deploy.
+Then rebuild the admin console and redeploy from authany-deploy.
+
+## License
+
+Apache License 2.0. Authany Server is derived from the open-source Authgear server by Oursky Limited; `LICENSE` and `NOTICE` are retained unchanged, and the original [`README.md`](../README.md) is kept for reference.
