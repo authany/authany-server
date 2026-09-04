@@ -34,7 +34,7 @@ Local development, tests and conventions are documented in [`CONTRIBUTING.md`](.
 
 ## Branches and releases
 
-- `main` is what production runs: the current base release plus Authany commits on top. Authany commits carry a `[Portal]`, `[AuthUI]` or `[Server]` prefix and end with `(Authany)`.
+- `main` is what production runs: the current base release plus Authany commits on top. Authany commits carry a `[Portal]`, `[AuthUI]`, `[Server]` or `[CI]` prefix and end with `(Authany)`.
 - Base release tags (`YYYY-MM-DD.N`) are mirrored in this repository. Currently based on `2026-08-26.0`.
 - Authany changes so far:
   - `[Portal] Add locale selection and language switcher (Authany)` — the admin console picks its locale from `localStorage` / browser language and offers a Language submenu; translations are loaded at runtime from the deployment's resource directory.
@@ -49,6 +49,18 @@ git push origin main --tags
 ```
 
 Then rebuild the admin console and redeploy from authany-deploy.
+
+## CI
+
+The only workflow that runs here is [`authany-portal.yaml`](workflows/authany-portal.yaml): typecheck, eslint, stylelint, prettier, tests and a build of `portal/`, on pushes to `main` and pull requests that touch `portal/`. Run the same checks locally with `npm run typecheck && npm run eslint && npm run prettier` in `portal/` before pushing.
+
+The upstream workflows (`ci-branches.yaml`, `ci-prs.yaml`, `ci-tags.yaml`, `custom-build.yaml`, `mirror.yaml`, `oursky.yaml`, `periodic-check-*.yaml`, `chromatic.yaml`, `authgear-once.yaml`) are kept in the tree untouched so base-release merges never conflict on them, but they are **disabled in the repository's Actions settings**: they assume the public upstream repository (full Go lint and tests, e2e in Docker, image pushes to quay.io, upstream secrets) and time out or run out of disk on the smaller runners a private repository gets. To turn one back on, e.g. after adding Go changes:
+
+```bash
+gh workflow enable "CI - Branches" --repo teomyth/authany-server
+```
+
+If a base release adds a new workflow file, disable it the same way (`gh workflow disable <name>`) after the merge.
 
 ## License
 

@@ -1,0 +1,61 @@
+name: Authany - Portal
+
+# Authany's own CI.
+#
+# The upstream workflows in this directory (CI - Branches, CI - Tags, Custom
+# Build, Mirror, ...) are disabled in this repository's Actions settings, not
+# in code, so that merging a new base release never conflicts on them. They are
+# sized for the public upstream repository (full Go lint and test, e2e in
+# Docker, image pushes) and time out or run out of disk on the smaller runners
+# a private repository gets. See .github/README.md.
+#
+# This workflow checks the part of the tree Authany changes: the admin console.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "portal/**"
+      - ".github/workflows/authany-portal.yaml"
+  pull_request:
+    paths:
+      - "portal/**"
+      - ".github/workflows/authany-portal.yaml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-native-deps
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "./.tool-versions"
+          cache: npm
+          cache-dependency-path: ./portal/package-lock.json
+      - run: npm ci
+        working-directory: ./portal
+      - run: npm run typecheck
+        working-directory: ./portal
+      - run: npm run eslint
+        working-directory: ./portal
+        if: ${{ !cancelled() }}
+      - run: npm run stylelint
+        working-directory: ./portal
+        if: ${{ !cancelled() }}
+      - run: npm run prettier
+        working-directory: ./portal
+        if: ${{ !cancelled() }}
+      - run: npm run test
+        working-directory: ./portal
+        if: ${{ !cancelled() }}
+      - run: npm run build
+        working-directory: ./portal
+        if: ${{ !cancelled() }}
