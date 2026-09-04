@@ -25,6 +25,7 @@ import { useSettingsAnchor } from "./hook/authgear";
 import { Logo } from "./components/common/Logo";
 import logoStyles from "./components/common/Logo.module.css";
 import ProjectSelector from "./components/header/ProjectSelector";
+import { LOCALE_DISPLAY_NAMES, useLocale } from "./locale";
 
 interface HeaderAppSectionProps {
   appID: string;
@@ -174,6 +175,7 @@ const ScreenHeader: React.VFC<ScreenNavProps> = function ScreenHeader(props) {
   );
 
   const { href: settingURL, onClick: onClickSettings } = useSettingsAnchor();
+  const { locale, availableLocales, setLocale } = useLocale();
 
   const menuProps = useMemo(() => {
     const items = [
@@ -185,6 +187,24 @@ const ScreenHeader: React.VFC<ScreenNavProps> = function ScreenHeader(props) {
         },
         href: settingURL,
         onClick: onClickSettings,
+      },
+      {
+        key: "language",
+        text: renderToString("ScreenHeader.language"),
+        iconProps: {
+          iconName: "LocaleLanguage",
+        },
+        subMenuProps: {
+          items: availableLocales.map((l) => ({
+            key: `language-${l}`,
+            text: LOCALE_DISPLAY_NAMES[l] ?? l,
+            canCheck: true,
+            checked: l === locale,
+            onClick: () => {
+              setLocale(l);
+            },
+          })),
+        },
       },
       {
         key: "logout",
@@ -214,6 +234,9 @@ const ScreenHeader: React.VFC<ScreenNavProps> = function ScreenHeader(props) {
     onClickSettings,
     onClickLogout,
     onClickCookiePreference,
+    locale,
+    availableLocales,
+    setLocale,
   ]);
 
   return (

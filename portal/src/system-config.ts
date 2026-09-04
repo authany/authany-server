@@ -36,8 +36,11 @@ export interface SystemConfigThemes {
   defaultButton: ITheme;
 }
 
+// Authany i18n: en is always present; other locales (zh-CN, ...) come from
+// PORTAL_CUSTOM_RESOURCE_DIRECTORY/translations.json and are merged over en at runtime.
 export interface SystemConfigTranslations {
   en: Record<string, string>;
+  [locale: string]: Record<string, string> | undefined;
 }
 
 export interface PartialSystemConfig
@@ -237,13 +240,28 @@ export function mergeSystemConfig(
       ...baseConfig.themes,
       ...overlayConfig.themes,
     },
-    translations: {
-      en: {
-        ...baseConfig.translations?.en,
-        ...overlayConfig.translations?.en,
-      },
-    },
+    translations: mergeTranslations(
+      baseConfig.translations,
+      overlayConfig.translations
+    ),
   };
+}
+
+function mergeTranslations(
+  base?: Partial<SystemConfigTranslations>,
+  overlay?: Partial<SystemConfigTranslations>
+): SystemConfigTranslations {
+  const locales = new Set<string>(["en"]);
+  for (const k of Object.keys(base ?? {})) locales.add(k);
+  for (const k of Object.keys(overlay ?? {})) locales.add(k);
+  const out: SystemConfigTranslations = { en: {} };
+  for (const locale of locales) {
+    out[locale] = {
+      ...(base?.[locale] ?? {}),
+      ...(overlay?.[locale] ?? {}),
+    };
+  }
+  return out;
 }
 
 export function instantiateSystemConfig(
@@ -270,9 +288,7 @@ export function instantiateSystemConfig(
       verifyButton: createTheme(config.themes?.verifyButton ?? {}),
       defaultButton: createTheme(config.themes?.defaultButton ?? {}),
     },
-    translations: {
-      en: config.translations?.en ?? {},
-    },
+    translations: mergeTranslations({ en: {} }, config.translations),
     searchEnabled: config.searchEnabled ?? false,
     auditLogEnabled: config.auditLogEnabled ?? false,
     gitCommitHash: config.gitCommitHash ?? "",
