@@ -19,6 +19,12 @@ import ShowError from "../../ShowError";
 import { useAuthenticatedForInvitationQuery } from "./query/authenticatedForInvitationQuery";
 import PrimaryButton from "../../PrimaryButton";
 import DefaultButton from "../../DefaultButton";
+import { readStoredLocale } from "../../locale";
+
+function uiLocalesFromChoice(): string[] | undefined {
+  const chosen = readStoredLocale();
+  return chosen != null && chosen !== "" ? [chosen] : undefined;
+}
 
 function encodeOAuthState(state: Record<string, unknown>): string {
   return btoa(JSON.stringify(state));
@@ -171,6 +177,10 @@ const AcceptAdminInvitationScreen: React.VFC =
           .startAuthentication({
             redirectURI,
             prompt: PromptOption.Login,
+            // Authany: show the login page in the language chosen for the
+            // console (shared with docs.authany.com); with no explicit choice
+            // we leave it to the browser's Accept-Language.
+            uiLocales: uiLocalesFromChoice(),
             state: encodeOAuthState({
               originalPath,
             }),

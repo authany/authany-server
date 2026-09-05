@@ -20,6 +20,12 @@ import ShowLoading from "../../ShowLoading";
 import { useViewerQuery } from "./query/viewerQuery";
 import { InternalRedirectState } from "../../InternalRedirect";
 import { useReset } from "../../gtm_v2";
+import { readStoredLocale } from "../../locale";
+
+function uiLocalesFromChoice(): string[] | undefined {
+  const chosen = readStoredLocale();
+  return chosen != null && chosen !== "" ? [chosen] : undefined;
+}
 
 interface AuthenticatedContextValue {
   loading: boolean;
@@ -62,6 +68,10 @@ const ShowQueryResult: React.VFC<ShowQueryResultProps> =
           .startAuthentication({
             redirectURI,
             prompt: PromptOption.Login,
+            // Authany: show the login page in the language chosen for the
+            // console (shared with docs.authany.com); with no explicit choice
+            // we leave it to the browser's Accept-Language.
+            uiLocales: uiLocalesFromChoice(),
             state: encodeOAuthState({
               originalPath,
             }),
