@@ -2674,7 +2674,7 @@ function PhoneSettings(props: PhoneSettingsProps) {
                 values={{
                   // eslint-disable-next-line react/no-unstable-nested-components
                   applicationLink: (chunks: React.ReactNode) => (
-                    <ExternalLink href="https://go.authgear.com/portal-support">
+                    <ExternalLink href="mailto:hello@authany.com">
                       {chunks}
                     </ExternalLink>
                   ),

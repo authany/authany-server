@@ -72,7 +72,7 @@ function ProjectQuotaMessageBar(
         values={{
           // eslint-disable-next-line react/no-unstable-nested-components
           externalLink: (chunks: React.ReactNode) => (
-            <ExternalLink href="https://go.authgear.com/portal-support">
+            <ExternalLink href="mailto:hello@authany.com">
               {chunks}
             </ExternalLink>
           ),
