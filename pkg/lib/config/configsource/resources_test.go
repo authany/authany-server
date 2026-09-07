@@ -258,9 +258,10 @@ http:
 			domainService := NewMockDomainService(ctrl)
 			domainService.EXPECT().ListDomains(gomock.Any(), "test").Return([]*apimodel.Domain{
 				{
-					ID:     "domain-id",
-					AppID:  "test",
-					Domain: "customdomain.com",
+					ID:         "domain-id",
+					AppID:      "test",
+					Domain:     "customdomain.com",
+					IsVerified: true,
 				},
 			}, nil).AnyTimes()
 
@@ -291,6 +292,52 @@ http:
 			)
 
 			So(err, ShouldBeNil)
+		})
+
+		Convey("Public origin cannot be changed to a pending (unverified) domain", func() {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			// ListDomains returns pending domains alongside verified ones.
+			// A pending domain is one the app has merely claimed; ownership
+			// has not been proven by the DNS TXT record yet.
+			domainService := NewMockDomainService(ctrl)
+			domainService.EXPECT().ListDomains(gomock.Any(), "test").Return([]*apimodel.Domain{
+				{
+					ID:         "domain-id",
+					AppID:      "test",
+					Domain:     "customdomain.com",
+					IsVerified: false,
+				},
+			}, nil).AnyTimes()
+
+			featureConfig := config.NewEffectiveDefaultFeatureConfig()
+
+			ctx := context.Background()
+			ctx = context.WithValue(ctx, ContextKeyFeatureConfig, featureConfig)
+			ctx = context.WithValue(ctx, ContextKeyAppHostSuffixes, &config.AppHostSuffixes{})
+			ctx = context.WithValue(ctx, ContextKeyDomainService, domainService)
+
+			_, err := descriptor.UpdateResource(
+				ctx,
+				nil,
+				&resource.ResourceFile{
+					Location: resource.Location{
+						Fs:   app,
+						Path: path,
+					},
+					Data: []byte(`id: test
+http:
+  public_origin: http://test
+`),
+				},
+				[]byte(`id: test
+http:
+  public_origin: http://customdomain.com
+`),
+			)
+
+			So(err, ShouldBeError, "invalid authgear.yaml:\n/http/public_origin: public origin is not allowed")
 		})
 
 		Convey("Public origin cannot be changed to unknown domain", func() {

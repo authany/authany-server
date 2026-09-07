@@ -279,6 +279,14 @@ func (d AuthgearYAMLDescriptor) validatePublicOrigin(ctx context.Context, valida
 		}
 
 		for _, domain := range availableDomains {
+			// ListDomains returns pending domains too. A pending domain has only
+			// been claimed, not proven: any collaborator can insert an arbitrary
+			// hostname, including one belonging to the operator or to another
+			// app. Only a domain whose DNS TXT record has been verified may back
+			// a public origin.
+			if !domain.IsVerified {
+				continue
+			}
 			if incomingUrl.Host == domain.Domain {
 				validOrigin = true
 				break
