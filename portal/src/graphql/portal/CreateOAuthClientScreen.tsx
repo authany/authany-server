@@ -403,11 +403,12 @@ const CreateOAuthClientScreen: React.VFC = function CreateOAuthClientScreen() {
         /^\/oauth\/clients$/,
         "error.client-quota-exceeded",
         {
-          to: `/project/${appID}/billing`,
+          // Authany: no billing page; the quota message links to the contact address
+          href: "mailto:hello@authany.com",
         }
       ),
     ],
-    [appID]
+    []
   );
 
   return useLoadableView({

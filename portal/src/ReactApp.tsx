@@ -131,6 +131,15 @@ const router = createBrowserRouter([
         ),
       },
       {
+        // Authany: direct sign-up entry (linked from the home page).
+        path: "signup",
+        element: (
+          <Authenticated page="signup">
+            <Navigate to="/projects" replace={true} />
+          </Authenticated>
+        ),
+      },
+      {
         path: "projects",
         children: [
           {

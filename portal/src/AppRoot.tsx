@@ -153,9 +153,6 @@ const BiometricConfigurationScreen = lazy(
 const MFAConfigurationScreen = lazy(
   async () => import("./graphql/portal/MFAConfigurationScreen")
 );
-const SubscriptionScreen = lazy(
-  async () => import("./graphql/portal/SubscriptionScreen")
-);
 const LicenseScreen = lazy(
   async () => import("./graphql/portal/LicenseScreen")
 );
@@ -204,9 +201,6 @@ const FraudProtectionLogEntryScreen = lazy(
 );
 const IPBlocklistScreen = lazy(
   async () => import("./graphql/portal/IPBlocklistScreen")
-);
-const SubscriptionRedirect = lazy(
-  async () => import("./graphql/portal/SubscriptionRedirect")
 );
 const EndpointDirectAccessScreen = lazy(
   async () => import("./graphql/portal/EndpointDirectAccessScreen")
@@ -923,34 +917,12 @@ const AppRoot: React.VFC = function AppRoot() {
             </Route>
           </Route>
 
-          <Route path="billing">
-            <Route
-              index={true}
-              element={
-                <Suspense fallback={<ShowLoading />}>
-                  <SubscriptionScreen />
-                </Suspense>
-              }
-            />
-          </Route>
-
           <Route path="license">
             <Route
               index={true}
               element={
                 <Suspense fallback={<ShowLoading />}>
                   <LicenseScreen />
-                </Suspense>
-              }
-            />
-          </Route>
-
-          <Route path="billing-redirect">
-            <Route
-              index={true}
-              element={
-                <Suspense fallback={<ShowLoading />}>
-                  <SubscriptionRedirect />
                 </Suspense>
               }
             />

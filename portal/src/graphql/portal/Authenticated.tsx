@@ -45,6 +45,8 @@ const AuthenticatedContext = createContext(DEFAULT_VALUE);
 
 interface ShowQueryResultProps {
   isAuthenticated: boolean;
+  // Authany: "signup" opens the sign-up page instead of login (the /signup route).
+  page?: "signup";
   children?: React.ReactElement;
 }
 
@@ -54,10 +56,13 @@ function encodeOAuthState(state: Record<string, unknown>): string {
 
 const ShowQueryResult: React.VFC<ShowQueryResultProps> =
   function ShowQueryResult(props: ShowQueryResultProps) {
-    const { isAuthenticated } = props;
+    const { isAuthenticated, page } = props;
 
     const redirectURI = window.location.origin + "/oauth-redirect";
-    const originalPath = `${window.location.pathname}${window.location.search}`;
+    // The /signup entry point should land on the console root after
+    // authentication, not bounce back to /signup.
+    const originalPath =
+      page != null ? "/" : `${window.location.pathname}${window.location.search}`;
 
     useEffect(() => {
       if (!isAuthenticated) {
@@ -68,6 +73,7 @@ const ShowQueryResult: React.VFC<ShowQueryResultProps> =
           .startAuthentication({
             redirectURI,
             prompt: PromptOption.Login,
+            page,
             // Authany: show the login page in the language chosen for the
             // console (shared with docs.authany.com); with no explicit choice
             // we leave it to the browser's Accept-Language.
@@ -80,7 +86,7 @@ const ShowQueryResult: React.VFC<ShowQueryResultProps> =
             console.error(err);
           });
       }
-    }, [isAuthenticated, redirectURI, originalPath]);
+    }, [isAuthenticated, redirectURI, originalPath, page]);
 
     if (isAuthenticated) {
       return props.children ?? null;
@@ -90,6 +96,7 @@ const ShowQueryResult: React.VFC<ShowQueryResultProps> =
   };
 
 interface Props {
+  page?: "signup";
   children?: React.ReactElement;
 }
 

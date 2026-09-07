@@ -372,11 +372,12 @@ const CreateM2MClientScreen: React.VFC = function CreateM2MClientScreen() {
         /^\/oauth\/clients$/,
         "error.client-quota-exceeded",
         {
-          to: `/project/${appID}/billing`,
+          // Authany: no billing page; the quota message links to the contact address
+          href: "mailto:hello@authany.com",
         }
       ),
     ],
-    [appID]
+    []
   );
 
   return useLoadableView({

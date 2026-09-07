@@ -2680,7 +2680,9 @@ function PhoneSettings(props: PhoneSettingsProps) {
                   ),
                   // eslint-disable-next-line react/no-unstable-nested-components
                   billingLink: (chunks: React.ReactNode) => (
-                    <Link to={`/project/${appID}/billing`}>{chunks}</Link>
+                    <ExternalLink href="mailto:hello@authany.com">
+                      {chunks}
+                    </ExternalLink>
                   ),
                 }}
               />

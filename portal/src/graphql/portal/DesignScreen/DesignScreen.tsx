@@ -709,7 +709,7 @@ const AuthgearBrandingConfiguration: React.VFC<AuthgearBrandingConfigurationProp
             </Text>
             <DefaultButton
               className={cn(styles.upgradeNowButton, "ml-3", "flex-none")}
-              href={`/project/${appID}/billing`}
+              href="mailto:hello@authany.com"
               text={
                 <FormattedMessage id="DesignScreen.configuration.authgearBranding.upgradeNow" />
               }
