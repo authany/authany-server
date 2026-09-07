@@ -39,6 +39,7 @@ Local development, tests and conventions are documented in [`CONTRIBUTING.md`](.
 - Authany changes so far:
   - `[Portal] Add locale selection and language switcher (Authany)` — the admin console picks its locale from `localStorage` / browser language and offers a Language submenu; translations are loaded at runtime from the deployment's resource directory.
   - `[Portal] Strip residual upstream vendor links (Authany)` — external links to the base project's website, docs, community and mailboxes render as plain text; header contact/docs links, the Get Started contact and resource columns, the Billing nav entry and the Starter Kit section are removed.
+  - `[Server] De-brand the collaborator invitation subject (Authany)` — the collaborator invitation email subject says "in Authany". The email body is overridden at deployment level (`PORTAL_CUSTOM_RESOURCE_DIRECTORY/templates/en/messages/`); the subject is hard-coded, so this change only reaches production once the portal image is built from this repository.
 
 Taking a new base release:
 
