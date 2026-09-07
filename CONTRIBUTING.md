@@ -1,3 +1,14 @@
+> **This file is upstream's, kept unmodified below apart from this notice.**
+>
+> These are the Authgear project's contributor instructions, retained because the development
+> setup they describe is still accurate for this fork. Anything about reporting issues, pull
+> requests or community channels refers to the upstream project, not to Authany.
+>
+> Authany's own notes on branches, releases and CI are in **[.github/README.md](.github/README.md)**;
+> report security issues through **[SECURITY.md](SECURITY.md)**.
+
+---
+
 * [Contributing guide](#contributing-guide)
   * [Install dependencies](#install-dependencies)
     * [Install dependencies with asdf and homebrew](#install-dependencies-with-asdf-and-homebrew)

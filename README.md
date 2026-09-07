@@ -1,3 +1,13 @@
+> **This file is upstream's, kept unmodified below apart from this notice.**
+>
+> You are looking at **Authany Server**, a modified version of the Authgear server, used under the
+> Apache License 2.0. The page below is the original Authgear project README; its links, branding
+> and hosted-cloud offering belong to Oursky Limited, not to Authany.
+>
+> For what this repository actually is, read **[.github/README.md](.github/README.md)**.
+
+---
+
 <a href="https://www.authgear.com/?utm_source=github&utm_medium=readme&utm_campaign=logo"><img src="https://raw.githubusercontent.com/authgear/.github/main/profile/authgear-logo-github.svg" width="400" alt="Authgear Logo">
 </a>
 
