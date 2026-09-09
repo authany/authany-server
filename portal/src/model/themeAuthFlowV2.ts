@@ -215,7 +215,9 @@ export const DEFAULT_LIGHT_THEME: CustomisableTheme = {
     textDecoration: "underline",
   },
   logo: {
-    height: "100px",
+    // Authany: 48px, matching the brand definition. Upstream's 100px is sized for a square
+    // app icon; our reference lockup is a wordmark.
+    height: "48px",
   },
 };
 
@@ -266,7 +268,9 @@ export const DEFAULT_DARK_THEME: CustomisableTheme = {
     textDecoration: "underline",
   },
   logo: {
-    height: "100px",
+    // Authany: 48px, matching the brand definition. Upstream's 100px is sized for a square
+    // app icon; our reference lockup is a wordmark.
+    height: "48px",
   },
 };
 

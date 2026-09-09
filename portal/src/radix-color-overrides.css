@@ -1,3 +1,21 @@
+/* Authany: the accent scale is achromatic.
+
+   Radix Themes binds every accent surface in the console to the "indigo" scale
+   (ThemeProvider accentColor="indigo"), and two components hardcode color="indigo" on top of
+   that, so the whole v2 console rendered in Authgear's #176df3 -- the wizard stepper, the
+   primary buttons, the callouts, the onboarding radio cards. Rather than swap the accent name,
+   which would leave those two hardcoded props blue, the scale itself is regenerated from the
+   Authany greyscale in the platform repo's brand/README.md.
+
+   Steps keep their Radix meaning: 1-2 backgrounds, 3-5 component fills, 6-8 borders, 9 the
+   solid accent, 10 its hover, 11 low-contrast text, 12 high-contrast text. Step 9 is the brand
+   #0a0a0a on light and #f5f5f5 on dark, with contrast inverted to match, which is the same pair
+   the auth UI uses. The alpha ramp is pure black over white on light and pure white over the
+   brand near-black on dark, each step's alpha chosen to composite to its solid twin.
+
+   The display-p3 blocks carry the same values rather than an oklch twin: grey is identical in
+   every gamut, so a wide-gamut variant would only add drift. */
+
 /* This file defines our own custom color palette */
 /* https://www.figma.com/design/wAIzBnO9un4fYcq5ampR5k/Radix-Themes-(Storybook)?node-id=3795-92063&t=hD90rcrEF95c6rUb-0 */
 /* All colors should be generated from https://www.radix-ui.com/colors/custom */
@@ -8,36 +26,36 @@
 :root,
 .light,
 .light-theme {
-  --indigo-1: #fcfdff;
-  --indigo-2: #f5f9ff;
-  --indigo-3: #eaf3ff;
-  --indigo-4: #dbebff;
-  --indigo-5: #c9e1ff;
-  --indigo-6: #b4d4ff;
-  --indigo-7: #9bc2ff;
-  --indigo-8: #76a9fc;
-  --indigo-9: #176df3;
-  --indigo-10: #055fe1;
-  --indigo-11: #0e64e6;
-  --indigo-12: #0d2f68;
+  --indigo-1: #fcfcfc;
+  --indigo-2: #f7f7f7;
+  --indigo-3: #ebebeb;
+  --indigo-4: #e0e0e0;
+  --indigo-5: #d6d6d6;
+  --indigo-6: #c9c9c9;
+  --indigo-7: #b3b3b3;
+  --indigo-8: #a8a8a8;
+  --indigo-9: #0a0a0a;
+  --indigo-10: #262626;
+  --indigo-11: #545454;
+  --indigo-12: #141414;
 
-  --indigo-a1: #0055ff03;
-  --indigo-a2: #0066ff0a;
-  --indigo-a3: #006eff15;
-  --indigo-a4: #0072ff24;
-  --indigo-a5: #0072ff36;
-  --indigo-a6: #016dff4b;
-  --indigo-a7: #0064ff64;
-  --indigo-a8: #005ffa89;
-  --indigo-a9: #005ff2e8;
-  --indigo-a10: #005ce0fa;
-  --indigo-a11: #005be5f1;
-  --indigo-a12: #002460f2;
+  --indigo-a1: #00000003;
+  --indigo-a2: #00000008;
+  --indigo-a3: #00000014;
+  --indigo-a4: #0000001f;
+  --indigo-a5: #00000029;
+  --indigo-a6: #00000036;
+  --indigo-a7: #0000004c;
+  --indigo-a8: #00000057;
+  --indigo-a9: #000000f5;
+  --indigo-a10: #000000d9;
+  --indigo-a11: #000000ab;
+  --indigo-a12: #000000eb;
 
-  --indigo-contrast: #fff;
-  --indigo-surface: #f3f8ffcc;
-  --indigo-indicator: #176df3;
-  --indigo-track: #176df3;
+  --indigo-contrast: #ffffff;
+  --indigo-surface: #f7f7f7cc;
+  --indigo-indicator: #0a0a0a;
+  --indigo-track: #0a0a0a;
 }
 
 @supports (color: color(display-p3 1 1 1)) {
@@ -45,108 +63,108 @@
     :root,
     .light,
     .light-theme {
-      --indigo-1: oklch(99.4% 0.003 260.1);
-      --indigo-2: oklch(98.2% 0.0102 260.1);
-      --indigo-3: oklch(96% 0.0212 260.1);
-      --indigo-4: oklch(93.7% 0.0405 260.1);
-      --indigo-5: oklch(90.5% 0.0596 260.1);
-      --indigo-6: oklch(86.4% 0.0785 260.1);
-      --indigo-7: oklch(80.8% 0.0993 260.1);
-      --indigo-8: oklch(73.3% 0.1339 260.1);
-      --indigo-9: oklch(56.9% 0.2159 260.1);
-      --indigo-10: oklch(52.5% 0.2113 260.1);
-      --indigo-11: oklch(54.1% 0.2113 260.1);
-      --indigo-12: oklch(32% 0.1072 260.1);
+      --indigo-1: #fcfcfc;
+      --indigo-2: #f7f7f7;
+      --indigo-3: #ebebeb;
+      --indigo-4: #e0e0e0;
+      --indigo-5: #d6d6d6;
+      --indigo-6: #c9c9c9;
+      --indigo-7: #b3b3b3;
+      --indigo-8: #a8a8a8;
+      --indigo-9: #0a0a0a;
+      --indigo-10: #262626;
+      --indigo-11: #545454;
+      --indigo-12: #141414;
 
-      --indigo-a1: color(display-p3 0.0235 0.349 1 / 0.012);
-      --indigo-a2: color(display-p3 0.0235 0.349 0.8941 / 0.036);
-      --indigo-a3: color(display-p3 0.0078 0.3725 0.949 / 0.075);
-      --indigo-a4: color(display-p3 0.0078 0.3686 0.9412 / 0.13);
-      --indigo-a5: color(display-p3 0.0078 0.3725 0.9412 / 0.193);
-      --indigo-a6: color(display-p3 0.0039 0.3647 0.9451 / 0.271);
-      --indigo-a7: color(display-p3 0.0039 0.3294 0.949 / 0.361);
-      --indigo-a8: color(display-p3 0.0039 0.3098 0.9294 / 0.495);
-      --indigo-a9: color(display-p3 0 0.2706 0.902 / 0.797);
-      --indigo-a10: color(display-p3 0 0.2471 0.8235 / 0.844);
-      --indigo-a11: color(display-p3 0 0.251 0.8431 / 0.824);
-      --indigo-a12: color(display-p3 0 0.098 0.3333 / 0.91);
+      --indigo-a1: #00000003;
+      --indigo-a2: #00000008;
+      --indigo-a3: #00000014;
+      --indigo-a4: #0000001f;
+      --indigo-a5: #00000029;
+      --indigo-a6: #00000036;
+      --indigo-a7: #0000004c;
+      --indigo-a8: #00000057;
+      --indigo-a9: #000000f5;
+      --indigo-a10: #000000d9;
+      --indigo-a11: #000000ab;
+      --indigo-a12: #000000eb;
 
-      --indigo-contrast: #fff;
-      --indigo-surface: color(display-p3 0.9569 0.9725 1 / 0.8);
-      --indigo-indicator: oklch(56.9% 0.2159 260.1);
-      --indigo-track: oklch(56.9% 0.2159 260.1);
+      --indigo-contrast: #ffffff;
+      --indigo-surface: #f7f7f7cc;
+      --indigo-indicator: #0a0a0a;
+      --indigo-track: #0a0a0a;
     }
   }
 }
 
 .dark,
 .dark-theme {
-  --indigo-1: #0a111d;
-  --indigo-2: #0e1827;
-  --indigo-3: #0e254c;
-  --indigo-4: #0e2f67;
-  --indigo-5: #133a7a;
-  --indigo-6: #1b458b;
-  --indigo-7: #23529f;
-  --indigo-8: #2960bb;
-  --indigo-9: #176df3;
-  --indigo-10: #005ee3;
-  --indigo-11: #83b7ff;
-  --indigo-12: #cfe3ff;
+  --indigo-1: #0a0a0a;
+  --indigo-2: #141414;
+  --indigo-3: #1f1f1f;
+  --indigo-4: #242424;
+  --indigo-5: #2e2e2e;
+  --indigo-6: #3a3a3a;
+  --indigo-7: #474747;
+  --indigo-8: #545454;
+  --indigo-9: #f5f5f5;
+  --indigo-10: #e0e0e0;
+  --indigo-11: #a8a8a8;
+  --indigo-12: #f7f7f7;
 
-  --indigo-a1: #0012fd0d;
-  --indigo-a2: #005cfb18;
-  --indigo-a3: #0661fd40;
-  --indigo-a4: #0964fd5d;
-  --indigo-a5: #166efe71;
-  --indigo-a6: #2577ff83;
-  --indigo-a7: #2f7dfe99;
-  --indigo-a8: #327ffeb7;
-  --indigo-a9: #1771fef3;
-  --indigo-a10: #0068ffe1;
-  --indigo-a11: #83b7ff;
-  --indigo-a12: #cfe3ff;
+  --indigo-a1: #ffffff00;
+  --indigo-a2: #ffffff0a;
+  --indigo-a3: #ffffff16;
+  --indigo-a4: #ffffff1b;
+  --indigo-a5: #ffffff25;
+  --indigo-a6: #ffffff32;
+  --indigo-a7: #ffffff3f;
+  --indigo-a8: #ffffff4d;
+  --indigo-a9: #fffffff5;
+  --indigo-a10: #ffffffdf;
+  --indigo-a11: #ffffffa5;
+  --indigo-a12: #fffffff7;
 
-  --indigo-contrast: #fff;
-  --indigo-surface: #0c1f3d80;
-  --indigo-indicator: #176df3;
-  --indigo-track: #176df3;
+  --indigo-contrast: #0a0a0a;
+  --indigo-surface: #14141480;
+  --indigo-indicator: #f5f5f5;
+  --indigo-track: #f5f5f5;
 }
 
 @supports (color: color(display-p3 1 1 1)) {
   @media (color-gamut: p3) {
     .dark,
     .dark-theme {
-      --indigo-1: oklch(17.8% 0.0279 260.1);
-      --indigo-2: oklch(20.7% 0.0341 260.1);
-      --indigo-3: oklch(27.1% 0.0783 260.1);
-      --indigo-4: oklch(31.8% 0.1053 260.1);
-      --indigo-5: oklch(36.1% 0.118 260.1);
-      --indigo-6: oklch(40.4% 0.1249 260.1);
-      --indigo-7: oklch(45% 0.1358 260.1);
-      --indigo-8: oklch(50.3% 0.155 260.1);
-      --indigo-9: oklch(56.9% 0.2159 260.1);
-      --indigo-10: oklch(52.5% 0.2159 260.1);
-      --indigo-11: oklch(77.7% 0.1393 260.1);
-      --indigo-12: oklch(91.1% 0.0483 260.1);
+      --indigo-1: #0a0a0a;
+      --indigo-2: #141414;
+      --indigo-3: #1f1f1f;
+      --indigo-4: #242424;
+      --indigo-5: #2e2e2e;
+      --indigo-6: #3a3a3a;
+      --indigo-7: #474747;
+      --indigo-8: #545454;
+      --indigo-9: #f5f5f5;
+      --indigo-10: #e0e0e0;
+      --indigo-11: #a8a8a8;
+      --indigo-12: #f7f7f7;
 
-      --indigo-a1: color(display-p3 0 0.0667 0.9882 / 0.047);
-      --indigo-a2: color(display-p3 0.0235 0.3765 0.9922 / 0.089);
-      --indigo-a3: color(display-p3 0.1176 0.3843 1 / 0.236);
-      --indigo-a4: color(display-p3 0.1373 0.4 1 / 0.345);
-      --indigo-a5: color(display-p3 0.1882 0.4353 1 / 0.425);
-      --indigo-a6: color(display-p3 0.2314 0.4706 1 / 0.492);
-      --indigo-a7: color(display-p3 0.2745 0.5059 1 / 0.576);
-      --indigo-a8: color(display-p3 0.2902 0.5137 1 / 0.69);
-      --indigo-a9: color(display-p3 0.2196 0.4549 1 / 0.916);
-      --indigo-a10: color(display-p3 0.1647 0.4118 1 / 0.849);
-      --indigo-a11: color(display-p3 0.5725 0.7333 1 / 0.975);
-      --indigo-a12: color(display-p3 0.8392 0.898 1 / 0.988);
+      --indigo-a1: #ffffff00;
+      --indigo-a2: #ffffff0a;
+      --indigo-a3: #ffffff16;
+      --indigo-a4: #ffffff1b;
+      --indigo-a5: #ffffff25;
+      --indigo-a6: #ffffff32;
+      --indigo-a7: #ffffff3f;
+      --indigo-a8: #ffffff4d;
+      --indigo-a9: #fffffff5;
+      --indigo-a10: #ffffffdf;
+      --indigo-a11: #ffffffa5;
+      --indigo-a12: #fffffff7;
 
-      --indigo-contrast: #fff;
-      --indigo-surface: color(display-p3 0.0588 0.1098 0.2275 / 0.5);
-      --indigo-indicator: oklch(56.9% 0.2159 260.1);
-      --indigo-track: oklch(56.9% 0.2159 260.1);
+      --indigo-contrast: #0a0a0a;
+      --indigo-surface: #14141480;
+      --indigo-indicator: #f5f5f5;
+      --indigo-track: #f5f5f5;
     }
   }
 }

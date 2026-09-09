@@ -7,7 +7,11 @@
   @apply flex-1-0-auto;
   @apply bg-no-repeat bg-cover;
   @apply flex flex-col;
-  background-color: var(--accent-9);
+  /* Authany: a literal, not var(--accent-9). This is the paint behind the background image and
+     the fallback if it fails to load; tying it to the accent meant it was Authgear blue, and it
+     would follow the accent again if that ever stops being achromatic. The content wrapper
+     carries the "dark" class, so this ground must stay dark. */
+  background-color: #0a0a0a;
 }
 
 .onboardingSurveyLayout__content {

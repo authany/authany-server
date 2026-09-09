@@ -353,7 +353,12 @@ function constructConfig(
       derivePrimaryAuthenticatorsFromFormState(currentState);
 
     config.ui ??= {};
-    config.ui.dark_theme_disabled = true;
+    // Authany: leave both undefined, which the Design page reads back as "auto", i.e. follow
+    // prefers-color-scheme. Upstream hardcoded dark_theme_disabled here, so every project the
+    // wizard created could never use the dark theme this deployment ships, and dark-mode users
+    // got a white flash on a customer's login page while our own accounts project rendered
+    // correctly. The deployment carries a dark stylesheet; there is no reason to forbid it.
+    config.ui.dark_theme_disabled = undefined;
     config.ui.light_theme_disabled = undefined;
   });
 }
