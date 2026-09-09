@@ -31,7 +31,7 @@ import {
   UseSendTestEmailMutationReturnType,
 } from "./mutations/sendTestEmail";
 import logoSendgrid from "../../images/sendgrid_logo.svg";
-import logoAuthgear from "../../images/authgear_logo.svg";
+import logoAuthany from "../../images/authany_logo.svg";
 import styles from "./SMTPConfigurationScreen.module.css";
 import ExternalLink from "../../ExternalLink";
 import { AppSecretKey } from "./globalTypes.generated";
@@ -503,7 +503,7 @@ const SMTPConfigurationScreenContent: React.VFC<SMTPConfigurationScreenContentPr
           value: ProviderType.Authgear,
           icon: (
             <img
-              src={logoAuthgear}
+              src={logoAuthany}
               alt=""
               className="object-contain"
               style={{

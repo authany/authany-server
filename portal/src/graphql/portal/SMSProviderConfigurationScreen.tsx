@@ -39,7 +39,7 @@ import ScreenContent from "../../ScreenContent";
 import styles from "./SMSProviderConfigurationScreen.module.css";
 import logoTwilio from "../../images/twilio_logo.svg";
 import logoWebhook from "../../images/webhook_logo.svg";
-import logoAuthgear from "../../images/authgear_logo.svg";
+import logoAuthany from "../../images/authany_logo.svg";
 import { startReauthentication } from "./Authenticated";
 import { CodeField } from "../../components/common/CodeField";
 import CodeEditor from "../../CodeEditor";
@@ -986,7 +986,7 @@ function SMSProviderConfigurationContent(props: {
         value: SMSProviderType.Authgear,
         icon: (
           <img
-            src={logoAuthgear}
+            src={logoAuthany}
             alt=""
             className="object-contain"
             style={{
