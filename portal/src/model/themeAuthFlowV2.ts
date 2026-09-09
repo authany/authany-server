@@ -163,8 +163,13 @@ export const EMPTY_THEME: PartialCustomisableTheme = {
   logo: {},
 };
 
-export const DEFAULT_BORDER_RADIUS = "0.875em";
+export const DEFAULT_BORDER_RADIUS = "1em";
 
+// Authany: the monochrome default. These values are the Design page's baseline, so they are
+// what a project falls back to and what "reset" restores. They mirror the brand definition in
+// the platform repo, deploy/brand/platform/static/authgear-authflowv2-light-theme.css; the
+// deployment layer deliberately sets shape only and leaves colour to each project, so if this
+// baseline carried the upstream blue every new project would be blue.
 export const DEFAULT_LIGHT_THEME: CustomisableTheme = {
   page: {
     backgroundColor: "#ffffff",
@@ -173,90 +178,92 @@ export const DEFAULT_LIGHT_THEME: CustomisableTheme = {
     alignment: "center",
   },
   primaryButton: {
-    backgroundColor: "#176df3",
-    backgroundColorActive: "#1151b8",
-    backgroundColorHover: "#1151b8",
+    backgroundColor: "#0a0a0a",
+    backgroundColorActive: "#000000",
+    backgroundColorHover: "#262626",
     labelColor: "#ffffff",
     borderRadius: {
       type: "rounded",
-      radius: "0.875em",
+      radius: "1em",
     },
   },
   secondaryButton: {
     borderRadius: {
       type: "rounded",
-      radius: "0.875em",
+      radius: "1em",
     },
   },
   inputField: {
     borderRadius: {
       type: "rounded",
-      radius: "0.875em",
+      radius: "1em",
     },
   },
   phoneInputField: {
     borderRadius: {
       type: "rounded",
-      radius: "0.875em",
+      radius: "1em",
     },
   },
   icon: {
-    color: "#176df3",
+    color: "#0a0a0a",
   },
   link: {
-    color: "#176df3",
-    colorActive: "#1151b8",
-    colorHover: "#1151b8",
-    textDecoration: "none",
+    color: "#0a0a0a",
+    colorActive: "#000000",
+    colorHover: "#444444",
+    textDecoration: "underline",
   },
   logo: {
     height: "100px",
   },
 };
 
+// Authany: the dark half of the same monochrome default. Inverted, and on the brand's
+// near-black rather than upstream's #1c1c1e.
 export const DEFAULT_DARK_THEME: CustomisableTheme = {
   page: {
-    backgroundColor: "#1c1c1e",
+    backgroundColor: "#0a0a0a",
   },
   card: {
     alignment: "center",
   },
   primaryButton: {
-    backgroundColor: "#176df3",
-    backgroundColorActive: "#235dba",
-    backgroundColorHover: "#235dba",
-    labelColor: "#f0f1f1",
+    backgroundColor: "#f5f5f5",
+    backgroundColorActive: "#ffffff",
+    backgroundColorHover: "#e0e0e0",
+    labelColor: "#0a0a0a",
     borderRadius: {
       type: "rounded",
-      radius: "0.875em",
+      radius: "1em",
     },
   },
   secondaryButton: {
     borderRadius: {
       type: "rounded",
-      radius: "0.875em",
+      radius: "1em",
     },
   },
   inputField: {
     borderRadius: {
       type: "rounded",
-      radius: "0.875em",
+      radius: "1em",
     },
   },
   phoneInputField: {
     borderRadius: {
       type: "rounded",
-      radius: "0.875em",
+      radius: "1em",
     },
   },
   icon: {
-    color: "#176df3",
+    color: "#f5f5f5",
   },
   link: {
-    color: "#2f7bf4",
-    colorActive: "#235dba",
-    colorHover: "#235dba",
-    textDecoration: "none",
+    color: "#f5f5f5",
+    colorActive: "#ffffff",
+    colorHover: "#c8c8c8",
+    textDecoration: "underline",
   },
   logo: {
     height: "100px",

@@ -170,7 +170,10 @@ function makeDefaultState({
     authMethods: [AuthMethod.Passwordless],
 
     logo: null,
-    buttonAndLinkColor: "#176DF3",
+    // Authany: the wizard always writes a theme file on finish, even when the customer never
+    // touches the colour field, so this literal decides what every new project looks like.
+    // Monochrome, matching DEFAULT_LIGHT_THEME and the deployment layer.
+    buttonAndLinkColor: "#0A0A0A",
     buttonLabelColor: "#FFFFFF",
   };
 }
