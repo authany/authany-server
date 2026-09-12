@@ -58,6 +58,18 @@ func TestSMSTemplateCodeConfigResolveTemplateCode(t *testing.T) {
 	})
 }
 
+func TestTencentCredentialsSetDefaults(t *testing.T) {
+	Convey("TencentCredentials.SetDefaults", t, func() {
+		c := config.TencentCredentials{}
+		c.SetDefaults()
+		So(c.Region, ShouldEqual, "ap-guangzhou")
+
+		c = config.TencentCredentials{Region: "ap-hongkong"}
+		c.SetDefaults()
+		So(c.Region, ShouldEqual, "ap-hongkong")
+	})
+}
+
 func TestOAuthClientCredentialsOctetKey_Mask(t *testing.T) {
 	Convey("OAuthClientCredentialsOctetKey.Mask", t, func() {
 		testCases := []struct {

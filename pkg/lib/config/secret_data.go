@@ -420,6 +420,45 @@ func (c *AliyunCredentials) SensitiveStrings() []string {
 	}
 }
 
+var _ = SecretConfigSchema.Add("TencentCredentials", `
+{
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		"secret_id": { "type": "string" },
+		"secret_key": { "type": "string" },
+		"sdk_app_id": { "type": "string" },
+		"region": { "type": "string" },
+		"sign_name": { "type": "string" },
+		"template_code": { "type": "string" },
+		"template_codes": { "$ref": "#/$defs/SMSTemplateCodes" }
+	},
+	"required": ["secret_id", "secret_key", "sdk_app_id", "sign_name", "template_code"]
+}
+`)
+
+type TencentCredentials struct {
+	SecretID  string `json:"secret_id,omitempty"`
+	SecretKey string `json:"secret_key,omitempty"`
+	SDKAppID  string `json:"sdk_app_id,omitempty"`
+	Region    string `json:"region,omitempty"`
+	SMSTemplateCodeConfig
+}
+
+func (c *TencentCredentials) SetDefaults() {
+	if c.Region == "" {
+		c.Region = "ap-guangzhou"
+	}
+}
+
+func (c *TencentCredentials) SensitiveStrings() []string {
+	return []string{
+		c.SecretID,
+		c.SecretKey,
+		c.SDKAppID,
+	}
+}
+
 var _ = SecretConfigSchema.Add("JWS", `
 {
 	"type": "object",
