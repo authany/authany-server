@@ -355,7 +355,9 @@ const (
 	// nolint: gosec
 	NexmoCredentialsKey SecretKey = "sms.nexmo"
 	// nolint: gosec
-	AliyunCredentialsKey       SecretKey = "sms.aliyun"
+	AliyunCredentialsKey SecretKey = "sms.aliyun"
+	// nolint: gosec
+	TencentCredentialsKey      SecretKey = "sms.tencent"
 	CustomSMSProviderConfigKey SecretKey = "sms.custom"
 	OAuthKeyMaterialsKey       SecretKey = "oauth"
 	CSRFKeyMaterialsKey        SecretKey = "csrf"
@@ -408,6 +410,7 @@ var secretItemKeys = map[SecretKey]secretKeyDef{
 	TwilioCredentialsKey:                       {"TwilioCredentials", func() SecretItemData { return &TwilioCredentials{} }},
 	NexmoCredentialsKey:                        {"NexmoCredentials", func() SecretItemData { return &NexmoCredentials{} }},
 	AliyunCredentialsKey:                       {"AliyunCredentials", func() SecretItemData { return &AliyunCredentials{} }},
+	TencentCredentialsKey:                      {"TencentCredentials", func() SecretItemData { return &TencentCredentials{} }},
 	OAuthKeyMaterialsKey:                       {"OAuthKeyMaterials", func() SecretItemData { return &OAuthKeyMaterials{} }},
 	CSRFKeyMaterialsKey:                        {"CSRFKeyMaterials", func() SecretItemData { return &CSRFKeyMaterials{} }},
 	WebhookKeyMaterialsKey:                     {"WebhookKeyMaterials", func() SecretItemData { return &WebhookKeyMaterials{} }},

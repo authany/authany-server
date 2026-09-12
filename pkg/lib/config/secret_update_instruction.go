@@ -865,9 +865,20 @@ func (i *SAMLSpSigningSecretsUpdateInstruction) set(currentConfig *SecretConfig)
 }
 
 type SMSProviderSecretsUpdateInstructionSetData struct {
-	TwilioCredentials            *SMSProviderSecretsUpdateInstructionTwilioCredentials `json:"twilioCredentials,omitempty"`
-	AliyunCredentials            *SMSProviderSecretsUpdateInstructionAliyunCredentials `json:"aliyunCredentials,omitempty"`
-	CustomSMSProviderCredentials *SMSProviderSecretsUpdateInstructionCustomSMSProvider `json:"customSMSProviderCredentials,omitempty"`
+	TwilioCredentials            *SMSProviderSecretsUpdateInstructionTwilioCredentials  `json:"twilioCredentials,omitempty"`
+	AliyunCredentials            *SMSProviderSecretsUpdateInstructionAliyunCredentials  `json:"aliyunCredentials,omitempty"`
+	TencentCredentials           *SMSProviderSecretsUpdateInstructionTencentCredentials `json:"tencentCredentials,omitempty"`
+	CustomSMSProviderCredentials *SMSProviderSecretsUpdateInstructionCustomSMSProvider  `json:"customSMSProviderCredentials,omitempty"`
+}
+
+type SMSProviderSecretsUpdateInstructionTencentCredentials struct {
+	SecretID      string            `json:"secretID,omitempty"`
+	SecretKey     string            `json:"secretKey,omitempty"`
+	SDKAppID      string            `json:"sdkAppID,omitempty"`
+	Region        string            `json:"region,omitempty"`
+	SignName      string            `json:"signName,omitempty"`
+	TemplateCode  string            `json:"templateCode,omitempty"`
+	TemplateCodes map[string]string `json:"templateCodes,omitempty"`
 }
 
 type SMSProviderSecretsUpdateInstructionAliyunCredentials struct {
@@ -996,6 +1007,29 @@ func (i *SMSProviderSecretsUpdateInstruction) set(currentConfig *SecretConfig) (
 		}
 	} else {
 		err := remove(AliyunCredentialsKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if i.SetData.TencentCredentials != nil {
+		tencentCredentials := TencentCredentials{
+			SecretID:  i.SetData.TencentCredentials.SecretID,
+			SecretKey: i.SetData.TencentCredentials.SecretKey,
+			SDKAppID:  i.SetData.TencentCredentials.SDKAppID,
+			Region:    i.SetData.TencentCredentials.Region,
+			SMSTemplateCodeConfig: SMSTemplateCodeConfig{
+				SignName:      i.SetData.TencentCredentials.SignName,
+				TemplateCode:  i.SetData.TencentCredentials.TemplateCode,
+				TemplateCodes: i.SetData.TencentCredentials.TemplateCodes,
+			},
+		}
+		err := upsert(TencentCredentialsKey, tencentCredentials)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := remove(TencentCredentialsKey)
 		if err != nil {
 			return nil, err
 		}
