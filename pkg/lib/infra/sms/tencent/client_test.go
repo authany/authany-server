@@ -209,11 +209,27 @@ func TestTencentClientSend(t *testing.T) {
 			)
 		})
 
+		Convey("request rate limited", func() {
+			assertErrorKind(
+				`{"Response":{"Error":{"Code":"RequestLimitExceeded.UinLimitExceeded","Message":"limit"},"RequestId":"req-1"}}`,
+				&smsapi.ErrKindRateLimited,
+				"RequestLimitExceeded.UinLimitExceeded",
+			)
+		})
+
 		Convey("authentication failed", func() {
 			assertErrorKind(
 				`{"Response":{"Error":{"Code":"AuthFailure.SignatureFailure","Message":"bad signature"},"RequestId":"req-1"}}`,
 				&smsapi.ErrKindAuthenticationFailed,
 				"AuthFailure.SignatureFailure",
+			)
+		})
+
+		Convey("unauthorized operation", func() {
+			assertErrorKind(
+				`{"Response":{"Error":{"Code":"UnauthorizedOperation.SmsSdkAppIdVerifyFail","Message":"unauthorized"},"RequestId":"req-1"}}`,
+				&smsapi.ErrKindAuthenticationFailed,
+				"UnauthorizedOperation.SmsSdkAppIdVerifyFail",
 			)
 		})
 
@@ -230,6 +246,14 @@ func TestTencentClientSend(t *testing.T) {
 				`{"Response":{"Error":{"Code":"FailedOperation.TemplateIncorrectOrUnapproved","Message":"bad template"}}}`,
 				&smsapi.ErrKindDeliveryRejected,
 				"FailedOperation.TemplateIncorrectOrUnapproved",
+			)
+		})
+
+		Convey("insufficient balance", func() {
+			assertErrorKind(
+				`{"Response":{"SendStatusSet":[{"Code":"FailedOperation.InsufficientBalanceInSmsPackage","Message":"no balance"}]}}`,
+				&smsapi.ErrKindDeliveryRejected,
+				"FailedOperation.InsufficientBalanceInSmsPackage",
 			)
 		})
 

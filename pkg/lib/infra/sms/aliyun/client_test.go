@@ -15,6 +15,7 @@ import (
 	"github.com/authgear/authgear-server/pkg/api/apierrors"
 	"github.com/authgear/authgear-server/pkg/lib/config"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/smsapi"
+	"github.com/authgear/authgear-server/pkg/util/clock"
 )
 
 func TestSignRPCRequest(t *testing.T) {
@@ -72,6 +73,7 @@ func TestAliyunClient(t *testing.T) {
 		server := httptest.NewServer(handler)
 		client := &AliyunClient{
 			Client:            server.Client(),
+			Clock:             clock.NewMockClockAt("2023-03-13T08:34:30Z"),
 			Endpoint:          server.URL,
 			AliyunCredentials: credentials,
 		}
@@ -126,6 +128,8 @@ func TestAliyunClient(t *testing.T) {
 			So(form.Get("TemplateCode"), ShouldEqual, "SMS_OVERSEAS")
 			So(form.Get("TemplateParam"), ShouldEqual, `{"code":"123456"}`)
 			So(form.Get("Action"), ShouldEqual, "SendSms")
+			// The timestamp comes from the injected clock.
+			So(form.Get("Timestamp"), ShouldEqual, "2023-03-13T08:34:30Z")
 
 			signedValues := url.Values{}
 			for key, value := range form {
@@ -229,6 +233,23 @@ func TestAliyunClient(t *testing.T) {
 
 				closeServer()
 			}
+		})
+
+		Convey("timeout", func() {
+			client, closeServer := newClient(func(w http.ResponseWriter, r *http.Request) {
+				time.Sleep(100 * time.Millisecond)
+			}, credentials())
+			defer closeServer()
+
+			client.Client = &http.Client{Timeout: 10 * time.Millisecond}
+
+			err := send(client, "+8613800138000", "verification_sms.txt")
+			So(err, ShouldNotBeNil)
+
+			var sendError *smsapi.SendError
+			So(errors.As(err, &sendError), ShouldBeTrue)
+			So(sendError.ProviderType, ShouldEqual, config.SMSProviderAliyun)
+			So(sendError.APIErrorKind, ShouldEqual, &smsapi.ErrKindTimeout)
 		})
 
 		Convey("non-JSON response", func() {
