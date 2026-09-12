@@ -38,6 +38,26 @@ func TestOAuthClientCredentialsItemMarshalUnmarshalJSON(t *testing.T) {
 	})
 }
 
+func TestSMSTemplateCodeConfigResolveTemplateCode(t *testing.T) {
+	Convey("SMSTemplateCodeConfig.ResolveTemplateCode", t, func() {
+		c := config.SMSTemplateCodeConfig{
+			SignName:     "Authgear",
+			TemplateCode: "SMS_default",
+			TemplateCodes: map[string]string{
+				"verification_sms.txt":             "SMS_1",
+				"authenticate_primary_oob_sms.txt": "",
+			},
+		}
+
+		So(c.ResolveTemplateCode("verification_sms.txt"), ShouldEqual, "SMS_1")
+		So(c.ResolveTemplateCode("authenticate_primary_oob_sms.txt"), ShouldEqual, "SMS_default")
+		So(c.ResolveTemplateCode("setup_primary_oob_sms.txt"), ShouldEqual, "SMS_default")
+
+		empty := config.SMSTemplateCodeConfig{TemplateCode: "SMS_default"}
+		So(empty.ResolveTemplateCode("verification_sms.txt"), ShouldEqual, "SMS_default")
+	})
+}
+
 func TestOAuthClientCredentialsOctetKey_Mask(t *testing.T) {
 	Convey("OAuthClientCredentialsOctetKey.Mask", t, func() {
 		testCases := []struct {

@@ -32,7 +32,7 @@ func (c *MessagingConfig) SetDefaults() {
 var _ = Schema.Add("SMSProvider", `
 {
 	"type": "string",
-	"enum": ["nexmo", "twilio", "custom"]
+	"enum": ["nexmo", "twilio", "custom", "aliyun"]
 }
 `)
 
@@ -42,6 +42,7 @@ const (
 	SMSProviderNexmo  SMSProvider = "nexmo"
 	SMSProviderTwilio SMSProvider = "twilio"
 	SMSProviderCustom SMSProvider = "custom"
+	SMSProviderAliyun SMSProvider = "aliyun"
 )
 
 var _ = Schema.Add("SMSConfig", `

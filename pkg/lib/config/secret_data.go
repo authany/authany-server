@@ -353,6 +353,73 @@ func (c *NexmoCredentials) SensitiveStrings() []string {
 	}
 }
 
+// SMSTemplateCodes maps an Authgear SMS template name to a template code
+// registered at the SMS provider. Only the templates carrying a one-time
+// password are supported; templates carrying a link are not.
+var _ = SecretConfigSchema.Add("SMSTemplateCodes", `
+{
+	"type": "object",
+	"additionalProperties": { "type": "string" },
+	"propertyNames": {
+		"enum": [
+			"verification_sms.txt",
+			"setup_primary_oob_sms.txt",
+			"setup_secondary_oob_sms.txt",
+			"authenticate_primary_oob_sms.txt",
+			"authenticate_secondary_oob_sms.txt",
+			"forgot_password_oob_sms.txt"
+		]
+	}
+}
+`)
+
+// SMSTemplateCodeConfig is embedded by the credentials of the SMS providers
+// that do not allow sending an arbitrary body, but require a pre-registered
+// signature and template code instead.
+type SMSTemplateCodeConfig struct {
+	SignName      string            `json:"sign_name,omitempty"`
+	TemplateCode  string            `json:"template_code,omitempty"`
+	TemplateCodes map[string]string `json:"template_codes,omitempty"`
+}
+
+// ResolveTemplateCode returns the template code to use for templateName.
+func (c *SMSTemplateCodeConfig) ResolveTemplateCode(templateName string) string {
+	if templateCode, ok := c.TemplateCodes[templateName]; ok && templateCode != "" {
+		return templateCode
+	}
+	return c.TemplateCode
+}
+
+var _ = SecretConfigSchema.Add("AliyunCredentials", `
+{
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		"access_key_id": { "type": "string" },
+		"access_key_secret": { "type": "string" },
+		"sign_name": { "type": "string" },
+		"template_code": { "type": "string" },
+		"template_codes": { "$ref": "#/$defs/SMSTemplateCodes" },
+		"overseas_template_code": { "type": "string" }
+	},
+	"required": ["access_key_id", "access_key_secret", "sign_name", "template_code"]
+}
+`)
+
+type AliyunCredentials struct {
+	AccessKeyID     string `json:"access_key_id,omitempty"`
+	AccessKeySecret string `json:"access_key_secret,omitempty"`
+	SMSTemplateCodeConfig
+	OverseasTemplateCode string `json:"overseas_template_code,omitempty"`
+}
+
+func (c *AliyunCredentials) SensitiveStrings() []string {
+	return []string{
+		c.AccessKeyID,
+		c.AccessKeySecret,
+	}
+}
+
 var _ = SecretConfigSchema.Add("JWS", `
 {
 	"type": "object",
