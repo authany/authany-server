@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httputil"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/authgear/authgear-server/pkg/lib/config"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/smsapi"
+	"github.com/authgear/authgear-server/pkg/util/clock"
 	utilhttputil "github.com/authgear/authgear-server/pkg/util/httputil"
 	"github.com/authgear/authgear-server/pkg/util/phone"
 )
@@ -36,6 +37,7 @@ const (
 
 type AliyunClient struct {
 	Client            *http.Client
+	Clock             clock.Clock
 	Endpoint          string
 	AliyunCredentials *config.AliyunCredentials
 }
@@ -47,6 +49,7 @@ func NewAliyunClient(c *config.AliyunCredentials) *AliyunClient {
 
 	return &AliyunClient{
 		Client:            utilhttputil.NewExternalClient(5 * time.Second),
+		Clock:             clock.NewSystemClock(),
 		Endpoint:          DefaultEndpoint,
 		AliyunCredentials: c,
 	}
@@ -100,6 +103,7 @@ func (a *AliyunClient) send0(ctx context.Context, opts smsapi.SendOptions) ([]by
 		Action:      ActionSendSms,
 		Version:     APIVersion,
 		RegionID:    DefaultRegionID,
+		Timestamp:   a.Clock.NowUTC(),
 	})
 	values.Set("PhoneNumbers", phoneNumber)
 	values.Set("SignName", a.AliyunCredentials.SignName)
@@ -116,13 +120,7 @@ func (a *AliyunClient) send0(ctx context.Context, opts smsapi.SendOptions) ([]by
 
 	resp, err := a.Client.Do(req)
 	if err != nil {
-		if os.IsTimeout(err) {
-			return nil, nil, errors.Join(err, &smsapi.SendError{
-				ProviderType: config.SMSProviderAliyun,
-				APIErrorKind: &smsapi.ErrKindTimeout,
-			})
-		}
-		return nil, nil, err
+		return nil, nil, a.makeTransportError(err)
 	}
 	defer resp.Body.Close()
 
@@ -140,6 +138,17 @@ func (a *AliyunClient) send0(ctx context.Context, opts smsapi.SendOptions) ([]by
 	}
 
 	return bodyBytes, dumpedResponse, nil
+}
+
+func (a *AliyunClient) makeTransportError(err error) error {
+	var netErr net.Error
+	if errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &netErr) && netErr.Timeout()) {
+		return errors.Join(err, &smsapi.SendError{
+			ProviderType: config.SMSProviderAliyun,
+			APIErrorKind: &smsapi.ErrKindTimeout,
+		})
+	}
+	return err
 }
 
 func (a *AliyunClient) Send(ctx context.Context, opts smsapi.SendOptions) error {
@@ -196,8 +205,6 @@ func (a *AliyunClient) makeError(
 	case "isv.DAY_LIMIT_CONTROL": // The daily sending limit is exceeded
 		err.APIErrorKind = &smsapi.ErrKindRateLimited
 	case "isv.MOBILE_NUMBER_ILLEGAL": // Invalid phone number
-		fallthrough
-	case "isv.MOBILE_COUNT_OVER_LIMIT": // Too many phone numbers
 		err.APIErrorKind = &smsapi.ErrKindInvalidPhoneNumber
 	case "InvalidAccessKeyId.NotFound":
 		fallthrough

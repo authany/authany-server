@@ -248,14 +248,16 @@ func (t *TencentClient) makeError(errorCode string, dumpedResponse []byte) error
 
 	// See https://cloud.tencent.com/document/api/382/55981
 	switch {
-	case strings.HasPrefix(errorCode, "LimitExceeded"), errorCode == "RequestLimitExceeded":
+	case strings.HasPrefix(errorCode, "LimitExceeded"), strings.HasPrefix(errorCode, "RequestLimitExceeded"):
 		err.APIErrorKind = &smsapi.ErrKindRateLimited
 	case errorCode == "InvalidParameterValue.IncorrectPhoneNumber":
 		err.APIErrorKind = &smsapi.ErrKindInvalidPhoneNumber
-	case strings.HasPrefix(errorCode, "AuthFailure"):
+	case strings.HasPrefix(errorCode, "AuthFailure"),
+		strings.HasPrefix(errorCode, "UnauthorizedOperation"):
 		err.APIErrorKind = &smsapi.ErrKindAuthenticationFailed
 	case errorCode == "FailedOperation.SignatureIncorrectOrUnapproved",
-		errorCode == "FailedOperation.TemplateIncorrectOrUnapproved":
+		errorCode == "FailedOperation.TemplateIncorrectOrUnapproved",
+		errorCode == "FailedOperation.InsufficientBalanceInSmsPackage":
 		err.APIErrorKind = &smsapi.ErrKindDeliveryRejected
 	}
 
