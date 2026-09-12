@@ -45,6 +45,15 @@ const (
 	// Token endpoint rate limits
 	RateLimitGroupOAuthTokenGeneral           RateLimitGroup = "oauth.token.general"            // #nosec G101
 	RateLimitGroupOAuthTokenClientCredentials RateLimitGroup = "oauth.token.client_credentials" // #nosec G101
+
+	// Dynamic Client Registration rate limits
+	RateLimitGroupOAuthRegister RateLimitGroup = "oauth.register"
+
+	// Client ID Metadata Document rate limits
+	RateLimitGroupOAuthClientIDMetadataDocumentFetch RateLimitGroup = "oauth.client_id_metadata_document.fetch"
+
+	// Client ID Metadata Document / DCR client logo rate limits
+	RateLimitGroupOAuthCIMDLogo RateLimitGroup = "oauth.cimd_logo"
 )
 
 const (
@@ -108,6 +117,17 @@ const (
 	// OAuth Token
 	RateLimitOAuthTokenGeneralPerIP   RateLimitName = "oauth.token.general.per_ip"   // #nosec G101
 	RateLimitOAuthTokenGeneralPerUser RateLimitName = "oauth.token.general.per_user" // #nosec G101
+
+	// Dynamic Client Registration
+	RateLimitOAuthRegisterPerIP      RateLimitName = "oauth.register.per_ip"
+	RateLimitOAuthRegisterPerProject RateLimitName = "oauth.register.per_project"
+
+	// Client ID Metadata Document
+	RateLimitOAuthClientIDMetadataDocumentFetchPerIP      RateLimitName = "oauth.client_id_metadata_document.fetch.per_ip"
+	RateLimitOAuthClientIDMetadataDocumentFetchPerProject RateLimitName = "oauth.client_id_metadata_document.fetch.per_project"
+
+	// Client ID Metadata Document / DCR client logo
+	RateLimitOAuthCIMDLogoPerClient RateLimitName = "oauth.cimd_logo.per_client"
 )
 
 const (
@@ -190,6 +210,14 @@ const (
 	OAuthTokenPerUser                     BucketName = "OAuthTokenPerUser" // #nosec G101
 	OAuthTokenClientCredentialsPerClient  BucketName = "OAuthTokenClientCredentialsPerClient"
 	OAuthTokenClientCredentialsPerProject BucketName = "OAuthTokenClientCredentialsPerProject"
+
+	OAuthRegisterPerIP      BucketName = "OAuthRegisterPerIP"
+	OAuthRegisterPerProject BucketName = "OAuthRegisterPerProject"
+
+	OAuthClientIDMetadataDocumentFetchPerIP      BucketName = "OAuthClientIDMetadataDocumentFetchPerIP"
+	OAuthClientIDMetadataDocumentFetchPerProject BucketName = "OAuthClientIDMetadataDocumentFetchPerProject"
+
+	OAuthCIMDLogoPerClient BucketName = "OAuthCIMDLogoPerClient"
 )
 
 func (n RateLimitGroup) resolvePerIP(cfg *config.AppConfig, featureCfg *config.FeatureConfig) *config.RateLimitConfig {

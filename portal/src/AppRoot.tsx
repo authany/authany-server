@@ -7,7 +7,6 @@ import { useAppAndSecretConfigQuery } from "./graphql/portal/query/appAndSecretC
 import ScreenLayout from "./ScreenLayout";
 import ShowLoading from "./ShowLoading";
 import { useUnauthenticatedDialogContext } from "./components/auth/UnauthenticatedDialogContext";
-import { useUIImplementation } from "./hook/useUIImplementation";
 import { useSystemConfig } from "./context/SystemConfigContext";
 import {
   ScreenNavQueryDocument,
@@ -16,6 +15,9 @@ import {
 import { usePortalClient } from "./graphql/portal/apollo";
 import RequireAppFeature from "./RequireAppFeature";
 import RequireUser from "./RequireUser";
+import RequireAPIResource from "./RequireAPIResource";
+import RequireRole from "./RequireRole";
+import RequireGroup from "./RequireGroup";
 import { PortalAPIFeatureConfig } from "./types";
 
 // Feature-config predicates for the route-level RequireAppFeature guards. Each
@@ -53,22 +55,11 @@ const AddUserScreen = lazy(
 const UserDetailsScreen = lazy(
   async () => import("./graphql/adminapi/UserDetailsScreen")
 );
-const EmailScreen = lazy(async () => import("./graphql/adminapi/EmailScreen"));
-const PhoneScreen = lazy(async () => import("./graphql/adminapi/PhoneScreen"));
-const UsernameScreen = lazy(
-  async () => import("./graphql/adminapi/UsernameScreen")
-);
 const ChangePasswordScreen = lazy(
   async () => import("./graphql/adminapi/ChangePasswordScreen")
 );
 const AddPasswordScreen = lazy(
   async () => import("./graphql/adminapi/AddPasswordScreen")
-);
-const EditPictureScreen = lazy(
-  async () => import("./graphql/adminapi/EditPictureScreen")
-);
-const Add2FAScreen = lazy(
-  async () => import("./graphql/adminapi/Add2FAScreen")
 );
 
 const AuditLogScreen = lazy(
@@ -117,9 +108,6 @@ const CustomDomainListScreen = lazy(
 const VerifyDomainScreen = lazy(
   async () => import("./graphql/portal/VerifyDomainScreen")
 );
-const UISettingsScreen = lazy(
-  async () => import("./graphql/portal/UISettingsScreen")
-);
 const DesignScreen = lazy(
   async () => import("./graphql/portal/DesignScreen/DesignScreen")
 );
@@ -131,9 +119,6 @@ const CustomTextConfigurationScreen = lazy(
 );
 const LanguagesConfigurationScreen = lazy(
   async () => import("./graphql/portal/LanguagesConfigurationScreen")
-);
-const InviteAdminScreen = lazy(
-  async () => import("./graphql/portal/InviteAdminScreen")
 );
 const PortalAdminsSettings = lazy(
   async () => import("./graphql/portal/PortalAdminsSettings")
@@ -186,9 +171,6 @@ const AnalyticsScreen = lazy(
 const IntegrationsConfigurationScreen = lazy(
   async () => import("./graphql/portal/IntegrationsConfigurationScreen")
 );
-const GoogleTagManagerConfigurationScreen = lazy(
-  async () => import("./graphql/portal/GoogleTagManagerConfigurationScreen")
-);
 const BotProtectionConfigurationScreen = lazy(
   async () => import("./graphql/portal/BotProtectionConfigurationScreen")
 );
@@ -201,6 +183,9 @@ const FraudProtectionLogEntryScreen = lazy(
 );
 const IPBlocklistScreen = lazy(
   async () => import("./graphql/portal/IPBlocklistScreen")
+);
+const AccountLockoutScreen = lazy(
+  async () => import("./graphql/portal/AccountLockoutScreen")
 );
 const EndpointDirectAccessScreen = lazy(
   async () => import("./graphql/portal/EndpointDirectAccessScreen")
@@ -233,6 +218,9 @@ const EditOAuthClientResourceScopeScreen = lazy(
   async () =>
     import("./screens/api-resources/EditOAuthClientResourceScopeScreen")
 );
+const DynamicClientListScreen = lazy(
+  async () => import("./screens/dynamic-clients/DynamicClientListScreen")
+);
 
 const AppRoot: React.VFC = function AppRoot() {
   const { appID } = useParams() as { appID: string };
@@ -263,10 +251,6 @@ const AppRoot: React.VFC = function AppRoot() {
     screenNavQuery.data?.node?.__typename === "App"
       ? screenNavQuery.data.node.tutorialStatus.data.project_wizard
       : null;
-
-  const uiImplementation = useUIImplementation(
-    effectiveAppConfig?.ui?.implementation
-  );
 
   if (loading || screenNavQuery.loading) {
     return <ShowLoading />;
@@ -308,8 +292,6 @@ const AppRoot: React.VFC = function AppRoot() {
   }
 
   // In other cases, skip the wizard if it is not started
-
-  const useAuthUIV2 = uiImplementation === "authflowv2";
 
   return (
     <ApolloProvider client={client}>
@@ -377,7 +359,7 @@ const AppRoot: React.VFC = function AppRoot() {
                   </Suspense>
                 }
               />
-              <Route path=":roleID">
+              <Route path=":roleID" element={<RequireRole />}>
                 <Route
                   index={true}
                   element={<Navigate to="details" replace={true} />}
@@ -412,7 +394,7 @@ const AppRoot: React.VFC = function AppRoot() {
                   </Suspense>
                 }
               />
-              <Route path=":groupID">
+              <Route path=":groupID" element={<RequireGroup />}>
                 <Route
                   index={true}
                   element={<Navigate to="details" replace={true} />}
@@ -462,54 +444,6 @@ const AppRoot: React.VFC = function AppRoot() {
                     }
                   />
                   <Route
-                    path="add-email"
-                    element={
-                      <Suspense fallback={<ShowLoading />}>
-                        <EmailScreen />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="edit-email/:identityID"
-                    element={
-                      <Suspense fallback={<ShowLoading />}>
-                        <EmailScreen />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="add-phone"
-                    element={
-                      <Suspense fallback={<ShowLoading />}>
-                        <PhoneScreen />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="edit-phone/:identityID"
-                    element={
-                      <Suspense fallback={<ShowLoading />}>
-                        <PhoneScreen />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="add-username"
-                    element={
-                      <Suspense fallback={<ShowLoading />}>
-                        <UsernameScreen />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="edit-username/:identityID"
-                    element={
-                      <Suspense fallback={<ShowLoading />}>
-                        <UsernameScreen />
-                      </Suspense>
-                    }
-                  />
-                  <Route
                     path="change-password"
                     element={
                       <Suspense fallback={<ShowLoading />}>
@@ -522,38 +456,6 @@ const AppRoot: React.VFC = function AppRoot() {
                     element={
                       <Suspense fallback={<ShowLoading />}>
                         <AddPasswordScreen />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="edit-picture"
-                    element={
-                      <Suspense fallback={<ShowLoading />}>
-                        <EditPictureScreen />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="add-2fa-phone"
-                    element={
-                      <Suspense fallback={<ShowLoading />}>
-                        <Add2FAScreen authenticatorType="oob_otp_sms" />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="add-2fa-email"
-                    element={
-                      <Suspense fallback={<ShowLoading />}>
-                        <Add2FAScreen authenticatorType="oob_otp_email" />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="add-2fa-password"
-                    element={
-                      <Suspense fallback={<ShowLoading />}>
-                        <Add2FAScreen authenticatorType="password" />
                       </Suspense>
                     }
                   />
@@ -579,30 +481,32 @@ const AppRoot: React.VFC = function AppRoot() {
                 </Suspense>
               }
             />
-            <Route
-              path=":resourceID"
-              element={
-                <Suspense fallback={<ShowLoading />}>
-                  <APIResourceDetailsScreen />
-                </Suspense>
-              }
-            />
-            <Route
-              path=":resourceID/scopes/:scopeID"
-              element={
-                <Suspense fallback={<ShowLoading />}>
-                  <EditScopeScreen />
-                </Suspense>
-              }
-            />
-            <Route
-              path=":resourceID/applications/:clientID/scopes"
-              element={
-                <Suspense fallback={<ShowLoading />}>
-                  <EditApplicationScopesScreen />
-                </Suspense>
-              }
-            />
+            <Route path=":resourceID" element={<RequireAPIResource />}>
+              <Route
+                index={true}
+                element={
+                  <Suspense fallback={<ShowLoading />}>
+                    <APIResourceDetailsScreen />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="scopes/:scopeID"
+                element={
+                  <Suspense fallback={<ShowLoading />}>
+                    <EditScopeScreen />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="applications/:clientID/scopes"
+                element={
+                  <Suspense fallback={<ShowLoading />}>
+                    <EditApplicationScopesScreen />
+                  </Suspense>
+                }
+              />
+            </Route>
           </Route>
 
           <Route path="branding">
@@ -614,7 +518,7 @@ const AppRoot: React.VFC = function AppRoot() {
               path="design"
               element={
                 <Suspense fallback={<ShowLoading />}>
-                  {useAuthUIV2 ? <DesignScreen /> : <UISettingsScreen />}
+                  <DesignScreen />
                 </Suspense>
               }
             />
@@ -766,6 +670,14 @@ const AppRoot: React.VFC = function AppRoot() {
                   </Suspense>
                 }
               />
+              <Route
+                path="dcr"
+                element={
+                  <Suspense fallback={<ShowLoading />}>
+                    <DynamicClientListScreen />
+                  </Suspense>
+                }
+              />
               <Route path=":clientID">
                 <Route
                   index={true}
@@ -846,6 +758,16 @@ const AppRoot: React.VFC = function AppRoot() {
           </Route>
 
           <Route path="attack-protection">
+            <Route path="account-lockout">
+              <Route
+                index={true}
+                element={
+                  <Suspense fallback={<ShowLoading />}>
+                    <AccountLockoutScreen />
+                  </Suspense>
+                }
+              />
+            </Route>
             <Route path="bot-protection">
               <Route
                 index={true}
@@ -903,14 +825,6 @@ const AppRoot: React.VFC = function AppRoot() {
                 element={
                   <Suspense fallback={<ShowLoading />}>
                     <IntegrationsConfigurationScreen />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="google-tag-manager"
-                element={
-                  <Suspense fallback={<ShowLoading />}>
-                    <GoogleTagManagerConfigurationScreen />
                   </Suspense>
                 }
               />
@@ -1038,14 +952,6 @@ const AppRoot: React.VFC = function AppRoot() {
               element={
                 <Suspense fallback={<ShowLoading />}>
                   <PortalAdminsSettings />
-                </Suspense>
-              }
-            />
-            <Route
-              path="invite"
-              element={
-                <Suspense fallback={<ShowLoading />}>
-                  <InviteAdminScreen />
                 </Suspense>
               }
             />

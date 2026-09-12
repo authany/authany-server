@@ -34,6 +34,7 @@ import (
 	"github.com/authgear/authgear-server/pkg/lib/authn/stdattrs"
 	"github.com/authgear/authgear-server/pkg/lib/authn/user"
 	"github.com/authgear/authgear-server/pkg/lib/botprotection"
+	"github.com/authgear/authgear-server/pkg/lib/dcr"
 	"github.com/authgear/authgear-server/pkg/lib/dpop"
 	libes "github.com/authgear/authgear-server/pkg/lib/elasticsearch"
 	"github.com/authgear/authgear-server/pkg/lib/endpoints"
@@ -415,7 +416,26 @@ var CommonDependencySet = wire.NewSet(
 	wire.NewSet(
 		resourcescope.DependencySet,
 		wire.Bind(new(handler.TokenHandlerClientResourceScopeService), new(*resourcescope.ClientResourceScopeService)),
+		wire.Bind(new(handler.AuthorizationHandlerResourceScopeService), new(*resourcescope.Store)),
 	),
+
+	wire.NewSet(
+		dcr.DependencySet,
+		wire.Bind(new(oauthhandler.RegistrationHandlerDCRService), new(*dcr.Commands)),
+		wire.Bind(new(oauthhandler.RegistrationHandlerIATService), new(*dcr.Queries)),
+	),
+
+	// cimd.DependencySet is deliberately NOT included here. cimd.Service
+	// needs *appdb.Handle (via ServiceDatabase), and *appdb.Handle is
+	// provided per-binary (deps.RequestDependencySet, or an explicit
+	// appdb.NewHandle in a binary-local set) rather than by
+	// CommonDependencySet -- so a wire.Bind to it here would force every
+	// binary that pulls in CommonDependencySet (background workers,
+	// pgsearch, elasticsearch, the resolver, images) to also provide
+	// *appdb.Handle, breaking ones that don't need cimd.Service at all.
+	// Wired instead in pkg/auth/deps.go, alongside the sibling
+	// AuthorizationHandlerDatabase bind to *appdb.Handle that already lives
+	// in that request-scoped set.
 
 	wire.NewSet(
 		userinfo.DependencySet,
@@ -583,6 +603,7 @@ var CommonDependencySet = wire.NewSet(
 		wire.Bind(new(messaging.RateLimiter), new(*ratelimit.Limiter)),
 		wire.Bind(new(mfa.RateLimiter), new(*ratelimit.Limiter)),
 		wire.Bind(new(oauthhandler.TokenHandlerRateLimiter), new(*ratelimit.Limiter)),
+		wire.Bind(new(oauthhandler.RegistrationHandlerRateLimiter), new(*ratelimit.Limiter)),
 	),
 
 	wire.NewSet(
@@ -619,6 +640,7 @@ var CommonDependencySet = wire.NewSet(
 		usage.DependencySet,
 		wire.Bind(new(messaging.UsageLimiter), new(*usage.Limiter)),
 		wire.Bind(new(userimport.UsageLimiter), new(*usage.Limiter)),
+		wire.Bind(new(oauthhandler.RegistrationHandlerUsageLimiter), new(*usage.Limiter)),
 	),
 
 	wire.NewSet(
@@ -693,6 +715,8 @@ var CommonDependencySet = wire.NewSet(
 		wire.Bind(new(interaction.OAuthClientResolver), new(*oauthclient.Resolver)),
 		wire.Bind(new(oauth.OAuthClientResolver), new(*oauthclient.Resolver)),
 		wire.Bind(new(authenticationflow.OAuthClientResolver), new(*oauthclient.Resolver)),
+		wire.Bind(new(translation.OAuthClientResolver), new(*oauthclient.Resolver)),
+		wire.Bind(new(oidchandler.EndSessionHandlerOAuthClientResolver), new(*oauthclient.Resolver)),
 	),
 
 	userimport.DependencySet,

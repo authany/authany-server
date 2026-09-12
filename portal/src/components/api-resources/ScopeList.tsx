@@ -1,19 +1,22 @@
-import React, { useContext, useCallback, useMemo } from "react";
+import React, { useContext } from "react";
 import cn from "classnames";
-import { Scope } from "../../graphql/adminapi/globalTypes.generated";
 import {
-  DetailsListLayoutMode,
-  IColumn,
-  ShimmeredDetailsList,
-  SelectionMode,
-  IDetailsRowProps,
+  DropdownMenu,
+  IconButton as RadixIconButton,
   Text,
-} from "@fluentui/react";
-import { Context } from "../../intl";
+} from "@radix-ui/themes";
+import {
+  DotsVerticalIcon,
+  Pencil1Icon,
+  TrashIcon,
+} from "@radix-ui/react-icons";
+import { Scope } from "../../graphql/adminapi/globalTypes.generated";
+import { Context, FormattedMessage } from "../../intl";
 import PaginationWidget, { PaginationProps } from "../../PaginationWidget";
+import { Badge } from "../v2/Badge/Badge";
+import { CardTable } from "../v2/CardTable/CardTable";
+import { Tooltip } from "../v2/Tooltip/Tooltip";
 import styles from "./ScopeList.module.css";
-import { useSystemConfig } from "../../context/SystemConfigContext";
-import ActionButton from "../../ActionButton";
 
 interface ScopeListProps {
   className?: string;
@@ -24,124 +27,120 @@ interface ScopeListProps {
   onDelete: (scope: Scope) => void;
 }
 
-interface ActionButtonsColumnProps {
-  scope: Scope;
-  onEdit: (scope: Scope) => void;
-  onDelete: (scope: Scope) => void;
+// One enabled entry of a Scope's accessPolicy: a short badge label for the
+// table plus the full sentence shown on hover.
+interface AccessPolicyEntry {
+  key: string;
+  shortLabelID: string;
+  descriptionID: string;
 }
 
-function ActionButtonsColumn({
-  scope,
-  onEdit,
-  onDelete,
-}: ActionButtonsColumnProps) {
+// accessPolicy is an object the spec expects to grow more keys (see
+// docs/specs/api-resource.md, "Current keys: ..."), so build the enabled
+// policies as a list: a future policy becomes another badge here rather
+// than another column. The badge stays short enough to scan; the full
+// sentence lives in its tooltip, reusing the very string the scope form's
+// checkbox carries so the table and the form describe the policy in the
+// same words.
+function AccessPolicyCell({ scope }: { scope: Scope }): React.ReactElement {
   const { renderToString } = useContext(Context);
-  const { themes } = useSystemConfig();
+  const enabled: AccessPolicyEntry[] = [];
+  if (scope.accessPolicy.allowDynamicThirdPartyClientAccess) {
+    enabled.push({
+      key: "allowDynamicThirdPartyClientAccess",
+      shortLabelID:
+        "ScopeList.access-policy.allow-dynamic-third-party-client-access",
+      descriptionID: "ScopeForm.allow-dynamic-access.label",
+    });
+  }
+  if (enabled.length === 0) {
+    return (
+      <Text size="1" color="gray">
+        <FormattedMessage id="ScopeList.access-policy.none" />
+      </Text>
+    );
+  }
   return (
-    <div className="flex items-center">
-      <ActionButton
-        text={renderToString("edit")}
-        styles={{ label: { fontWeight: 600 } }}
-        theme={themes.actionButton}
-        onClick={useCallback(() => {
-          onEdit(scope);
-        }, [onEdit, scope])}
-      />
-      <ActionButton
-        text={renderToString("delete")}
-        styles={{ label: { fontWeight: 600 } }}
-        theme={themes.destructive}
-        onClick={useCallback(() => {
-          onDelete(scope);
-        }, [onDelete, scope])}
-      />
+    <div className={styles.accessPolicyBadges}>
+      {enabled.map((entry) => (
+        <Tooltip key={entry.key} content={renderToString(entry.descriptionID)}>
+          <span>
+            <Badge
+              size="1"
+              variant="neutral"
+              text={renderToString(entry.shortLabelID)}
+            />
+          </span>
+        </Tooltip>
+      ))}
     </div>
   );
 }
 
 export const ScopeList: React.VFC<ScopeListProps> = function ScopeList(props) {
-  const { className, scopes, loading, pagination, onEdit, onDelete } = props;
+  const { className, scopes, pagination, onEdit, onDelete } = props;
   const { renderToString } = useContext(Context);
-
-  const onRenderActions = useCallback(
-    (item?: Scope, _0?: number, _1?: IColumn) => {
-      if (item == null) {
-        return null;
-      }
-      return (
-        <ActionButtonsColumn scope={item} onDelete={onDelete} onEdit={onEdit} />
-      );
-    },
-    [onEdit, onDelete]
-  );
-
-  const onRenderScope = useCallback((item?: Scope) => {
-    if (item == null) {
-      return null;
-    }
-    return (
-      <div className="py-0.5 px-1 bg-[#F3F2F1] rounded">
-        <Text variant="smallPlus">{item.scope}</Text>
-      </div>
-    );
-  }, []);
-
-  const columns = useMemo(
-    (): IColumn[] => [
-      {
-        key: "scope",
-        name: renderToString("ScopeList.columns.scope"),
-        minWidth: 200,
-        maxWidth: 400,
-        isResizable: true,
-        fieldName: "scope",
-        onRender: onRenderScope,
-      },
-      {
-        key: "description",
-        name: renderToString("ScopeList.columns.description"),
-        minWidth: 200,
-        isResizable: true,
-        fieldName: "description",
-      },
-      {
-        key: "actions",
-        name: "",
-        minWidth: 100,
-        maxWidth: 100,
-        isResizable: false,
-        onRender: onRenderActions,
-      },
-    ],
-    [onRenderScope, onRenderActions, renderToString]
-  );
 
   return (
     <div className={cn(className, styles.listRoot)}>
-      <div data-is-scrollable="true" className={styles.listWrapper}>
-        <ShimmeredDetailsList
-          items={scopes}
-          enableShimmer={loading}
-          columns={columns}
-          layoutMode={DetailsListLayoutMode.justified}
-          selectionMode={SelectionMode.none}
-          onRenderRow={rowRenderer}
-        />
-      </div>
+      <CardTable>
+        <CardTable.Header>
+          <CardTable.HeaderCell className={styles.colScope}>
+            <FormattedMessage id="ScopeList.columns.scope" />
+          </CardTable.HeaderCell>
+          <CardTable.HeaderCell className={styles.colDescription}>
+            <FormattedMessage id="ScopeList.columns.description" />
+          </CardTable.HeaderCell>
+          <CardTable.HeaderCell className={styles.colAccessPolicy}>
+            <FormattedMessage id="ScopeList.columns.access-policy" />
+          </CardTable.HeaderCell>
+          <CardTable.HeaderCell className={styles.colActions} />
+        </CardTable.Header>
+        {scopes.map((scope) => (
+          <CardTable.Row key={scope.id}>
+            <CardTable.Cell className={styles.colScope}>
+              <span className={styles.scopeChip}>{scope.scope}</span>
+            </CardTable.Cell>
+            <CardTable.Cell className={styles.colDescription}>
+              <Text size="2" className={styles.description}>
+                {scope.description}
+              </Text>
+            </CardTable.Cell>
+            <CardTable.Cell className={styles.colAccessPolicy}>
+              <AccessPolicyCell scope={scope} />
+            </CardTable.Cell>
+            <CardTable.Cell className={styles.colActions}>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                  <RadixIconButton
+                    className={styles.rowActionsButton}
+                    variant="soft"
+                    color="gray"
+                    size="2"
+                    aria-label={renderToString("ScopeList.row-actions")}
+                  >
+                    <DotsVerticalIcon width="1rem" height="1rem" />
+                  </RadixIconButton>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="end">
+                  <DropdownMenu.Item onSelect={() => onEdit(scope)}>
+                    <Pencil1Icon />
+                    <FormattedMessage id="edit" />
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    color="red"
+                    onSelect={() => onDelete(scope)}
+                  >
+                    <TrashIcon />
+                    <FormattedMessage id="delete" />
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
+            </CardTable.Cell>
+          </CardTable.Row>
+        ))}
+      </CardTable>
       <PaginationWidget className={styles.paginator} {...pagination} />
     </div>
   );
 };
-
-function rowRenderer(
-  props?: IDetailsRowProps,
-  defaultRender?: (props?: IDetailsRowProps) => JSX.Element | null
-) {
-  if (props == null) {
-    return defaultRender?.(props) ?? null;
-  }
-  props.styles = {
-    cell: { display: "flex", alignItems: "center" },
-  };
-  return defaultRender?.(props) ?? null;
-}

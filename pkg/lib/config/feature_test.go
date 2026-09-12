@@ -255,6 +255,206 @@ collaborator:
 		So(effective.UI.PhoneInput, ShouldNotBeNil)
 		So(effective.UI.PhoneInput.AllowList, ShouldResemble, []string{"US", "GB"})
 	})
+
+	Convey("an explicit empty usage.limits.sms override survives the merge fold's marshal-and-reparse round trip", t, func() {
+		ctx := context.Background()
+
+		planYAML := []byte(`
+usage:
+  limits:
+    sms:
+      - quota: 100
+        period: day
+        action: block
+`)
+		appYAML := []byte(`
+usage:
+  limits:
+    sms: []
+`)
+
+		planCfg, err := config.ParseFeatureConfigWithoutDefaults(ctx, planYAML)
+		So(err, ShouldBeNil)
+		appCfg, err := config.ParseFeatureConfigWithoutDefaults(ctx, appYAML)
+		So(err, ShouldBeNil)
+
+		mergedConfig := &config.FeatureConfig{}
+		mergedConfig = mergedConfig.Merge(planCfg)
+		mergedConfig = mergedConfig.Merge(appCfg)
+
+		mergedYAML, err := yaml.Marshal(mergedConfig)
+		So(err, ShouldBeNil)
+
+		effective, err := config.ParseFeatureConfig(ctx, mergedYAML)
+		So(err, ShouldBeNil)
+
+		So(effective.Usage, ShouldNotBeNil)
+		So(effective.Usage.Limits, ShouldNotBeNil)
+		So(effective.Usage.Limits.SMS, ShouldResemble, []config.FeatureUsageLimitConfig{})
+	})
+
+	Convey("an app override that doesn't touch usage.limits.sms inherits the plan's list", t, func() {
+		ctx := context.Background()
+
+		planYAML := []byte(`
+usage:
+  limits:
+    sms:
+      - quota: 100
+        period: day
+        action: block
+`)
+		// The app layer is present and non-empty, but never mentions
+		// usage.limits.sms -- this is the "not set" case, distinct from
+		// the explicit-empty case above, and must inherit the plan's list.
+		appYAML := []byte(`
+collaborator:
+  maximum: 5
+`)
+
+		planCfg, err := config.ParseFeatureConfigWithoutDefaults(ctx, planYAML)
+		So(err, ShouldBeNil)
+		appCfg, err := config.ParseFeatureConfigWithoutDefaults(ctx, appYAML)
+		So(err, ShouldBeNil)
+
+		mergedConfig := &config.FeatureConfig{}
+		mergedConfig = mergedConfig.Merge(planCfg)
+		mergedConfig = mergedConfig.Merge(appCfg)
+
+		mergedYAML, err := yaml.Marshal(mergedConfig)
+		So(err, ShouldBeNil)
+
+		effective, err := config.ParseFeatureConfig(ctx, mergedYAML)
+		So(err, ShouldBeNil)
+
+		So(effective.Usage, ShouldNotBeNil)
+		So(effective.Usage.Limits, ShouldNotBeNil)
+		So(effective.Usage.Limits.SMS, ShouldResemble, []config.FeatureUsageLimitConfig{{
+			Quota:  100,
+			Period: model.UsageLimitPeriodDay,
+			Action: model.UsageLimitActionBlock,
+		}})
+	})
+
+	Convey("an explicit empty usage.limits.sms override survives Migrate's deprecated messaging.sms_usage fallback", t, func() {
+		// Migrate (feature.go) runs on the merge fold's re-parsed result and
+		// only backfills a limit from the deprecated messaging.sms_usage
+		// field when featureUsageLimits(SMS) is nil -- i.e. when it can't
+		// tell "explicitly cleared" apart from "never configured". If the
+		// explicit empty override doesn't survive the marshal/re-parse
+		// round trip (the omitempty bug this package's Merge fix
+		// addresses), Migrate wrongly treats it as unset and re-injects a
+		// limit derived from the deprecated field, clobbering the override.
+		ctx := context.Background()
+
+		planYAML := []byte(`
+messaging:
+  sms_usage:
+    enabled: true
+    quota: 50
+    period: month
+`)
+		appYAML := []byte(`
+usage:
+  limits:
+    sms: []
+`)
+
+		planCfg, err := config.ParseFeatureConfigWithoutDefaults(ctx, planYAML)
+		So(err, ShouldBeNil)
+		appCfg, err := config.ParseFeatureConfigWithoutDefaults(ctx, appYAML)
+		So(err, ShouldBeNil)
+
+		mergedConfig := &config.FeatureConfig{}
+		mergedConfig = mergedConfig.Merge(planCfg)
+		mergedConfig = mergedConfig.Merge(appCfg)
+
+		mergedYAML, err := yaml.Marshal(mergedConfig)
+		So(err, ShouldBeNil)
+
+		effective, err := config.ParseFeatureConfig(ctx, mergedYAML)
+		So(err, ShouldBeNil)
+
+		So(effective.Usage, ShouldNotBeNil)
+		So(effective.Usage.Limits, ShouldNotBeNil)
+		So(effective.Usage.Limits.SMS, ShouldResemble, []config.FeatureUsageLimitConfig{})
+	})
+}
+
+// The shared "merge feature config" fixture (testdata/merge_feature.yaml)
+// only ever sets usage.limits.oauth_client_cimd from one layer, which
+// catches a whole-FeatureUsageLimitsConfig-replace bug but not a
+// misimplemented merge that appends instead of replacing, or one that
+// treats an explicit `[]` the same as "not set" (e.g. `if len(layer.X) > 0`).
+// These two cases need their own isolated two-layer merges to observe.
+func TestFeatureConfigUsageLimitsOAuthClientCIMDMerge(t *testing.T) {
+	Convey("a later layer overriding usage.limits.oauth_client_cimd replaces the earlier layer's list wholesale, not appends", t, func() {
+		ctx := context.Background()
+
+		planYAML := []byte(`
+usage:
+  limits:
+    oauth_client_cimd:
+      - quota: 20
+        action: block
+      - quota: 15
+        action: alert
+`)
+		appYAML := []byte(`
+usage:
+  limits:
+    oauth_client_cimd:
+      - quota: 5
+        action: block
+`)
+
+		planCfg, err := config.ParseFeatureConfigWithoutDefaults(ctx, planYAML)
+		So(err, ShouldBeNil)
+		appCfg, err := config.ParseFeatureConfigWithoutDefaults(ctx, appYAML)
+		So(err, ShouldBeNil)
+
+		mergedConfig := &config.FeatureConfig{}
+		mergedConfig = mergedConfig.Merge(planCfg)
+		mergedConfig = mergedConfig.Merge(appCfg)
+		config.SetFieldDefaults(mergedConfig)
+
+		So(mergedConfig.Usage, ShouldNotBeNil)
+		So(mergedConfig.Usage.Limits, ShouldNotBeNil)
+		So(mergedConfig.Usage.Limits.OAuthClientCIMD, ShouldResemble, []config.StandingFeatureUsageLimitConfig{
+			{Quota: 5, Action: model.UsageLimitActionBlock},
+		})
+	})
+
+	Convey("a later layer setting usage.limits.oauth_client_cimd to an empty list removes the earlier layer's limit", t, func() {
+		ctx := context.Background()
+
+		planYAML := []byte(`
+usage:
+  limits:
+    oauth_client_cimd:
+      - quota: 20
+        action: block
+`)
+		appYAML := []byte(`
+usage:
+  limits:
+    oauth_client_cimd: []
+`)
+
+		planCfg, err := config.ParseFeatureConfigWithoutDefaults(ctx, planYAML)
+		So(err, ShouldBeNil)
+		appCfg, err := config.ParseFeatureConfigWithoutDefaults(ctx, appYAML)
+		So(err, ShouldBeNil)
+
+		mergedConfig := &config.FeatureConfig{}
+		mergedConfig = mergedConfig.Merge(planCfg)
+		mergedConfig = mergedConfig.Merge(appCfg)
+		config.SetFieldDefaults(mergedConfig)
+
+		So(mergedConfig.Usage, ShouldNotBeNil)
+		So(mergedConfig.Usage.Limits, ShouldNotBeNil)
+		So(mergedConfig.Usage.Limits.OAuthClientCIMD, ShouldResemble, []config.StandingFeatureUsageLimitConfig{})
+	})
 }
 
 // These single-field sections have `false` as their real, correct default

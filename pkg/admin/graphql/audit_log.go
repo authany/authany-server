@@ -158,6 +158,18 @@ var auditLogActivityType = graphql.NewEnum(graphql.EnumConfig{
 		"M2M_TOKEN_CREATED": &graphql.EnumValueConfig{
 			Value: "m2m.token.created",
 		},
+		"OAUTH_CLIENT_REGISTERED": &graphql.EnumValueConfig{
+			Value: "oauth.client.registered",
+		},
+		"OAUTH_CLIENT_REGISTRATION_FAILED": &graphql.EnumValueConfig{
+			Value: "oauth.client.registration.failed",
+		},
+		"OAUTH_CLIENT_RESOLUTION_FAILED": &graphql.EnumValueConfig{
+			Value: "oauth.client.resolution.failed",
+		},
+		"OAUTH_CLIENT_RESOLVED": &graphql.EnumValueConfig{
+			Value: "oauth.client.resolved",
+		},
 		// "PASSWORD_PRIMARY_RESET": &graphql.EnumValueConfig{
 		// 	Value: "password.primary.reset",
 		// },
@@ -373,6 +385,15 @@ var auditLogActivityType = graphql.NewEnum(graphql.EnumConfig{
 		},
 		"ADMIN_API_MUTATION_SET_PASSWORD_EXPIRED_EXECUTED": &graphql.EnumValueConfig{
 			Value: "admin_api.mutation.set_password_expired.executed",
+		},
+		"ADMIN_API_MUTATION_CREATE_INITIAL_ACCESS_TOKEN_EXECUTED": &graphql.EnumValueConfig{
+			Value: "admin_api.mutation.create_initial_access_token.executed",
+		},
+		"ADMIN_API_MUTATION_REVOKE_INITIAL_ACCESS_TOKEN_EXECUTED": &graphql.EnumValueConfig{
+			Value: "admin_api.mutation.revoke_initial_access_token.executed",
+		},
+		"ADMIN_API_MUTATION_DELETE_DYNAMIC_CLIENT_EXECUTED": &graphql.EnumValueConfig{
+			Value: "admin_api.mutation.delete_dynamic_client.executed",
 		},
 		"PROJECT_APP_CREATED": &graphql.EnumValueConfig{
 			Value: "project.app.created",

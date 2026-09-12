@@ -87,6 +87,13 @@ func newOAuthRevokeHandler(p *deps.RequestProvider) http.Handler {
 	))
 }
 
+func newOAuthRegisterHandler(p *deps.RequestProvider) http.Handler {
+	panic(wire.Build(
+		DependencySet,
+		wire.Bind(new(http.Handler), new(*handleroauth.RegisterHandler)),
+	))
+}
+
 func newOAuthMetadataHandler(p *deps.RequestProvider) http.Handler {
 	panic(wire.Build(
 		DependencySet,
@@ -413,6 +420,13 @@ func newWebAppPasskeyRequestOptionsHandler(p *deps.RequestProvider) http.Handler
 	panic(wire.Build(
 		DependencySet,
 		wire.Bind(new(http.Handler), new(*handlerwebapp.PasskeyRequestOptionsHandler)),
+	))
+}
+
+func newWebAppClientLogoHandler(p *deps.RequestProvider) http.Handler {
+	panic(wire.Build(
+		DependencySet,
+		wire.Bind(new(http.Handler), new(*handlerwebapp.ClientLogoHandler)),
 	))
 }
 

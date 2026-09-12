@@ -62,7 +62,9 @@ const ShowQueryResult: React.VFC<ShowQueryResultProps> =
     // The /signup entry point should land on the console root after
     // authentication, not bounce back to /signup.
     const originalPath =
-      page != null ? "/" : `${window.location.pathname}${window.location.search}`;
+      page != null
+        ? "/"
+        : `${window.location.pathname}${window.location.search}`;
 
     useEffect(() => {
       if (!isAuthenticated) {

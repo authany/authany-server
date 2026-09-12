@@ -28,6 +28,7 @@ function setup {( set -e
     go build -o dist/e2e ./cmd/e2e
     go build -o dist/e2e-proxy ./cmd/proxy
     go build -o dist/e2e-smtp ./cmd/smtp
+    go build -o dist/e2e-cimdserver ./cmd/cimdserver
     export PATH=$PATH:./dist
 
     echo "[ ] Starting authgear..."
@@ -74,11 +75,43 @@ function setup {( set -e
         sleep 1
     done
 
+    echo "[ ] Starting e2e-cimdserver..."
+    e2e-cimdserver > ./logs/e2e-cimdserver.log 2>&1 &
+    success=false
+    for i in $(seq 10); do \
+        if [ "$(curl -sL -w '%{http_code}' -o /dev/null http://localhost:2727/healthz)" = "200" ]; then
+            echo "    - started e2e-cimdserver."
+            success=true
+            break
+        fi
+        sleep 1
+    done
+    if [ "$success" = false ]; then
+        echo "Error: Failed to start e2e-cimdserver."
+        exit 1
+    fi
+
     echo "[ ] DB migration..."
     authgear database migrate up
     authgear audit database migrate up
     authgear images database migrate up
     authgear-portal database migrate up
+
+    echo "[ ] Starting portal..."
+    authgear-portal start portal > ./logs/portal.log 2>&1 &
+    success=false
+    for i in $(seq 10); do \
+        if [ "$(curl -sL -w '%{http_code}' -o /dev/null http://localhost:4004/healthz)" = "200" ]; then
+            echo "    - started portal."
+            success=true
+            break
+        fi
+        sleep 1
+    done
+    if [ "$success" = false ]; then
+        echo "Error: Failed to start portal."
+        exit 1
+    fi
 
     echo "[ ] Starting siteadmin..."
     authgear-portal start siteadmin > ./logs/siteadmin.log 2>&1 &
@@ -103,8 +136,10 @@ function teardown {( set -e
     kill_port 4001
     kill_port 4002
     kill_port 4003
+    kill_port 4004
     kill_port 8080
     kill_port 2525
+    kill_port 2727
     $CONTAINER_RUNTIME compose down
 )}
 

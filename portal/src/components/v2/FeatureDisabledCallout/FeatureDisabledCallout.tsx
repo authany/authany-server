@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Callout } from "@radix-ui/themes";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
 import { FormattedMessage, Values } from "../../../intl";
-import { useFeatureDisabledMessageValues } from "../../../graphql/portal/FeatureDisabledMessageBar";
+import ExternalLink from "../../../ExternalLink";
 
 export interface FeatureDisabledCalloutProps {
   className?: string;
@@ -10,10 +10,37 @@ export interface FeatureDisabledCalloutProps {
   messageValues?: Values;
 }
 
-// The v2 counterpart of FeatureDisabledMessageBar: the same
-// FeatureConfig.*.disabled message (with plan-page / contact-us links)
-// rendered as a Radix Callout, matching the info callouts used across the
-// migrated Advanced-settings screens.
+// useFeatureDisabledMessageValues provides the standard rich-text values
+// (plan-page link, contact-us link, bold) for FeatureConfig.*.disabled
+// messages.
+export function useFeatureDisabledMessageValues(
+  messageValues?: Values
+): Values {
+  return useMemo(() => {
+    // Authany: no billing page; every upgrade link becomes a contact link.
+    const planPagePath = "mailto:hello@authany.com";
+    const contactUsHref = "mailto:hello@authany.com";
+    return {
+      planPagePath,
+      contactUsHref,
+
+      b: (chunks: React.ReactNode) => <b>{chunks}</b>,
+
+      ReactRouterLink: (chunks: React.ReactNode) => (
+        <ExternalLink href={contactUsHref}>{chunks}</ExternalLink>
+      ),
+
+      ExternalLink: (chunks: React.ReactNode) => (
+        <ExternalLink href={contactUsHref}>{chunks}</ExternalLink>
+      ),
+      ...messageValues,
+    };
+  }, [messageValues]);
+}
+
+// The standard FeatureConfig.*.disabled message (with plan-page /
+// contact-us links) rendered as a Radix Callout, matching the info
+// callouts used across the migrated screens.
 export function FeatureDisabledCallout({
   className,
   messageID,

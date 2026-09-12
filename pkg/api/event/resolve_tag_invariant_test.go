@@ -39,6 +39,7 @@ var payloadRegistry = []any{
 	&nonblocking.AdminAPIMutationCreateAuthenticatorExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationCreateGroupExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationCreateIdentityExecutedEventPayload{},
+	&nonblocking.AdminAPIMutationCreateInitialAccessTokenExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationCreateResourceExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationCreateRoleExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationCreateScopeExecutedEventPayload{},
@@ -46,6 +47,7 @@ var payloadRegistry = []any{
 	&nonblocking.AdminAPIMutationCreateUserExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationDeleteAuthenticatorExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationDeleteAuthorizationExecutedEventPayload{},
+	&nonblocking.AdminAPIMutationDeleteDynamicClientExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationDeleteGroupExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationDeleteIdentityExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationDeleteResourceExecutedEventPayload{},
@@ -66,6 +68,7 @@ var payloadRegistry = []any{
 	&nonblocking.AdminAPIMutationResetAccountLockoutExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationResetPasswordExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationRevokeAllSessionsExecutedEventPayload{},
+	&nonblocking.AdminAPIMutationRevokeInitialAccessTokenExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationRevokeSessionExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationScheduleAccountAnonymizationExecutedEventPayload{},
 	&nonblocking.AdminAPIMutationScheduleAccountDeletionExecutedEventPayload{},
@@ -102,6 +105,10 @@ var payloadRegistry = []any{
 	&nonblocking.IdentityUnverifiedEventPayload{},
 	&nonblocking.IdentityVerifiedEventPayload{},
 	&nonblocking.M2MTokenCreatedEventPayload{},
+	&nonblocking.OAuthClientRegisteredEventPayload{},
+	&nonblocking.OAuthClientRegistrationFailedEventPayload{},
+	&nonblocking.OAuthClientResolutionFailedEventPayload{},
+	&nonblocking.OAuthClientResolvedEventPayload{},
 	&nonblocking.ProjectAppCreatedEventPayload{},
 	&nonblocking.ProjectAppSecretViewedEventPayload{},
 	&nonblocking.ProjectAppUpdatedEventPayload{},
@@ -143,9 +150,12 @@ var payloadRegistry = []any{
 }
 
 // countPayloadSourceFiles counts the *.go files in dir that define payload
-// types, i.e. every file except test files and the shared helper file that
-// carries no payload type of its own (util.go in blocking, project.go in
-// nonblocking).
+// types, i.e. every file except test files and the shared helper files that
+// carry no payload type of their own (util.go and project.go in
+// nonblocking's case; oauth_initial_access_token.go defines
+// EventPayloadInitialAccessToken, a sub-object shared by
+// oauth.client.registered and oauth.client.registration.failed, not a
+// payload in its own right).
 func countPayloadSourceFiles(t *testing.T, dir string) int {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -157,7 +167,7 @@ func countPayloadSourceFiles(t *testing.T, dir string) int {
 		if entry.IsDir() {
 			continue
 		}
-		if name == "util.go" || name == "project.go" {
+		if name == "util.go" || name == "project.go" || name == "oauth_initial_access_token.go" {
 			continue
 		}
 		if !hasSuffix(name, ".go") || hasSuffix(name, "_test.go") {

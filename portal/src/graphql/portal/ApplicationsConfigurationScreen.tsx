@@ -1,29 +1,14 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import {
-  DetailsList,
-  DetailsRow,
-  Dialog,
-  DialogFooter,
-  IButtonStyles,
-  IColumn,
-  IconButton,
-  IDetailsRowProps,
-  IDetailsRowStyleProps,
-  IDialogContentProps,
-  MessageBar,
-  SelectionMode,
-  Text,
-} from "@fluentui/react";
-import { concatStyleSetsWithProps } from "@fluentui/merge-styles";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import cn from "classnames";
+import {
+  DropdownMenu,
+  Heading,
+  IconButton as RadixIconButton,
+  Text,
+} from "@radix-ui/themes";
+import { DotsVerticalIcon } from "@radix-ui/react-icons";
 import { Context, FormattedMessage } from "../../intl";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { produce } from "immer";
 
 import ShowError from "../../ShowError";
@@ -34,43 +19,55 @@ import {
   AppConfigFormModel,
   useAppConfigForm,
 } from "../../hook/useAppConfigForm";
-import { useCopyFeedback } from "../../hook/useCopyFeedback";
 import styles from "./ApplicationsConfigurationScreen.module.css";
 import ScreenContent from "../../ScreenContent";
-import ScreenTitle from "../../ScreenTitle";
 import { useAppFeatureConfigQuery } from "./query/appFeatureConfigQuery";
-import ScreenDescription from "../../ScreenDescription";
 import { getApplicationTypeMessageID } from "./EditOAuthClientForm";
 import { findFramework } from "./CreateOAuthClientScreen/frameworks";
-import FeatureDisabledMessageBar from "./FeatureDisabledMessageBar";
-import { useSystemConfig } from "../../context/SystemConfigContext";
-import Widget from "../../Widget";
 import FormContainer from "../../FormContainer";
-import PrimaryButton from "../../PrimaryButton";
-import ActionButton from "../../ActionButton";
-import ButtonWithLoading from "../../ButtonWithLoading";
-import DefaultButton from "../../DefaultButton";
+import { PrimaryButton } from "../../components/v2/Button/PrimaryButton/PrimaryButton";
+import { CardTable } from "../../components/v2/CardTable/CardTable";
+import { ConfirmationDialog } from "../../components/v2/ConfirmationDialog/ConfirmationDialog";
+import { CopyIconButton } from "../../components/v2/CopyIconButton/CopyIconButton";
+import { FeatureDisabledCallout } from "../../components/v2/FeatureDisabledCallout/FeatureDisabledCallout";
+import { OverflowTabs } from "../../components/v2/OverflowTabs/OverflowTabs";
+import { Tooltip } from "../../components/v2/Tooltip/Tooltip";
 import { useOAuthClientForm } from "../../hook/useOAuthClientForm";
+import { usePivotNavigation } from "../../hook/usePivot";
 import { getNextPlan } from "../../util/plan";
+import { RolesAndGroupsEmptyView } from "../../components/roles-and-groups/empty-view/RolesAndGroupsEmptyView";
+import { DynamicClientsTab } from "../../components/dynamic-clients/DynamicClientsTab";
 
-const COPY_ICON_STLYES: IButtonStyles = {
-  root: { margin: "0 4px" },
-  rootHovered: { backgroundColor: "#d8d6d3" },
-  rootPressed: { backgroundColor: "#c2c0be" },
-};
-
-const cellActionButtonStyles: IButtonStyles = {
-  root: { padding: 0 },
-  label: { margin: 0 },
-};
-
-interface FormState {
+export interface FormState {
   clients: OAuthClientConfig[];
+  dynamicClientRegistrationEnabled: boolean;
+  initialAccessTokenRequired: boolean;
+  accessTokenLifetimeSeconds: number | undefined;
+  refreshTokenLifetimeSeconds: number | undefined;
+  refreshTokenIdleTimeoutEnabled: boolean;
+  refreshTokenIdleTimeoutSeconds: number | undefined;
 }
 
 function constructFormState(config: PortalAPIAppConfig): FormState {
+  const dcr = config.oauth?.dynamic_client_registration;
   return {
     clients: config.oauth?.clients ?? [],
+    dynamicClientRegistrationEnabled: dcr?.enabled ?? false,
+    // Absent means required — the spec default. The requirement only means
+    // anything while registration is enabled, so normalise it back to required
+    // whenever registration is off: that way enabling registration can never
+    // silently open it, including for a config that arrived with the
+    // requirement already turned off. constructConfig then drops the key.
+    initialAccessTokenRequired:
+      dcr?.enabled ?? false ? dcr?.initial_access_token_required ?? true : true,
+    accessTokenLifetimeSeconds:
+      dcr?.default_client_config?.access_token_lifetime_seconds,
+    refreshTokenLifetimeSeconds:
+      dcr?.default_client_config?.refresh_token_lifetime_seconds,
+    refreshTokenIdleTimeoutEnabled:
+      dcr?.default_client_config?.refresh_token_idle_timeout_enabled ?? true,
+    refreshTokenIdleTimeoutSeconds:
+      dcr?.default_client_config?.refresh_token_idle_timeout_seconds,
   };
 }
 
@@ -84,151 +81,196 @@ function constructConfig(
     ([config, currentState]) => {
       config.oauth ??= {};
       config.oauth.clients = currentState.clients;
+
+      config.oauth.dynamic_client_registration ??= {};
+      const dcr = config.oauth.dynamic_client_registration;
+
+      if (currentState.dynamicClientRegistrationEnabled) {
+        dcr.enabled = true;
+      } else {
+        delete dcr.enabled;
+      }
+
+      if (currentState.initialAccessTokenRequired) {
+        // Absent means required — keep the config minimal.
+        delete dcr.initial_access_token_required;
+      } else {
+        dcr.initial_access_token_required = false;
+      }
+
+      dcr.default_client_config ??= {};
+      const defaultClientConfig = dcr.default_client_config;
+
+      if (currentState.accessTokenLifetimeSeconds != null) {
+        defaultClientConfig.access_token_lifetime_seconds =
+          currentState.accessTokenLifetimeSeconds;
+      } else {
+        delete defaultClientConfig.access_token_lifetime_seconds;
+      }
+
+      if (currentState.refreshTokenLifetimeSeconds != null) {
+        defaultClientConfig.refresh_token_lifetime_seconds =
+          currentState.refreshTokenLifetimeSeconds;
+      } else {
+        delete defaultClientConfig.refresh_token_lifetime_seconds;
+      }
+
+      if (currentState.refreshTokenIdleTimeoutEnabled) {
+        // Absent means enabled — the server default.
+        delete defaultClientConfig.refresh_token_idle_timeout_enabled;
+      } else {
+        defaultClientConfig.refresh_token_idle_timeout_enabled = false;
+      }
+
+      if (currentState.refreshTokenIdleTimeoutSeconds != null) {
+        defaultClientConfig.refresh_token_idle_timeout_seconds =
+          currentState.refreshTokenIdleTimeoutSeconds;
+      } else {
+        delete defaultClientConfig.refresh_token_idle_timeout_seconds;
+      }
+
       clearEmptyObject(config);
     }
   );
   return newConfig;
 }
 
-function makeOAuthClientListColumns(
-  renderToString: (messageId: string) => string
-): IColumn[] {
-  return [
-    {
-      key: "name",
-      fieldName: "name",
-      name: renderToString("ApplicationsConfigurationScreen.client-list.name"),
-      minWidth: 280,
-      className: styles.columnHeader,
-    },
-    {
-      key: "clientId",
-      fieldName: "clientId",
-      name: renderToString(
-        "ApplicationsConfigurationScreen.client-list.client-id"
-      ),
-      minWidth: 250,
-      className: styles.columnHeader,
-    },
-    {
-      key: "action",
-      fieldName: "action",
-      name: renderToString(
-        "ApplicationsConfigurationScreen.client-list.action"
-      ),
-      minWidth: 100,
-      className: styles.columnHeader,
-    },
-  ];
+function stopPropagation(e: React.SyntheticEvent) {
+  e.stopPropagation();
 }
 
-interface OAuthClientIdCopyButtonProps {
-  clientId: string;
+interface ClientRowProps {
+  client: OAuthClientConfig;
+  onDeleteClick: (clientID: string) => void;
 }
 
-const OAuthClientIdCopyButton: React.VFC<OAuthClientIdCopyButtonProps> =
-  function OAuthClientIdCopyButton(props) {
-    const { clientId } = props;
-
-    const { copyButtonProps, Feedback } = useCopyFeedback({
-      textToCopy: clientId,
-    });
-
-    return (
-      <div>
-        <IconButton {...copyButtonProps} styles={COPY_ICON_STLYES} />
-        <Feedback />
-      </div>
-    );
-  };
-
-interface OAuthClientIdCellProps {
-  clientId: string;
-}
-
-const OAuthClientIdCell: React.VFC<OAuthClientIdCellProps> =
-  function OAuthClientIdCell({ clientId }: OAuthClientIdCellProps) {
-    return (
-      <>
-        <span className={styles.cellContent}>{clientId}</span>
-        <OAuthClientIdCopyButton clientId={clientId} />
-      </>
-    );
-  };
-
-interface ClientCardProps {
-  name?: string;
-  clientId: string;
-  applicationType?: string;
-}
-
-const ClientCard: React.VFC<ClientCardProps> = (props) => {
-  const { name, clientId, applicationType } = props;
+const ClientRow: React.VFC<ClientRowProps> = function ClientRow(props) {
+  const { client, onDeleteClick } = props;
+  const { renderToString } = useContext(Context);
   const { appID } = useParams() as { appID: string };
-  const targetPath = `/project/${appID}/configuration/apps/${clientId}/edit`;
+  const navigate = useNavigate();
 
-  const {
-    themes: {
-      main: {
-        palette: { neutralSecondary },
-      },
+  const editPath = `/project/${appID}/configuration/apps/${encodeURIComponent(
+    client.client_id
+  )}/edit`;
+
+  const framework = findFramework(client.x_framework);
+  const fallbackIcon =
+    client.x_application_type === "m2m" ? "server" : "app-window";
+  const iconName = framework?.iconName ?? fallbackIcon;
+
+  const onRowClick = useCallback(() => {
+    navigate(editPath);
+  }, [navigate, editPath]);
+
+  const onRowKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      // Only navigate when the row itself is focused; Enter/Space on the
+      // copy button or the actions menu must not trigger navigation.
+      if (e.target !== e.currentTarget) {
+        return;
+      }
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        navigate(editPath);
+      }
     },
-  } = useSystemConfig();
-
-  return (
-    <Link to={targetPath}>
-      <Widget>
-        <Text className={styles.clientCardTitle}>{name}</Text>
-        <div className={styles.clientCardIdContainer}>
-          <Text
-            className={styles.clientCardContent}
-            style={{ color: neutralSecondary }}
-          >
-            {clientId}
-          </Text>
-          <OAuthClientIdCopyButton clientId={clientId} />
-        </div>
-        <Text
-          className={styles.clientCardContent}
-          style={{ color: neutralSecondary }}
-        >
-          <FormattedMessage id={getApplicationTypeMessageID(applicationType)} />
-        </Text>
-      </Widget>
-    </Link>
+    [navigate, editPath]
   );
-};
-
-interface ClientCardListProps {
-  className: string;
-  items: OAuthClientConfig[];
-}
-
-const ClientCardList: React.VFC<ClientCardListProps> = (props) => {
-  const { className, items } = props;
 
   return (
-    <div className={cn(styles.clientCardList, className)}>
-      {items.map((card) => {
-        return (
-          <ClientCard
-            key={card.client_id}
-            name={card.name}
-            clientId={card.client_id}
-            applicationType={card.x_application_type}
+    <CardTable.Row
+      className={styles.clientRow}
+      role="button"
+      tabIndex={0}
+      onClick={onRowClick}
+      onKeyDown={onRowKeyDown}
+    >
+      <CardTable.Cell className={styles.colName}>
+        <div className={styles.clientIconWrap}>
+          <i
+            className={cn("ti", `ti-${iconName}`, styles.clientIcon)}
+            aria-hidden={true}
           />
-        );
-      })}
-    </div>
+        </div>
+        <div className={styles.clientNameBlock}>
+          <Text size="2" className={styles.clientName}>
+            {client.name ?? ""}
+          </Text>
+          <Text size="1" className={styles.clientSubtitle}>
+            <FormattedMessage
+              id={getApplicationTypeMessageID(client.x_application_type)}
+            />
+            {framework != null ? (
+              <>
+                {" · "}
+                <FormattedMessage id={framework.displayNameMessageId} />
+              </>
+            ) : null}
+          </Text>
+          <div className={styles.compactClientId} onClick={stopPropagation}>
+            <Text size="1" className={styles.clientIdText}>
+              {client.client_id}
+            </Text>
+            <CopyIconButton textToCopy={client.client_id} />
+          </div>
+        </div>
+      </CardTable.Cell>
+      <CardTable.Cell className={styles.colClientId} onClick={stopPropagation}>
+        <Text size="2" className={styles.clientIdText}>
+          {client.client_id}
+        </Text>
+        <CopyIconButton textToCopy={client.client_id} />
+      </CardTable.Cell>
+      <CardTable.Cell className={styles.colActions} onClick={stopPropagation}>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <RadixIconButton
+              className={styles.rowActionsButton}
+              variant="soft"
+              color="gray"
+              size="2"
+              aria-label={renderToString(
+                "ApplicationsConfigurationScreen.client-list.row-actions"
+              )}
+            >
+              <DotsVerticalIcon width="1rem" height="1rem" />
+            </RadixIconButton>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content align="end">
+            <DropdownMenu.Item
+              onSelect={() => {
+                navigate(editPath);
+              }}
+            >
+              <FormattedMessage id="edit" />
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              color="red"
+              onSelect={() => {
+                onDeleteClick(client.client_id);
+              }}
+            >
+              <FormattedMessage id="ApplicationsConfigurationScreen.delete-client.label" />
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      </CardTable.Cell>
+    </CardTable.Row>
   );
 };
+
+type ApplicationsTabKey = "applications" | "dynamic-clients";
 
 interface OAuthClientConfigurationContentProps {
   form: AppConfigFormModel<FormState>;
   planName: string | null;
   oauthClientsSoftMaximum: number | undefined;
   oauthClientsHardMaximum: number | undefined;
-  showNotification: (msg: string) => void;
+  selectedKey: ApplicationsTabKey;
+  onChangeKey: (key: ApplicationsTabKey) => void;
+  publicOrigin: string;
+  dcrClientQuota: number | null;
 }
 
 const OAuthClientConfigurationContent: React.VFC<OAuthClientConfigurationContentProps> =
@@ -238,26 +280,18 @@ const OAuthClientConfigurationContent: React.VFC<OAuthClientConfigurationContent
       planName,
       oauthClientsHardMaximum,
       oauthClientsSoftMaximum,
+      selectedKey,
+      onChangeKey,
+      publicOrigin,
+      dcrClientQuota,
     } = props;
     const navigate = useNavigate();
-    const { themes } = useSystemConfig();
     const { renderToString } = useContext(Context);
     const { appID } = useParams() as { appID: string };
 
     const deleteForm = useOAuthClientForm(appID, null);
 
     const [isRemoveDialogVisible, setIsRemoveDialogVisible] = useState(false);
-
-    const dialogContentProps: IDialogContentProps = useMemo(() => {
-      return {
-        title: renderToString(
-          "ApplicationsConfigurationScreen.delete-client-dialog.title"
-        ),
-        subText: renderToString(
-          "ApplicationsConfigurationScreen.delete-client-dialog.description"
-        ),
-      };
-    }, [renderToString]);
 
     const hardLimitReached = useMemo(() => {
       if (oauthClientsHardMaximum == null) {
@@ -270,16 +304,12 @@ const OAuthClientConfigurationContent: React.VFC<OAuthClientConfigurationContent
       return oauthClientsSoftMaximum ?? oauthClientsHardMaximum;
     }, [oauthClientsHardMaximum, oauthClientsSoftMaximum]);
 
-    const oauthClientListColumns = useMemo(() => {
-      return makeOAuthClientListColumns(renderToString);
-    }, [renderToString]);
-
     const goToCreateApp = useCallback(() => {
       navigate(`/project/${appID}/configuration/apps/add`);
     }, [appID, navigate]);
 
     const showDialogAndSetRemoveClientByID = useCallback(
-      (clientID) => {
+      (clientID: string) => {
         deleteForm.setState((state) => ({
           ...state,
           removeClientByID: clientID,
@@ -299,6 +329,15 @@ const OAuthClientConfigurationContent: React.VFC<OAuthClientConfigurationContent
       });
     }, [deleteForm, setIsRemoveDialogVisible]);
 
+    const onRemoveDialogOpenChange = useCallback(
+      (open: boolean) => {
+        if (!open && !deleteForm.isUpdating) {
+          dismissDialogAndResetRemoveClientByID();
+        }
+      },
+      [deleteForm.isUpdating, dismissDialogAndResetRemoveClientByID]
+    );
+
     const onConfirmRemove = useCallback(() => {
       deleteForm.save().then(
         () => {
@@ -311,102 +350,6 @@ const OAuthClientConfigurationContent: React.VFC<OAuthClientConfigurationContent
       );
     }, [deleteForm, reload, dismissDialogAndResetRemoveClientByID]);
 
-    const onRenderOAuthClientRow = useCallback(
-      (props?: IDetailsRowProps) => {
-        if (!props) {
-          return null;
-        }
-
-        const { styles: stylesProp, ...rest } = props;
-
-        const clientID = "client_id" in props.item && props.item.client_id;
-        const targetPath =
-          typeof clientID === "string"
-            ? `/project/${appID}/configuration/apps/${clientID}/edit`
-            : ".";
-
-        const styles = (props: IDetailsRowStyleProps) =>
-          concatStyleSetsWithProps(
-            props,
-            {
-              // Reduce the cell height after adding copy button to the list
-              cell: {
-                paddingTop: 4,
-                paddingBottom: 4,
-              },
-            },
-            stylesProp
-          );
-
-        return (
-          <Link to={targetPath}>
-            <DetailsRow styles={styles} {...rest} />
-          </Link>
-        );
-      },
-      [appID]
-    );
-
-    const onRenderOAuthClientColumns = useCallback(
-      (item?: OAuthClientConfig, _index?: number, column?: IColumn) => {
-        if (item == null || column == null) {
-          return null;
-        }
-        switch (column.key) {
-          case "name": {
-            const framework = findFramework(item.x_framework);
-            const fallbackIcon =
-              item.x_application_type === "m2m" ? "server" : "app-window";
-            const iconName = framework?.iconName ?? fallbackIcon;
-            return (
-              <div className={styles.nameCell}>
-                <i
-                  className={cn("ti", `ti-${iconName}`, styles.nameCellIcon)}
-                  aria-hidden={true}
-                />
-                <div className={styles.nameCellText}>
-                  <div className={styles.nameCellTitle}>{item.name ?? ""}</div>
-                  <div className={styles.nameCellSubtitle}>
-                    <FormattedMessage
-                      id={getApplicationTypeMessageID(item.x_application_type)}
-                    />
-                    {framework != null ? (
-                      <>
-                        {" · "}
-                        <FormattedMessage id={framework.displayNameMessageId} />
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            );
-          }
-          case "clientId":
-            return <OAuthClientIdCell clientId={item.client_id} />;
-          case "action":
-            return (
-              <span className={styles.cellContent}>
-                <ActionButton
-                  id={getApplicationTypeMessageID(item.x_application_type)}
-                  text={renderToString(
-                    "ApplicationsConfigurationScreen.delete-client.label"
-                  )}
-                  theme={themes.destructive}
-                  styles={cellActionButtonStyles}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    showDialogAndSetRemoveClientByID(item.client_id);
-                  }}
-                />
-              </span>
-            );
-          default:
-            return null;
-        }
-      },
-      [renderToString, showDialogAndSetRemoveClientByID, themes.destructive]
-    );
-
     const canUpgradePlan = useMemo(() => {
       return getNextPlan(planName ?? "") != null;
     }, [planName]);
@@ -418,73 +361,161 @@ const OAuthClientConfigurationContent: React.VFC<OAuthClientConfigurationContent
       return state.clients.length >= displayedClientMaximum;
     }, [state, displayedClientMaximum]);
 
+    const onTabChange = useCallback(
+      (value: string) => {
+        onChangeKey(value as ApplicationsTabKey);
+      },
+      [onChangeKey]
+    );
+
+    const tabOptions = useMemo(
+      () => [
+        {
+          value: "applications",
+          label: renderToString(
+            "ApplicationsConfigurationScreen.tab.applications"
+          ),
+        },
+        {
+          value: "dynamic-clients",
+          label: renderToString(
+            "ApplicationsConfigurationScreen.tab.dynamic-clients"
+          ),
+        },
+      ],
+      [renderToString]
+    );
+
+    const isEmpty = state.clients.length === 0;
+
     return (
       <ScreenContent layout="list">
-        <div className={styles.screenTitle}>
-          <ScreenTitle className={styles.widget}>
+        <div className={styles.pageHeader}>
+          <Heading as="h1" size="5" weight="bold" className={styles.pageTitle}>
             <FormattedMessage id="ApplicationsConfigurationScreen.title" />
-          </ScreenTitle>
-          <PrimaryButton
-            text={renderToString(
-              "ApplicationsConfigurationScreen.add-client-button"
-            )}
-            iconProps={{ iconName: "Add" }}
-            onClick={goToCreateApp}
-            disabled={hardLimitReached}
-          />
+          </Heading>
         </div>
-        <ScreenDescription className={styles.widget}>
-          <FormattedMessage id="ApplicationsConfigurationScreen.description" />
-        </ScreenDescription>
-        <div className={styles.widget}>
-          {displayMaximumWarning ? (
-            <FeatureDisabledMessageBar
-              messageID={
-                canUpgradePlan
-                  ? "FeatureConfig.oauth-clients.maximum.upgrade"
-                  : "FeatureConfig.oauth-clients.maximum.contact-us"
-              }
-              messageValues={{ maximum: displayedClientMaximum! }}
-            />
-          ) : null}
-          <div className={styles.desktopView}>
-            <DetailsList
-              onRenderRow={onRenderOAuthClientRow}
-              className={styles.clientList}
-              columns={oauthClientListColumns}
-              items={state.clients}
-              selectionMode={SelectionMode.none}
-              onRenderItemColumn={onRenderOAuthClientColumns}
+        <OverflowTabs
+          className={styles.widget}
+          value={selectedKey}
+          onValueChange={onTabChange}
+          tabs={tabOptions}
+        />
+        {selectedKey === "applications" ? (
+          isEmpty ? (
+            <div className={cn(styles.widget, styles.emptyState)}>
+              <RolesAndGroupsEmptyView
+                icon={
+                  <span className={styles.emptyStateIconWrap}>
+                    <i
+                      className={cn("ti", "ti-apps", styles.emptyStateIcon)}
+                      aria-hidden={true}
+                    />
+                  </span>
+                }
+                title={
+                  <FormattedMessage id="ApplicationsConfigurationScreen.empty-state.title" />
+                }
+                description={
+                  <FormattedMessage id="ApplicationsConfigurationScreen.empty-state.description" />
+                }
+                button={
+                  <RolesAndGroupsEmptyView.CreateButton
+                    onClick={goToCreateApp}
+                    text={
+                      <FormattedMessage id="ApplicationsConfigurationScreen.add-client-button" />
+                    }
+                  />
+                }
+              />
+            </div>
+          ) : (
+            <>
+              <div className={cn(styles.widget, styles.listHeader)}>
+                <Text as="p" size="2" className={styles.pageDescription}>
+                  <FormattedMessage id="ApplicationsConfigurationScreen.description" />
+                </Text>
+                <Tooltip
+                  content={
+                    <FormattedMessage
+                      id="ApplicationsConfigurationScreen.add-client-button.hard-limit-tooltip"
+                      values={{ maximum: oauthClientsHardMaximum ?? 0 }}
+                    />
+                  }
+                  disabled={!hardLimitReached}
+                >
+                  {/* The tooltip must still fire when the button is disabled,
+                    so it anchors on a wrapper span instead of the button
+                    itself. */}
+                  <span>
+                    <PrimaryButton
+                      size="2"
+                      text={
+                        <FormattedMessage id="ApplicationsConfigurationScreen.add-client-button" />
+                      }
+                      onClick={goToCreateApp}
+                      disabled={hardLimitReached}
+                    />
+                  </span>
+                </Tooltip>
+              </div>
+              <div className={cn(styles.widget, styles.listSection)}>
+                {displayMaximumWarning ? (
+                  <FeatureDisabledCallout
+                    messageID={
+                      canUpgradePlan
+                        ? "FeatureConfig.oauth-clients.maximum.upgrade"
+                        : "FeatureConfig.oauth-clients.maximum.contact-us"
+                    }
+                    messageValues={{ maximum: displayedClientMaximum! }}
+                  />
+                ) : null}
+                <CardTable>
+                  <CardTable.Header>
+                    <CardTable.HeaderCell className={styles.colName}>
+                      <FormattedMessage id="ApplicationsConfigurationScreen.client-list.name" />
+                    </CardTable.HeaderCell>
+                    <CardTable.HeaderCell className={styles.colClientId}>
+                      <FormattedMessage id="ApplicationsConfigurationScreen.client-list.client-id" />
+                    </CardTable.HeaderCell>
+                    <CardTable.HeaderCell className={styles.colActions} />
+                  </CardTable.Header>
+                  {state.clients.map((client) => (
+                    <ClientRow
+                      key={client.client_id}
+                      client={client}
+                      onDeleteClick={showDialogAndSetRemoveClientByID}
+                    />
+                  ))}
+                </CardTable>
+              </div>
+            </>
+          )
+        ) : (
+          <div className={styles.widget}>
+            <DynamicClientsTab
+              form={props.form}
+              publicOrigin={publicOrigin}
+              dcrClientQuota={dcrClientQuota}
             />
           </div>
-          <div className={styles.mobileView}>
-            <ClientCardList
-              className={styles.clientList}
-              items={state.clients}
-            />
-          </div>
-        </div>
-        <Dialog
-          hidden={!isRemoveDialogVisible}
-          dialogContentProps={dialogContentProps}
-          modalProps={{ isBlocking: deleteForm.isUpdating }}
-          onDismiss={dismissDialogAndResetRemoveClientByID}
-        >
-          <DialogFooter>
-            <ButtonWithLoading
-              theme={themes.actionButton}
-              loading={deleteForm.isUpdating}
-              onClick={onConfirmRemove}
-              disabled={!isRemoveDialogVisible}
-              labelId="confirm"
-            />
-            <DefaultButton
-              onClick={dismissDialogAndResetRemoveClientByID}
-              disabled={deleteForm.isUpdating || !isRemoveDialogVisible}
-              text={<FormattedMessage id="cancel" />}
-            />
-          </DialogFooter>
-        </Dialog>
+        )}
+        <ConfirmationDialog
+          open={isRemoveDialogVisible}
+          onOpenChange={onRemoveDialogOpenChange}
+          title={
+            <FormattedMessage id="ApplicationsConfigurationScreen.delete-client-dialog.title" />
+          }
+          description={
+            <FormattedMessage id="ApplicationsConfigurationScreen.delete-client-dialog.description" />
+          }
+          confirmText={<FormattedMessage id="confirm" />}
+          cancelText={<FormattedMessage id="cancel" />}
+          onConfirm={onConfirmRemove}
+          onCancel={dismissDialogAndResetRemoveClientByID}
+          loading={deleteForm.isUpdating}
+          confirmColor="red"
+        />
       </ScreenContent>
     );
   };
@@ -492,7 +523,6 @@ const OAuthClientConfigurationContent: React.VFC<OAuthClientConfigurationContent
 const ApplicationsConfigurationScreen: React.VFC =
   function ApplicationsConfigurationScreen() {
     const { appID } = useParams() as { appID: string };
-    const navigate = useNavigate();
 
     const form = useAppConfigForm({
       appID,
@@ -500,15 +530,26 @@ const ApplicationsConfigurationScreen: React.VFC =
       constructConfig,
     });
     const featureConfig = useAppFeatureConfigQuery(appID);
+    const { selectedKey, onChangeKey } = usePivotNavigation<ApplicationsTabKey>(
+      ["applications", "dynamic-clients"]
+    );
 
-    const [messageBar, setMessageBar] = useState<React.ReactNode>(null);
-    const showNotification = useCallback((msg: string) => {
-      setMessageBar(
-        <MessageBar onDismiss={() => setMessageBar(null)}>
-          <p>{msg}</p>
-        </MessageBar>
-      );
-    }, []);
+    const publicOrigin = useMemo(() => {
+      return form.effectiveConfig.http?.public_origin ?? "";
+    }, [form.effectiveConfig]);
+
+    const dcrClientQuota = useMemo<number | null>(() => {
+      const limits =
+        featureConfig.effectiveFeatureConfig?.usage?.limits?.oauth_client_dcr;
+      const blockQuotas = (limits ?? [])
+        .filter((limit) => limit.action === "block")
+        .map((limit) => limit.quota)
+        .filter((quota): quota is number => quota != null);
+      if (blockQuotas.length === 0) {
+        return null;
+      }
+      return Math.min(...blockQuotas);
+    }, [featureConfig.effectiveFeatureConfig]);
 
     const oauthClientsHardMaximum = useMemo<number | undefined>(() => {
       return featureConfig.effectiveFeatureConfig?.oauth?.client?.maximum;
@@ -538,12 +579,6 @@ const ApplicationsConfigurationScreen: React.VFC =
       }
     }, [form, featureConfig]);
 
-    useEffect(() => {
-      if (!isLoading && !error && form.state.clients.length === 0) {
-        navigate("./add", { replace: true });
-      }
-    }, [isLoading, error, form.state.clients.length, navigate]);
-
     if (isLoading) {
       return <ShowLoading />;
     }
@@ -553,17 +588,16 @@ const ApplicationsConfigurationScreen: React.VFC =
     }
 
     return (
-      <FormContainer
-        form={form}
-        messageBar={messageBar}
-        hideFooterComponent={true}
-      >
+      <FormContainer form={form}>
         <OAuthClientConfigurationContent
           form={form}
           planName={featureConfig.planName}
           oauthClientsHardMaximum={oauthClientsHardMaximum}
           oauthClientsSoftMaximum={oauthClientsSoftMaximum}
-          showNotification={showNotification}
+          selectedKey={selectedKey}
+          onChangeKey={onChangeKey}
+          publicOrigin={publicOrigin}
+          dcrClientQuota={dcrClientQuota}
         />
       </FormContainer>
     );
