@@ -199,7 +199,7 @@ describe("CssAstVisitor", () => {
     --color-link--active: #235dba;
     --color-link--hover: #235dba;
     --body-text__link-text-decoration: underline;
-    --brand-logo__height: 100px
+    --brand-logo__height: 48px
 }`;
     const styleVisitor = new CssAstVisitor(ThemeTargetSelector.Light);
     customisableThemeStyleGroup.acceptCssAstVisitor(styleVisitor);
