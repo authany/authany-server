@@ -866,7 +866,17 @@ func (i *SAMLSpSigningSecretsUpdateInstruction) set(currentConfig *SecretConfig)
 
 type SMSProviderSecretsUpdateInstructionSetData struct {
 	TwilioCredentials            *SMSProviderSecretsUpdateInstructionTwilioCredentials `json:"twilioCredentials,omitempty"`
+	AliyunCredentials            *SMSProviderSecretsUpdateInstructionAliyunCredentials `json:"aliyunCredentials,omitempty"`
 	CustomSMSProviderCredentials *SMSProviderSecretsUpdateInstructionCustomSMSProvider `json:"customSMSProviderCredentials,omitempty"`
+}
+
+type SMSProviderSecretsUpdateInstructionAliyunCredentials struct {
+	AccessKeyID          string            `json:"accessKeyID,omitempty"`
+	AccessKeySecret      string            `json:"accessKeySecret,omitempty"`
+	SignName             string            `json:"signName,omitempty"`
+	TemplateCode         string            `json:"templateCode,omitempty"`
+	TemplateCodes        map[string]string `json:"templateCodes,omitempty"`
+	OverseasTemplateCode string            `json:"overseasTemplateCode,omitempty"`
 }
 
 type SMSProviderSecretsUpdateInstructionTwilioCredentials struct {
@@ -964,6 +974,28 @@ func (i *SMSProviderSecretsUpdateInstruction) set(currentConfig *SecretConfig) (
 		}
 	} else {
 		err := remove(TwilioCredentialsKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if i.SetData.AliyunCredentials != nil {
+		aliyunCredentials := AliyunCredentials{
+			AccessKeyID:     i.SetData.AliyunCredentials.AccessKeyID,
+			AccessKeySecret: i.SetData.AliyunCredentials.AccessKeySecret,
+			SMSTemplateCodeConfig: SMSTemplateCodeConfig{
+				SignName:      i.SetData.AliyunCredentials.SignName,
+				TemplateCode:  i.SetData.AliyunCredentials.TemplateCode,
+				TemplateCodes: i.SetData.AliyunCredentials.TemplateCodes,
+			},
+			OverseasTemplateCode: i.SetData.AliyunCredentials.OverseasTemplateCode,
+		}
+		err := upsert(AliyunCredentialsKey, aliyunCredentials)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := remove(AliyunCredentialsKey)
 		if err != nil {
 			return nil, err
 		}

@@ -36,6 +36,11 @@ type SMSGatewayEnvironmentDefaultConfig struct {
 	Provider      SMSGatewayEnvironmentDefaultProvider      `envconfig:"PROVIDER"`
 }
 
+// SMSGatewayEnvironmentConfig intentionally only covers twilio, nexmo and
+// custom. The SMS providers added after them are configured per project in
+// authgear.secrets.yaml only, because a deployment-wide default is meaningful
+// only for the providers that the deployment operator, instead of the project
+// owner, has an account of.
 type SMSGatewayEnvironmentConfig struct {
 	Twilio  SMSGatewayEnvironmentTwilioCredentials       `envconfig:"TWILIO"`
 	Nexmo   SMSGatewayEnvironmentNexmoCredentials        `envconfig:"NEXMO"`

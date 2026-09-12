@@ -23,3 +23,9 @@ error: null
 config:
   use_config_from: "authgear.secrets.yaml"
   provider: "twilio"
+---
+name: success-authgear.secrets.yaml-with-provider-aliyun
+error: null
+config:
+  use_config_from: "authgear.secrets.yaml"
+  provider: "aliyun"
