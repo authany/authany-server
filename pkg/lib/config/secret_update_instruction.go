@@ -871,6 +871,7 @@ type SMSProviderSecretsUpdateInstructionSetData struct {
 	TencentCredentials           *SMSProviderSecretsUpdateInstructionTencentCredentials   `json:"tencentCredentials,omitempty"`
 	YunpianCredentials           *SMSProviderSecretsUpdateInstructionYunpianCredentials   `json:"yunpianCredentials,omitempty"`
 	SmsbaoCredentials            *SMSProviderSecretsUpdateInstructionSmsbaoCredentials    `json:"smsbaoCredentials,omitempty"`
+	GatewayAPICredentials        *SMSProviderSecretsUpdateInstructionGatewayAPICredentials `json:"gatewayAPICredentials,omitempty"`
 	CustomSMSProviderCredentials *SMSProviderSecretsUpdateInstructionCustomSMSProvider    `json:"customSMSProviderCredentials,omitempty"`
 }
 
@@ -882,6 +883,12 @@ type SMSProviderSecretsUpdateInstructionSmsbaoCredentials struct {
 	Username         string `json:"username,omitempty"`
 	PasswordOrAPIKey string `json:"passwordOrAPIKey,omitempty"`
 	GoodsID          string `json:"goodsID,omitempty"`
+}
+
+type SMSProviderSecretsUpdateInstructionGatewayAPICredentials struct {
+	Endpoint string `json:"endpoint,omitempty"`
+	APIToken string `json:"apiToken,omitempty"`
+	Sender   string `json:"sender,omitempty"`
 }
 
 type SMSProviderSecretsUpdateInstructionAliyunMASCredentials struct {
@@ -995,6 +1002,7 @@ func (i *SMSProviderSecretsUpdateInstruction) set(currentConfig *SecretConfig) (
 		{Key: TencentCredentialsKey, Credentials: newTencentCredentials(i.SetData.TencentCredentials)},
 		{Key: YunpianCredentialsKey, Credentials: newYunpianCredentials(i.SetData.YunpianCredentials)},
 		{Key: SmsbaoCredentialsKey, Credentials: newSmsbaoCredentials(i.SetData.SmsbaoCredentials)},
+		{Key: GatewayAPICredentialsKey, Credentials: newGatewayAPICredentials(i.SetData.GatewayAPICredentials)},
 		{Key: CustomSMSProviderConfigKey, Credentials: newCustomSMSProviderConfig(i.SetData.CustomSMSProviderCredentials)},
 	}
 
@@ -1103,6 +1111,17 @@ func newSmsbaoCredentials(in *SMSProviderSecretsUpdateInstructionSmsbaoCredentia
 		Username:         in.Username,
 		PasswordOrAPIKey: in.PasswordOrAPIKey,
 		GoodsID:          in.GoodsID,
+	}
+}
+
+func newGatewayAPICredentials(in *SMSProviderSecretsUpdateInstructionGatewayAPICredentials) any {
+	if in == nil {
+		return nil
+	}
+	return GatewayAPICredentials{
+		Endpoint: in.Endpoint,
+		APIToken: in.APIToken,
+		Sender:   in.Sender,
 	}
 }
 

@@ -32,21 +32,22 @@ func (c *MessagingConfig) SetDefaults() {
 var _ = Schema.Add("SMSProvider", `
 {
 	"type": "string",
-	"enum": ["nexmo", "twilio", "custom", "aliyun", "tencent", "aliyun_mas", "yunpian", "smsbao"]
+	"enum": ["nexmo", "twilio", "custom", "aliyun", "tencent", "aliyun_mas", "yunpian", "smsbao", "gatewayapi"]
 }
 `)
 
 type SMSProvider string
 
 const (
-	SMSProviderNexmo     SMSProvider = "nexmo"
-	SMSProviderTwilio    SMSProvider = "twilio"
-	SMSProviderCustom    SMSProvider = "custom"
-	SMSProviderAliyun    SMSProvider = "aliyun"
-	SMSProviderTencent   SMSProvider = "tencent"
-	SMSProviderAliyunMAS SMSProvider = "aliyun_mas"
-	SMSProviderYunpian   SMSProvider = "yunpian"
-	SMSProviderSmsbao    SMSProvider = "smsbao"
+	SMSProviderNexmo      SMSProvider = "nexmo"
+	SMSProviderTwilio     SMSProvider = "twilio"
+	SMSProviderCustom     SMSProvider = "custom"
+	SMSProviderAliyun     SMSProvider = "aliyun"
+	SMSProviderTencent    SMSProvider = "tencent"
+	SMSProviderAliyunMAS  SMSProvider = "aliyun_mas"
+	SMSProviderYunpian    SMSProvider = "yunpian"
+	SMSProviderSmsbao     SMSProvider = "smsbao"
+	SMSProviderGatewayAPI SMSProvider = "gatewayapi"
 )
 
 var _ = Schema.Add("SMSConfig", `

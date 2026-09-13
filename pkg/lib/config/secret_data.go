@@ -543,6 +543,34 @@ func (c *SmsbaoCredentials) SensitiveStrings() []string {
 	}
 }
 
+// GatewayAPICredentials configures GatewayAPI (https://gatewayapi.com), a
+// body-based SMS provider. Endpoint is the REST base URL, e.g.
+// https://gatewayapi.com or https://gatewayapi.eu.
+var _ = SecretConfigSchema.Add("GatewayAPICredentials", `
+{
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		"endpoint": { "type": "string" },
+		"api_token": { "type": "string" },
+		"sender": { "type": "string" }
+	},
+	"required": ["endpoint", "api_token", "sender"]
+}
+`)
+
+type GatewayAPICredentials struct {
+	Endpoint string `json:"endpoint,omitempty"`
+	APIToken string `json:"api_token,omitempty"`
+	Sender   string `json:"sender,omitempty"`
+}
+
+func (c *GatewayAPICredentials) SensitiveStrings() []string {
+	return []string{
+		c.APIToken,
+	}
+}
+
 var _ = SecretConfigSchema.Add("JWS", `
 {
 	"type": "object",
