@@ -42,9 +42,29 @@ var smsProviderConfigurationInput = graphql.NewInputObject(graphql.InputObjectCo
 			Type:        smsProviderConfigurationAliyunInput,
 			Description: "Aliyun configuration",
 		},
+		"aliyunMAS": &graphql.InputObjectFieldConfig{
+			Type:        smsProviderConfigurationAliyunMASInput,
+			Description: "Aliyun MAS configuration",
+		},
 		"tencent": &graphql.InputObjectFieldConfig{
 			Type:        smsProviderConfigurationTencentInput,
 			Description: "Tencent Cloud configuration",
+		},
+		"yunpian": &graphql.InputObjectFieldConfig{
+			Type:        smsProviderConfigurationYunpianInput,
+			Description: "Yunpian configuration",
+		},
+		"smsbao": &graphql.InputObjectFieldConfig{
+			Type:        smsProviderConfigurationSmsbaoInput,
+			Description: "SMSBao configuration",
+		},
+		"gatewayAPI": &graphql.InputObjectFieldConfig{
+			Type:        smsProviderConfigurationGatewayAPIInput,
+			Description: "GatewayAPI configuration",
+		},
+		"smsAero": &graphql.InputObjectFieldConfig{
+			Type:        smsProviderConfigurationSmsAeroInput,
+			Description: "SMS Aero configuration",
 		},
 		"webhook": &graphql.InputObjectFieldConfig{
 			Type:        smsProviderConfigurationWebhookInput,
@@ -131,6 +151,81 @@ var smsProviderConfigurationTencentInput = graphql.NewInputObject(graphql.InputO
 		},
 		"templateCodes": &graphql.InputObjectFieldConfig{
 			Type: SMSTemplateCodes,
+		},
+	},
+})
+
+var smsProviderConfigurationAliyunMASInput = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "SMSProviderConfigurationAliyunMASInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"accessKeyID": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"accessKeySecret": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"signName": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"templateCode": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"templateCodes": &graphql.InputObjectFieldConfig{
+			Type: SMSTemplateCodes,
+		},
+	},
+})
+
+var smsProviderConfigurationYunpianInput = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "SMSProviderConfigurationYunpianInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"apiKey": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+	},
+})
+
+var smsProviderConfigurationSmsbaoInput = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "SMSProviderConfigurationSmsbaoInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"username": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"passwordOrAPIKey": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"goodsID": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+	},
+})
+
+var smsProviderConfigurationGatewayAPIInput = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "SMSProviderConfigurationGatewayAPIInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"endpoint": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"apiToken": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"sender": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+	},
+})
+
+var smsProviderConfigurationSmsAeroInput = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "SMSProviderConfigurationSmsAeroInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"email": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"apiKey": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"senderName": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
 		},
 	},
 })

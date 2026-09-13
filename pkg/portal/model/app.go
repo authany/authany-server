@@ -171,10 +171,45 @@ type SMSProviderTencentCredentials struct {
 	TemplateCodes map[string]string `json:"templateCodes,omitempty"`
 }
 
+type SMSProviderAliyunMASCredentials struct {
+	AccessKeyID     string            `json:"accessKeyID,omitempty"`
+	AccessKeySecret *string           `json:"accessKeySecret,omitempty"`
+	SignName        string            `json:"signName,omitempty"`
+	TemplateCode    string            `json:"templateCode,omitempty"`
+	TemplateCodes   map[string]string `json:"templateCodes,omitempty"`
+}
+
+type SMSProviderYunpianCredentials struct {
+	APIKey *string `json:"apiKey,omitempty"`
+}
+
+type SMSProviderSmsbaoCredentials struct {
+	Username         string  `json:"username,omitempty"`
+	PasswordOrAPIKey *string `json:"passwordOrAPIKey,omitempty"`
+	GoodsID          string  `json:"goodsID,omitempty"`
+}
+
+type SMSProviderGatewayAPICredentials struct {
+	Endpoint string  `json:"endpoint,omitempty"`
+	APIToken *string `json:"apiToken,omitempty"`
+	Sender   string  `json:"sender,omitempty"`
+}
+
+type SMSProviderSmsAeroCredentials struct {
+	Email      string  `json:"email,omitempty"`
+	APIKey     *string `json:"apiKey,omitempty"`
+	SenderName string  `json:"senderName,omitempty"`
+}
+
 type SMSProviderSecrets struct {
 	TwilioCredentials            *SMSProviderTwilioCredentials        `json:"twilioCredentials,omitempty"`
 	AliyunCredentials            *SMSProviderAliyunCredentials        `json:"aliyunCredentials,omitempty"`
+	AliyunMASCredentials         *SMSProviderAliyunMASCredentials     `json:"aliyunMASCredentials,omitempty"`
 	TencentCredentials           *SMSProviderTencentCredentials       `json:"tencentCredentials,omitempty"`
+	YunpianCredentials           *SMSProviderYunpianCredentials       `json:"yunpianCredentials,omitempty"`
+	SmsbaoCredentials            *SMSProviderSmsbaoCredentials        `json:"smsbaoCredentials,omitempty"`
+	GatewayAPICredentials        *SMSProviderGatewayAPICredentials    `json:"gatewayAPICredentials,omitempty"`
+	SmsAeroCredentials           *SMSProviderSmsAeroCredentials       `json:"smsAeroCredentials,omitempty"`
 	CustomSMSProviderCredentials *SMSProviderCustomSMSProviderConfigs `json:"customSMSProviderCredentials,omitempty"`
 }
 
@@ -390,6 +425,50 @@ func NewSecretConfig(secretConfig *config.SecretConfig, unmaskedSecrets []config
 		}
 		if _, exist := unmaskedSecretsSet[config.TencentCredentialsKey]; exist {
 			smsProviderSecrets.TencentCredentials.SecretKey = &tencentCredentials.SecretKey
+		}
+	}
+	if aliyunMASCredentials, ok := secretConfig.LookupData(config.AliyunMASCredentialsKey).(*config.AliyunMASCredentials); ok {
+		smsProviderSecrets.AliyunMASCredentials = &SMSProviderAliyunMASCredentials{
+			AccessKeyID:   aliyunMASCredentials.AccessKeyID,
+			SignName:      aliyunMASCredentials.SignName,
+			TemplateCode:  aliyunMASCredentials.TemplateCode,
+			TemplateCodes: aliyunMASCredentials.TemplateCodes,
+		}
+		if _, exist := unmaskedSecretsSet[config.AliyunMASCredentialsKey]; exist {
+			smsProviderSecrets.AliyunMASCredentials.AccessKeySecret = &aliyunMASCredentials.AccessKeySecret
+		}
+	}
+	if yunpianCredentials, ok := secretConfig.LookupData(config.YunpianCredentialsKey).(*config.YunpianCredentials); ok {
+		smsProviderSecrets.YunpianCredentials = &SMSProviderYunpianCredentials{}
+		if _, exist := unmaskedSecretsSet[config.YunpianCredentialsKey]; exist {
+			smsProviderSecrets.YunpianCredentials.APIKey = &yunpianCredentials.APIKey
+		}
+	}
+	if smsbaoCredentials, ok := secretConfig.LookupData(config.SmsbaoCredentialsKey).(*config.SmsbaoCredentials); ok {
+		smsProviderSecrets.SmsbaoCredentials = &SMSProviderSmsbaoCredentials{
+			Username: smsbaoCredentials.Username,
+			GoodsID:  smsbaoCredentials.GoodsID,
+		}
+		if _, exist := unmaskedSecretsSet[config.SmsbaoCredentialsKey]; exist {
+			smsProviderSecrets.SmsbaoCredentials.PasswordOrAPIKey = &smsbaoCredentials.PasswordOrAPIKey
+		}
+	}
+	if gatewayAPICredentials, ok := secretConfig.LookupData(config.GatewayAPICredentialsKey).(*config.GatewayAPICredentials); ok {
+		smsProviderSecrets.GatewayAPICredentials = &SMSProviderGatewayAPICredentials{
+			Endpoint: gatewayAPICredentials.Endpoint,
+			Sender:   gatewayAPICredentials.Sender,
+		}
+		if _, exist := unmaskedSecretsSet[config.GatewayAPICredentialsKey]; exist {
+			smsProviderSecrets.GatewayAPICredentials.APIToken = &gatewayAPICredentials.APIToken
+		}
+	}
+	if smsAeroCredentials, ok := secretConfig.LookupData(config.SmsAeroCredentialsKey).(*config.SmsAeroCredentials); ok {
+		smsProviderSecrets.SmsAeroCredentials = &SMSProviderSmsAeroCredentials{
+			Email:      smsAeroCredentials.Email,
+			SenderName: smsAeroCredentials.SenderName,
+		}
+		if _, exist := unmaskedSecretsSet[config.SmsAeroCredentialsKey]; exist {
+			smsProviderSecrets.SmsAeroCredentials.APIKey = &smsAeroCredentials.APIKey
 		}
 	}
 	if customSMSProviderConfig, ok := secretConfig.LookupData(config.CustomSMSProviderConfigKey).(*config.CustomSMSProviderConfig); ok {

@@ -886,6 +886,42 @@ input SMSProviderAliyunCredentialsInput {
   templateCodes: SMSTemplateCodes
 }
 
+"""Aliyun MAS SMS credentials"""
+type SMSProviderAliyunMASCredentials {
+  """"""
+  accessKeyID: String!
+
+  """"""
+  accessKeySecret: String
+
+  """"""
+  signName: String
+
+  """"""
+  templateCode: String
+
+  """"""
+  templateCodes: SMSTemplateCodes
+}
+
+""""""
+input SMSProviderAliyunMASCredentialsInput {
+  """"""
+  accessKeyID: String!
+
+  """"""
+  accessKeySecret: String
+
+  """"""
+  signName: String
+
+  """"""
+  templateCode: String
+
+  """"""
+  templateCodes: SMSTemplateCodes
+}
+
 """"""
 input SMSProviderConfigurationAliyunInput {
   """"""
@@ -908,6 +944,24 @@ input SMSProviderConfigurationAliyunInput {
 }
 
 """"""
+input SMSProviderConfigurationAliyunMASInput {
+  """"""
+  accessKeyID: String!
+
+  """"""
+  accessKeySecret: String!
+
+  """"""
+  signName: String
+
+  """"""
+  templateCode: String
+
+  """"""
+  templateCodes: SMSTemplateCodes
+}
+
+""""""
 input SMSProviderConfigurationDenoInput {
   """"""
   script: String!
@@ -917,12 +971,36 @@ input SMSProviderConfigurationDenoInput {
 }
 
 """"""
+input SMSProviderConfigurationGatewayAPIInput {
+  """"""
+  apiToken: String!
+
+  """"""
+  endpoint: String
+
+  """"""
+  sender: String
+}
+
+""""""
 input SMSProviderConfigurationInput {
   """Aliyun configuration"""
   aliyun: SMSProviderConfigurationAliyunInput
 
+  """Aliyun MAS configuration"""
+  aliyunMAS: SMSProviderConfigurationAliyunMASInput
+
   """Deno hook configuration"""
   deno: SMSProviderConfigurationDenoInput
+
+  """GatewayAPI configuration"""
+  gatewayAPI: SMSProviderConfigurationGatewayAPIInput
+
+  """SMS Aero configuration"""
+  smsAero: SMSProviderConfigurationSmsAeroInput
+
+  """SMSBao configuration"""
+  smsbao: SMSProviderConfigurationSmsbaoInput
 
   """Tencent Cloud configuration"""
   tencent: SMSProviderConfigurationTencentInput
@@ -932,6 +1010,33 @@ input SMSProviderConfigurationInput {
 
   """Webhook Configuration"""
   webhook: SMSProviderConfigurationWebhookInput
+
+  """Yunpian configuration"""
+  yunpian: SMSProviderConfigurationYunpianInput
+}
+
+""""""
+input SMSProviderConfigurationSmsAeroInput {
+  """"""
+  apiKey: String!
+
+  """"""
+  email: String!
+
+  """"""
+  senderName: String
+}
+
+""""""
+input SMSProviderConfigurationSmsbaoInput {
+  """"""
+  goodsID: String
+
+  """"""
+  passwordOrAPIKey: String!
+
+  """"""
+  username: String!
 }
 
 """"""
@@ -991,6 +1096,12 @@ input SMSProviderConfigurationWebhookInput {
   url: String!
 }
 
+""""""
+input SMSProviderConfigurationYunpianInput {
+  """"""
+  apiKey: String!
+}
+
 """Custom SMS Provider configs"""
 type SMSProviderCustomSMSProviderSecrets {
   """"""
@@ -1000,19 +1111,58 @@ type SMSProviderCustomSMSProviderSecrets {
   url: String!
 }
 
+"""GatewayAPI SMS credentials"""
+type SMSProviderGatewayAPICredentials {
+  """"""
+  apiToken: String
+
+  """"""
+  endpoint: String
+
+  """"""
+  sender: String
+}
+
+""""""
+input SMSProviderGatewayAPICredentialsInput {
+  """"""
+  apiToken: String
+
+  """"""
+  endpoint: String
+
+  """"""
+  sender: String
+}
+
 """SMS Provider secrets"""
 type SMSProviderSecrets {
   """"""
   aliyunCredentials: SMSProviderAliyunCredentials
 
   """"""
+  aliyunMASCredentials: SMSProviderAliyunMASCredentials
+
+  """"""
   customSMSProviderCredentials: SMSProviderCustomSMSProviderSecrets
+
+  """"""
+  gatewayAPICredentials: SMSProviderGatewayAPICredentials
+
+  """"""
+  smsAeroCredentials: SMSProviderSmsAeroCredentials
+
+  """"""
+  smsbaoCredentials: SMSProviderSmsbaoCredentials
 
   """"""
   tencentCredentials: SMSProviderTencentCredentials
 
   """"""
   twilioCredentials: SMSProviderTwilioCredentials
+
+  """"""
+  yunpianCredentials: SMSProviderYunpianCredentials
 }
 
 """"""
@@ -1021,13 +1171,28 @@ input SMSProviderSecretsSetDataInput {
   aliyunCredentials: SMSProviderAliyunCredentialsInput
 
   """"""
+  aliyunMASCredentials: SMSProviderAliyunMASCredentialsInput
+
+  """"""
   customSMSProviderCredentials: CustomSmsProviderSecretsInput
+
+  """"""
+  gatewayAPICredentials: SMSProviderGatewayAPICredentialsInput
+
+  """"""
+  smsAeroCredentials: SMSProviderSmsAeroCredentialsInput
+
+  """"""
+  smsbaoCredentials: SMSProviderSmsbaoCredentialsInput
 
   """"""
   tencentCredentials: SMSProviderTencentCredentialsInput
 
   """"""
   twilioCredentials: SMSProviderTwilioCredentialsInput
+
+  """"""
+  yunpianCredentials: SMSProviderYunpianCredentialsInput
 }
 
 """"""
@@ -1037,6 +1202,54 @@ input SMSProviderSecretsUpdateInstructionsInput {
 
   """"""
   setData: SMSProviderSecretsSetDataInput
+}
+
+"""SMS Aero SMS credentials"""
+type SMSProviderSmsAeroCredentials {
+  """"""
+  apiKey: String
+
+  """"""
+  email: String!
+
+  """"""
+  senderName: String
+}
+
+""""""
+input SMSProviderSmsAeroCredentialsInput {
+  """"""
+  apiKey: String
+
+  """"""
+  email: String!
+
+  """"""
+  senderName: String
+}
+
+"""SMSBao SMS credentials"""
+type SMSProviderSmsbaoCredentials {
+  """"""
+  goodsID: String
+
+  """"""
+  passwordOrAPIKey: String
+
+  """"""
+  username: String!
+}
+
+""""""
+input SMSProviderSmsbaoCredentialsInput {
+  """"""
+  goodsID: String
+
+  """"""
+  passwordOrAPIKey: String
+
+  """"""
+  username: String!
 }
 
 """Tencent Cloud SMS credentials"""
@@ -1133,6 +1346,18 @@ input SMSProviderTwilioCredentialsInput {
 
   """"""
   messagingServiceSID: String
+}
+
+"""Yunpian SMS credentials"""
+type SMSProviderYunpianCredentials {
+  """"""
+  apiKey: String
+}
+
+""""""
+input SMSProviderYunpianCredentialsInput {
+  """"""
+  apiKey: String
 }
 
 """
