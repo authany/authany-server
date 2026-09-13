@@ -745,6 +745,8 @@ func newUserImportService(ctx context.Context, p *deps.AppProvider) *userimport.
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -775,6 +777,8 @@ func newUserImportService(ctx context.Context, p *deps.AppProvider) *userimport.
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,

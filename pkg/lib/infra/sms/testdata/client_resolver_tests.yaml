@@ -603,3 +603,127 @@ authgear.secrets.yaml:
 environment_variables:
 result:
 error: no available SMS client
+
+---
+name: test-aliyun-only-secret-defined
+authgear.yaml:
+authgear.secrets.yaml:
+  aliyun:
+    access_key_id: "my-access-key-id"
+    access_key_secret: "my-access-key-secret"
+    sign_name: "my-sign-name"
+    template_code: "SMS_0001"
+environment_variables:
+result:
+  access_key_id: "my-access-key-id"
+  access_key_secret: "my-access-key-secret"
+  sign_name: "my-sign-name"
+  template_code: "SMS_0001"
+
+---
+name: test-tencent-only-secret-defined
+authgear.yaml:
+authgear.secrets.yaml:
+  tencent:
+    secret_id: "my-secret-id"
+    secret_key: "my-secret-key"
+    sdk_app_id: "my-sdk-app-id"
+    region: "ap-guangzhou"
+    sign_name: "my-sign-name"
+    template_code: "1234567"
+environment_variables:
+result:
+  secret_id: "my-secret-id"
+  secret_key: "my-secret-key"
+  sdk_app_id: "my-sdk-app-id"
+  region: "ap-guangzhou"
+  sign_name: "my-sign-name"
+  template_code: "1234567"
+
+---
+name: test-aliyun-selected-by-messaging-sms-provider
+authgear.yaml:
+  messaging:
+    sms_provider: aliyun
+authgear.secrets.yaml:
+  twilio:
+    account_sid: "my-account-sid"
+    auth_token: "my-auth-token"
+    message_service_sid: "my-message-service-sid"
+  aliyun:
+    access_key_id: "my-access-key-id"
+    access_key_secret: "my-access-key-secret"
+    sign_name: "my-sign-name"
+    template_code: "SMS_0001"
+environment_variables:
+result:
+  access_key_id: "my-access-key-id"
+  access_key_secret: "my-access-key-secret"
+  sign_name: "my-sign-name"
+  template_code: "SMS_0001"
+
+---
+name: test-tencent-selected-by-sms-gateway-provider
+authgear.yaml:
+  messaging:
+    sms_gateway:
+      use_config_from: authgear.secrets.yaml
+      provider: tencent
+authgear.secrets.yaml:
+  aliyun:
+    access_key_id: "my-access-key-id"
+    access_key_secret: "my-access-key-secret"
+    sign_name: "my-sign-name"
+    template_code: "SMS_0001"
+  tencent:
+    secret_id: "my-secret-id"
+    secret_key: "my-secret-key"
+    sdk_app_id: "my-sdk-app-id"
+    region: "ap-guangzhou"
+    sign_name: "my-sign-name"
+    template_code: "1234567"
+environment_variables:
+result:
+  secret_id: "my-secret-id"
+  secret_key: "my-secret-key"
+  sdk_app_id: "my-sdk-app-id"
+  region: "ap-guangzhou"
+  sign_name: "my-sign-name"
+  template_code: "1234567"
+
+---
+name: test-aliyun-and-tencent-ambiguous
+authgear.yaml:
+authgear.secrets.yaml:
+  aliyun:
+    access_key_id: "my-access-key-id"
+    access_key_secret: "my-access-key-secret"
+    sign_name: "my-sign-name"
+    template_code: "SMS_0001"
+  tencent:
+    secret_id: "my-secret-id"
+    secret_key: "my-secret-key"
+    sdk_app_id: "my-sdk-app-id"
+    region: "ap-guangzhou"
+    sign_name: "my-sign-name"
+    template_code: "1234567"
+environment_variables:
+result:
+error: ambiguous SMS client
+
+---
+name: test-aliyun-selected-but-no-secret
+authgear.yaml:
+  messaging:
+    sms_provider: aliyun
+authgear.secrets.yaml:
+  tencent:
+    secret_id: "my-secret-id"
+    secret_key: "my-secret-key"
+    sdk_app_id: "my-sdk-app-id"
+    region: "ap-guangzhou"
+    sign_name: "my-sign-name"
+    template_code: "1234567"
+environment_variables:
+result:
+error: no available SMS client

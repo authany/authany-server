@@ -853,6 +853,8 @@ func newUserService(p *deps.BackgroundProvider, appID string, appContext *config
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -883,6 +885,8 @@ func newUserService(p *deps.BackgroundProvider, appID string, appContext *config
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
