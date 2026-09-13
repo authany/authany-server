@@ -47,7 +47,7 @@ func TestManager(t *testing.T) {
 		denoClient.EXPECT().Check(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 		domainService := NewMockDomainService(ctrl)
 		domainService.EXPECT().ListDomains(gomock.Any(), gomock.Any()).AnyTimes().Return([]*apimodel.Domain{
-			{ID: "domain-id", AppID: "app-id", Domain: "test"},
+			{ID: "domain-id", AppID: "app-id", Domain: "test", IsVerified: true},
 		}, nil)
 
 		portalResMgr := &appresource.Manager{
