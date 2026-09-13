@@ -1,0 +1,65 @@
+name: Authany - Server
+
+# Authany's own Go check.
+#
+# The upstream workflows in this directory (CI - Branches, CI - PRs, ...) are
+# kept untouched so that merging a new base release never conflicts on them,
+# and they are disabled in this repository's Actions settings. See
+# .github/README.md.
+#
+# This is deliberately smaller than the upstream authgear-test job: no
+# `make lint`, no full `make test`, no e2e. Those take too long on a 2 vCPU
+# runner and a few packages fail for environmental reasons in this tree. What
+# is left is enough to catch a broken build, a broken SMS/config/portal test
+# and unformatted code before an image is published.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "pkg/**"
+      - "cmd/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/authany-server.yaml"
+  pull_request:
+    paths:
+      - "pkg/**"
+      - "cmd/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/authany-server.yaml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./.github/actions/install-native-deps
+    # setup-go@v5, not the @v4 the untouched upstream workflows still pin:
+    # actionlint rejects v4 as running on a retired runner.
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: "./go.mod"
+        cache: true
+    - run: go build ./cmd/... ./pkg/...
+    - run: go test ./pkg/lib/config/... ./pkg/lib/infra/sms/... ./pkg/lib/messaging/... ./pkg/portal/... -count=1 -timeout 5m
+      if: ${{ !cancelled() }}
+    - name: gofmt
+      if: ${{ !cancelled() }}
+      run: |
+        out="$(gofmt -l pkg cmd)"
+        if [ -n "$out" ]; then
+          echo "$out"
+          exit 1
+        fi
