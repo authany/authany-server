@@ -53,7 +53,9 @@ func TestYunpianClient(t *testing.T) {
 			client, closeServer := newClient(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.ParseForm()
 				form = r.PostForm
-				respondJSON(http.StatusOK, `{"code":0,"msg":"发送成功","count":1,"fee":0.05,"unit":"RMB","mobile":"13800138000","sid":3310228982}`)(w, r)
+				// The Json 返回示例 of
+				// https://www.yunpian.com/official/document/sms/zh_CN/domestic_single_send
+				respondJSON(http.StatusOK, `{"code":0,"msg":"发送成功","count":1,"fee":0.05,"unit":"RMB","mobile":"13200000000","sid":3310228982}`)(w, r)
 			})
 			defer closeServer()
 
@@ -71,7 +73,9 @@ func TestYunpianClient(t *testing.T) {
 			client, closeServer := newClient(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.ParseForm()
 				form = r.PostForm
-				respondJSON(http.StatusOK, `{"code":0,"msg":"发送成功","mobile":"+85298765432"}`)(w, r)
+				// The Json 返回示例 of
+				// https://www.yunpian.com/official/document/sms/zh_CN/intl_single_send
+				respondJSON(http.StatusOK, `{"code":0,"msg":"发送成功","count":1,"fee":0.05,"unit":"RMB","mobile":"+93701234567","sid":3310228982}`)(w, r)
 			})
 			defer closeServer()
 
@@ -94,6 +98,28 @@ func TestYunpianClient(t *testing.T) {
 			So(sendError.APIErrorKind, ShouldEqual, &smsapi.ErrKindInvalidPhoneNumber)
 		})
 
+		Convey("documented error response", func() {
+			// The API 调用失败，返回错误结果示例 of
+			// https://www.yunpian.com/official/document/sms/zh_CN/returnvalue_example
+			client, closeServer := newClient(respondJSON(
+				http.StatusBadRequest,
+				`{"http_status_code": 400,"code": 3,"msg": "账户余额不足","detail": "账户需要充值，请充值后重试"}`,
+			))
+			defer closeServer()
+
+			err := send(client, "+8613800138000")
+			So(err, ShouldNotBeNil)
+
+			var sendError *smsapi.SendError
+			So(errors.As(err, &sendError), ShouldBeTrue)
+			So(sendError.ProviderType, ShouldEqual, config.SMSProviderYunpian)
+			So(sendError.ProviderErrorCode, ShouldEqual, "3")
+			So(sendError.APIErrorKind, ShouldEqual, &smsapi.ErrKindDeliveryRejected)
+			So(len(sendError.DumpedResponse), ShouldBeGreaterThan, 0)
+		})
+
+		// The return codes are the ones of
+		// https://www.yunpian.com/official/document/sms/zh_CN/returnvalue_common
 		Convey("error codes", func() {
 			cases := []struct {
 				Code       int

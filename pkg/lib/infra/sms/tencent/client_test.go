@@ -188,7 +188,9 @@ func TestTencentClientSend(t *testing.T) {
 				receivedHeader = r.Header.Clone()
 				receivedHeader.Set("Host", r.Host)
 				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write([]byte(`{"Response":{"SendStatusSet":[{"SerialNo":"1","PhoneNumber":"+85298765432","Code":"Ok","Message":"send success"}],"RequestId":"req-1"}}`))
+				// The 成功 output example of
+				// https://cloud.tencent.com/document/api/382/55981
+				_, _ = w.Write([]byte(`{"Response":{"SendStatusSet":[{"SerialNo":"5000:1045710669157053657849499619","PhoneNumber":"+8618501234444","Fee":1,"SessionContext":"test","Code":"Ok","Message":"send success","IsoCode":"CN"}],"RequestId":"a0aabda6-cf91-4f3e-a81f-9198114a2279"}}`))
 			})
 			defer server.Close()
 
@@ -259,6 +261,8 @@ func TestTencentClientSend(t *testing.T) {
 			So(sendError.APIErrorKind, ShouldEqual, &smsapi.ErrKindUnsupportedRequest)
 		})
 
+		// The error codes are the ones of
+		// https://cloud.tencent.com/document/api/382/55981
 		assertErrorKind := func(responseBody string, expected *apierrors.Kind, expectedCode string) {
 			server := newServer(func(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte(responseBody))
@@ -321,6 +325,18 @@ func TestTencentClientSend(t *testing.T) {
 				`{"Response":{"Error":{"Code":"FailedOperation.TemplateIncorrectOrUnapproved","Message":"bad template"}}}`,
 				&smsapi.ErrKindDeliveryRejected,
 				"FailedOperation.TemplateIncorrectOrUnapproved",
+			)
+		})
+
+		Convey("documented failure response", func() {
+			// The 失败 output example of
+			// https://cloud.tencent.com/document/api/382/55981.
+			// The code is not one of the mapped ones, so it is reported
+			// without a kind, with the code still available to the console.
+			assertErrorKind(
+				`{"Response":{"SendStatusSet":[{"SerialNo":"","PhoneNumber":"+8618501234444","Fee":0,"SessionContext":"test","Code":"FailedOperation.TemplateParamSetNotMatchApprovedTemplate","Message":"request content does not match the template content","IsoCode":""}],"RequestId":"4e394811-9ebd-4d66-98ee-730b21c4a681"}}`,
+				nil,
+				"FailedOperation.TemplateParamSetNotMatchApprovedTemplate",
 			)
 		})
 

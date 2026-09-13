@@ -59,6 +59,9 @@ func TestSmsbaoClient(t *testing.T) {
 		}
 	}
 
+	// The response body is the plain text status code documented by
+	// https://www.smsbao.com/openapi/213.html and
+	// https://www.smsbao.com/openapi/299.html, where "0" means success.
 	respondText := func(body string) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/plain")
@@ -162,6 +165,7 @@ func TestSmsbaoClient(t *testing.T) {
 		})
 
 		Convey("error codes", func() {
+			// The 错误代码列表 of https://www.smsbao.com/openapi/213.html
 			cases := []struct {
 				Code string
 				Kind *apierrors.Kind

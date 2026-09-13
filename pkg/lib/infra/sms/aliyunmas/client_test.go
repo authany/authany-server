@@ -99,7 +99,9 @@ func TestAliyunMASClient(t *testing.T) {
 			client, closeServer := newClient(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.ParseForm()
 				form = r.PostForm
-				respondJSON(`{"Code":"OK","Message":"成功","Success":true,"RequestId":"req","Model":{"BizId":"biz","RequestId":"req"}}`)(w, r)
+				// The 正常返回示例 of
+				// https://help.aliyun.com/zh/pnvs/developer-reference/api-dypnsapi-2017-05-25-sendsmsverifycode
+				respondJSON(`{"AccessDeniedDetail": "无","Message": "成功 ","RequestId": "CC3BB6D2-2FDF-4321-9DCE-B38165CE4C47","Model": {"VerifyCode": "4232","RequestId": "a3671ccf-0102-4c8e-8797-a3678e091d09","OutId": "1231231313","BizId": "112231421412414124123^4"},"Code": "OK","Success": true}`)(w, r)
 			}, credentials())
 			defer closeServer()
 
@@ -175,6 +177,10 @@ func TestAliyunMASClient(t *testing.T) {
 		})
 
 		Convey("error codes", func() {
+			// The action specific codes are the ones of the 错误码 table of
+			// https://help.aliyun.com/zh/pnvs/developer-reference/api-dypnsapi-2017-05-25-sendsmsverifycode
+			// and the authentication codes are the common ones of
+			// https://help.aliyun.com/zh/sms/developer-reference/api-error-codes
 			cases := []struct {
 				Code string
 				Kind *apierrors.Kind

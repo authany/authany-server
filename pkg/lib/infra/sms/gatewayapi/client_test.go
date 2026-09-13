@@ -55,7 +55,8 @@ func TestGatewayAPIClientSend(t *testing.T) {
 				receivedHeader = r.Header.Clone()
 				receivedPath = r.URL.Path
 				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write([]byte(`{"ids":[41008]}`))
+				// The example response of https://gatewayapi.com/docs/apis/rest/
+				_, _ = w.Write([]byte(`{"ids":[421332671],"usage":{"countries":{"DK":2},"currency":"DKK","total_cost":0.30}}`))
 			})
 			defer server.Close()
 
@@ -122,9 +123,10 @@ func TestGatewayAPIClientSend(t *testing.T) {
 		})
 
 		Convey("unauthorized IP-address", func() {
+			// The failed request example of https://gatewayapi.com/docs/apis/rest/
 			assertErrorKind(
 				http.StatusForbidden,
-				`{"code":"0x0213","message":"Unauthorized IP-address: 1.1.1.1"}`,
+				`{"code": "0x0213","incident_uuid": "d8127429-fa0c-4316-b1f2-e610c3958f43","message": "Unauthorized IP-address: %1","variables": ["1.2.3.4"]}`,
 				&smsapi.ErrKindAuthenticationFailed,
 				"0x0213",
 			)

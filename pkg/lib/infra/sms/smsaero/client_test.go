@@ -54,7 +54,9 @@ func TestSmsAeroClientSend(t *testing.T) {
 				receivedBody, _ = io.ReadAll(r.Body)
 				receivedHeader = r.Header.Clone()
 				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write([]byte(`{"success":true,"data":[{"id":5,"from":"SMS Aero","number":"79990000000","text":"123456 is your code","status":1,"extendStatus":"delivery","channel":"FREE SIGN","cost":2.2,"dateCreate":1532342510,"dateSend":1532342510}],"message":null}`))
+				// The sms/send response example of
+				// https://smsaero.ru/integration/documentation/api/
+				_, _ = w.Write([]byte(`{"success": true,"data": [{"id": 1,"from": "SMS Aero","number": "79990000000","text": "your text","status": 0,"extendStatus": "queue","channel": "FREE SIGN","cost": 1.95,"dateCreate": 1510656981,"dateSend": 1510656981}],"message": null}`))
 			})
 			defer server.Close()
 
@@ -166,11 +168,13 @@ func TestSmsAeroClientSend(t *testing.T) {
 		})
 
 		Convey("delivery rejected", func() {
+			// "Not enough money" with HTTP 402 is the documented error of
+			// https://smsaero.ru/integration/documentation/api/#param-errors
 			assertErrorKind(
-				http.StatusOK,
-				`{"success":false,"data":null,"message":"no credits"}`,
+				http.StatusPaymentRequired,
+				`{"success": false,"data": null,"message": "Not enough money"}`,
 				&smsapi.ErrKindDeliveryRejected,
-				"no credits",
+				"Not enough money",
 			)
 		})
 
