@@ -746,7 +746,17 @@ const MFAConfigurationScreen: React.VFC = function MFAConfigurationScreen() {
           null ||
         secretConfig.secretConfig?.smsProviderSecrets?.aliyunCredentials !=
           null ||
+        secretConfig.secretConfig?.smsProviderSecrets?.aliyunMASCredentials !=
+          null ||
         secretConfig.secretConfig?.smsProviderSecrets?.tencentCredentials !=
+          null ||
+        secretConfig.secretConfig?.smsProviderSecrets?.yunpianCredentials !=
+          null ||
+        secretConfig.secretConfig?.smsProviderSecrets?.smsbaoCredentials !=
+          null ||
+        secretConfig.secretConfig?.smsProviderSecrets?.gatewayAPICredentials !=
+          null ||
+        secretConfig.secretConfig?.smsProviderSecrets?.smsAeroCredentials !=
           null ||
         secretConfig.secretConfig?.smsProviderSecrets
           ?.customSMSProviderCredentials != null,
@@ -758,7 +768,12 @@ const MFAConfigurationScreen: React.VFC = function MFAConfigurationScreen() {
     configForm.state,
     secretConfig.secretConfig?.smsProviderSecrets?.twilioCredentials,
     secretConfig.secretConfig?.smsProviderSecrets?.aliyunCredentials,
+    secretConfig.secretConfig?.smsProviderSecrets?.aliyunMASCredentials,
     secretConfig.secretConfig?.smsProviderSecrets?.tencentCredentials,
+    secretConfig.secretConfig?.smsProviderSecrets?.yunpianCredentials,
+    secretConfig.secretConfig?.smsProviderSecrets?.smsbaoCredentials,
+    secretConfig.secretConfig?.smsProviderSecrets?.gatewayAPICredentials,
+    secretConfig.secretConfig?.smsProviderSecrets?.smsAeroCredentials,
     secretConfig.secretConfig?.smsProviderSecrets?.customSMSProviderCredentials,
     secretConfig.secretConfig?.smtpSecret,
   ]);

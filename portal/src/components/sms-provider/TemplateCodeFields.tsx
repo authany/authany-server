@@ -2,6 +2,42 @@ import React, { useCallback } from "react";
 import { Text } from "@radix-ui/themes";
 import { FormattedMessage } from "../../intl";
 import { TextField } from "../v2/TextField/TextField";
+import { ErrorParseRule, makeLocalErrorParseRule } from "../../error/parse";
+import { LocalError } from "../../error/error";
+
+export const localErrorSignNameRequired: LocalError = {
+  errorName: "__local",
+  reason: "__local",
+  info: {
+    error: {
+      messageID: "errors.validation.required",
+    },
+  },
+};
+
+const signNameErrorRules: ErrorParseRule[] = [
+  makeLocalErrorParseRule(
+    localErrorSignNameRequired,
+    localErrorSignNameRequired.info.error
+  ),
+];
+
+export const localErrorTemplateCodeRequired: LocalError = {
+  errorName: "__local",
+  reason: "__local",
+  info: {
+    error: {
+      messageID: "errors.validation.required",
+    },
+  },
+};
+
+const templateCodeErrorRules: ErrorParseRule[] = [
+  makeLocalErrorParseRule(
+    localErrorTemplateCodeRequired,
+    localErrorTemplateCodeRequired.info.error
+  ),
+];
 
 export const SMS_TEMPLATE_NAMES = [
   "verification_sms.txt",
@@ -87,8 +123,8 @@ function TemplateCodeOverrideField({
       value={value}
       onChange={onChangeValue}
       disabled={disabled}
-      parentJSONPointer={/\/secrets\/\d+\/data/}
-      fieldName="template_codes"
+      parentJSONPointer={/\/secrets\/\d+\/data\/template_codes/}
+      fieldName={templateName}
     />
   );
 }
@@ -169,6 +205,7 @@ export function TemplateCodeFields({
         disabled={disabled}
         parentJSONPointer={/\/secrets\/\d+\/data/}
         fieldName="sign_name"
+        errorRules={signNameErrorRules}
       />
       <TextField
         size="2"
@@ -186,6 +223,7 @@ export function TemplateCodeFields({
         disabled={disabled}
         parentJSONPointer={/\/secrets\/\d+\/data/}
         fieldName="template_code"
+        errorRules={templateCodeErrorRules}
       />
       {overseasTemplateCode !== undefined ? (
         <TextField

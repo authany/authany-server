@@ -446,7 +446,17 @@ export interface VerificationRateLimitsSMSConfig {
   trigger_per_user?: RateLimitConfig;
 }
 
-export type SMSProvider = "nexmo" | "twilio" | "custom" | "aliyun" | "tencent";
+export type SMSProvider =
+  | "nexmo"
+  | "twilio"
+  | "custom"
+  | "aliyun"
+  | "tencent"
+  | "aliyun_mas"
+  | "yunpian"
+  | "smsbao"
+  | "gatewayapi"
+  | "smsaero";
 
 export type SMSGatewayConfigUseConfigFrom =
   | "environment_variable"
@@ -859,7 +869,12 @@ export interface SAMLIdpSigningSecrets {
 export interface SMSProviderSecrets {
   twilioCredentials?: SMSProviderTwilioCredentials | null;
   aliyunCredentials?: SMSProviderAliyunCredentials | null;
+  aliyunMASCredentials?: SMSProviderAliyunMASCredentials | null;
   tencentCredentials?: SMSProviderTencentCredentials | null;
+  yunpianCredentials?: SMSProviderYunpianCredentials | null;
+  smsbaoCredentials?: SMSProviderSmsbaoCredentials | null;
+  gatewayAPICredentials?: SMSProviderGatewayAPICredentials | null;
+  smsAeroCredentials?: SMSProviderSmsAeroCredentials | null;
   customSMSProviderCredentials?: SMSProviderCustomSMSProviderSecrets | null;
 }
 
@@ -880,6 +895,36 @@ export interface SMSProviderTencentCredentials {
   signName?: string | null;
   templateCode?: string | null;
   templateCodes?: Record<string, string> | null;
+}
+
+export interface SMSProviderAliyunMASCredentials {
+  accessKeyID: string;
+  accessKeySecret?: string | null;
+  signName?: string | null;
+  templateCode?: string | null;
+  templateCodes?: Record<string, string> | null;
+}
+
+export interface SMSProviderYunpianCredentials {
+  apiKey?: string | null;
+}
+
+export interface SMSProviderSmsbaoCredentials {
+  username: string;
+  passwordOrAPIKey?: string | null;
+  goodsID?: string | null;
+}
+
+export interface SMSProviderGatewayAPICredentials {
+  endpoint?: string | null;
+  apiToken?: string | null;
+  sender?: string | null;
+}
+
+export interface SMSProviderSmsAeroCredentials {
+  email: string;
+  apiKey?: string | null;
+  senderName?: string | null;
 }
 
 export interface SMSProviderTwilioCredentials {
