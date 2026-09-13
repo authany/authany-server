@@ -225,6 +225,82 @@ func TestSmsbaoClient(t *testing.T) {
 			So(errors.As(err, &sendError), ShouldBeTrue)
 			So(sendError.ProviderType, ShouldEqual, config.SMSProviderSmsbao)
 			So(sendError.APIErrorKind, ShouldEqual, &smsapi.ErrKindTimeout)
+
+			shouldNotContainCredentials(err)
+		})
+
+		Convey("the error of a failed connection does not contain the credentials", func() {
+			client, closeServer := newClient(respondText("0"), credentials())
+			// The server is closed so that the connection fails.
+			closeServer()
+
+			err := send(client, "+8613800138000", "verification_sms.txt")
+			So(err, ShouldNotBeNil)
+
+			shouldNotContainCredentials(err)
+		})
+
+		Convey("the credentials do not reach the instrumentation layer", func() {
+			var query url.Values
+			client, closeServer := newClient(func(w http.ResponseWriter, r *http.Request) {
+				query = r.URL.Query()
+				respondText("0")(w, r)
+			}, credentials())
+			defer closeServer()
+
+			// recording sits where otelhttp sits, that is,
+			// between the two RoundTrippers of the pair.
+			recording := &recordingRoundTripper{
+				Base: restoreQueryRoundTripper{Base: client.Client.Transport},
+			}
+			client.Client = &http.Client{Transport: stripQueryRoundTripper{Base: recording}}
+
+			err := send(client, "+8613800138000", "verification_sms.txt")
+			So(err, ShouldBeNil)
+
+			So(recording.URLs, ShouldHaveLength, 1)
+			So(recording.URLs[0], ShouldEndWith, PathDomestic)
+			So(recording.URLs[0], ShouldNotContainSubstring, "?")
+			So(recording.URLs[0], ShouldNotContainSubstring, "tom")
+			So(recording.URLs[0], ShouldNotContainSubstring, "9b11127a9701975c734b8aee81ee3526")
+
+			// The request actually sent still carries the query.
+			So(query.Get("u"), ShouldEqual, "tom")
+			So(query.Get("p"), ShouldEqual, "9b11127a9701975c734b8aee81ee3526")
+			So(query.Get("m"), ShouldEqual, "13800138000")
 		})
 	})
+}
+
+func TestNewSmsbaoClient(t *testing.T) {
+	Convey("NewSmsbaoClient", t, func() {
+		client := NewSmsbaoClient(&config.SmsbaoCredentials{
+			Username:         "tom",
+			PasswordOrAPIKey: "9b11127a9701975c734b8aee81ee3526",
+		})
+		// The query, which carries the credentials, is taken out of the URL
+		// before the request reaches otelhttp.
+		_, ok := client.Client.Transport.(stripQueryRoundTripper)
+		So(ok, ShouldBeTrue)
+	})
+}
+
+func shouldNotContainCredentials(err error) {
+	message := err.Error()
+	// The path is kept, so the assertions below are not vacuous.
+	So(message, ShouldContainSubstring, PathDomestic)
+	So(message, ShouldNotContainSubstring, "u=")
+	So(message, ShouldNotContainSubstring, "p=")
+	So(message, ShouldNotContainSubstring, "tom")
+	So(message, ShouldNotContainSubstring, "9b11127a9701975c734b8aee81ee3526")
+}
+
+type recordingRoundTripper struct {
+	Base http.RoundTripper
+	URLs []string
+}
+
+func (t *recordingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.URLs = append(t.URLs, req.URL.String())
+	return t.Base.RoundTrip(req)
 }
