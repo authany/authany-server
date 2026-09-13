@@ -961,6 +961,8 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -991,6 +993,8 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -2021,6 +2025,8 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -2051,6 +2057,8 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -3194,6 +3202,8 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -3224,6 +3234,8 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -5419,6 +5431,8 @@ func newOAuthJWKSHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -5449,6 +5463,8 @@ func newOAuthJWKSHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -6307,6 +6323,8 @@ func newOAuthUserInfoHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -6337,6 +6355,8 @@ func newOAuthUserInfoHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -7270,6 +7290,8 @@ func newOAuthEndSessionHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -7300,6 +7322,8 @@ func newOAuthEndSessionHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -8224,6 +8248,8 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -8254,6 +8280,8 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -9336,6 +9364,8 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -9366,6 +9396,8 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -10435,6 +10467,8 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -10465,6 +10499,8 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -12109,6 +12145,8 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -12139,6 +12177,8 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -13325,6 +13365,8 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -13355,6 +13397,8 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -14548,6 +14592,8 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -14578,6 +14624,8 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -15788,6 +15836,8 @@ func newWechatCallbackHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -15818,6 +15868,8 @@ func newWechatCallbackHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -16899,6 +16951,8 @@ func newWebAppAuthflowV2VerifyLoginLinkOTPHandler(p *deps.RequestProvider) http.
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -16929,6 +16983,8 @@ func newWebAppAuthflowV2VerifyLoginLinkOTPHandler(p *deps.RequestProvider) http.
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -18020,6 +18076,8 @@ func newWebAppAuthflowV2SettingsHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -18050,6 +18108,8 @@ func newWebAppAuthflowV2SettingsHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -19157,6 +19217,8 @@ func newWebAppAuthflowV2SettingsProfileEditHandler(p *deps.RequestProvider) http
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -19187,6 +19249,8 @@ func newWebAppAuthflowV2SettingsProfileEditHandler(p *deps.RequestProvider) http
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -20290,6 +20354,8 @@ func newWebAppAuthflowV2SettingsBiometricHandler(p *deps.RequestProvider) http.H
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -20320,6 +20386,8 @@ func newWebAppAuthflowV2SettingsBiometricHandler(p *deps.RequestProvider) http.H
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -21438,6 +21506,8 @@ func newWebAppAuthflowV2SettingsMFAHandler(p *deps.RequestProvider) http.Handler
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -21468,6 +21538,8 @@ func newWebAppAuthflowV2SettingsMFAHandler(p *deps.RequestProvider) http.Handler
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -22558,6 +22630,8 @@ func newWebAppAuthflowV2SettingsMFAViewRecoveryCodeHandler(p *deps.RequestProvid
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -22588,6 +22662,8 @@ func newWebAppAuthflowV2SettingsMFAViewRecoveryCodeHandler(p *deps.RequestProvid
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -23705,6 +23781,8 @@ func newWebAppAuthflowV2SettingsMFACreatePasswordHandler(p *deps.RequestProvider
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -23735,6 +23813,8 @@ func newWebAppAuthflowV2SettingsMFACreatePasswordHandler(p *deps.RequestProvider
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -24851,6 +24931,8 @@ func newWebAppAuthflowV2SettingsMFAPasswordHandler(p *deps.RequestProvider) http
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -24881,6 +24963,8 @@ func newWebAppAuthflowV2SettingsMFAPasswordHandler(p *deps.RequestProvider) http
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -25997,6 +26081,8 @@ func newWebAppAuthflowV2SettingsMFAChangePasswordHandler(p *deps.RequestProvider
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -26027,6 +26113,8 @@ func newWebAppAuthflowV2SettingsMFAChangePasswordHandler(p *deps.RequestProvider
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -27132,6 +27220,8 @@ func newWebAppAuthflowV2SettingsTOTPHandler(p *deps.RequestProvider) http.Handle
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -27162,6 +27252,8 @@ func newWebAppAuthflowV2SettingsTOTPHandler(p *deps.RequestProvider) http.Handle
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -28287,6 +28379,8 @@ func newWebAppAuthflowV2SettingsMFACreateTOTPHandler(p *deps.RequestProvider) ht
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -28317,6 +28411,8 @@ func newWebAppAuthflowV2SettingsMFACreateTOTPHandler(p *deps.RequestProvider) ht
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -29433,6 +29529,8 @@ func newWebAppAuthflowV2SettingsMFAEnterTOTPHandler(p *deps.RequestProvider) htt
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -29463,6 +29561,8 @@ func newWebAppAuthflowV2SettingsMFAEnterTOTPHandler(p *deps.RequestProvider) htt
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -30580,6 +30680,8 @@ func newWebAppAuthflowV2SettingsOOBOTPHandler(p *deps.RequestProvider) http.Hand
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -30610,6 +30712,8 @@ func newWebAppAuthflowV2SettingsOOBOTPHandler(p *deps.RequestProvider) http.Hand
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -31736,6 +31840,8 @@ func newWebAppAuthflowV2SettingsMFACreateOOBOTPHandler(p *deps.RequestProvider) 
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -31766,6 +31872,8 @@ func newWebAppAuthflowV2SettingsMFACreateOOBOTPHandler(p *deps.RequestProvider) 
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -32882,6 +32990,8 @@ func newWebAppAuthflowV2SettingsMFAEnterOOBOTPHandler(p *deps.RequestProvider) h
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -32912,6 +33022,8 @@ func newWebAppAuthflowV2SettingsMFAEnterOOBOTPHandler(p *deps.RequestProvider) h
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -34020,6 +34132,8 @@ func newWebAppAuthflowV2SettingsChangePasskeyHandler(p *deps.RequestProvider) ht
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -34050,6 +34164,8 @@ func newWebAppAuthflowV2SettingsChangePasskeyHandler(p *deps.RequestProvider) ht
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -35188,6 +35304,8 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -35218,6 +35336,8 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -36335,6 +36455,8 @@ func newWebAppAuthflowV2SettingsChangePasswordHandler(p *deps.RequestProvider) h
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -36365,6 +36487,8 @@ func newWebAppAuthflowV2SettingsChangePasswordHandler(p *deps.RequestProvider) h
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -37470,6 +37594,8 @@ func newWebAppAuthflowV2SettingsDeleteAccountHandler(p *deps.RequestProvider) ht
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -37500,6 +37626,8 @@ func newWebAppAuthflowV2SettingsDeleteAccountHandler(p *deps.RequestProvider) ht
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -38601,6 +38729,8 @@ func newWebAppAuthflowV2SettingsDeleteAccountSuccessHandler(p *deps.RequestProvi
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -38631,6 +38761,8 @@ func newWebAppAuthflowV2SettingsDeleteAccountSuccessHandler(p *deps.RequestProvi
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -39712,6 +39844,8 @@ func newWebAppAuthflowV2SettingsAdvancedSettingsHandler(p *deps.RequestProvider)
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -39742,6 +39876,8 @@ func newWebAppAuthflowV2SettingsAdvancedSettingsHandler(p *deps.RequestProvider)
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -40819,6 +40955,8 @@ func newWebAppLogoutHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -40849,6 +40987,8 @@ func newWebAppLogoutHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -42027,6 +42167,8 @@ func newWebAppReturnHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -42057,6 +42199,8 @@ func newWebAppReturnHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -43134,6 +43278,8 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -43164,6 +43310,8 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -44350,6 +44498,8 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -44380,6 +44530,8 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -45566,6 +45718,8 @@ func newWebAppAuthflowV2NotFoundHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -45596,6 +45750,8 @@ func newWebAppAuthflowV2NotFoundHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -46689,6 +46845,8 @@ func newWebAppPasskeyCreationOptionsHandler(p *deps.RequestProvider) http.Handle
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -46719,6 +46877,8 @@ func newWebAppPasskeyCreationOptionsHandler(p *deps.RequestProvider) http.Handle
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -47737,6 +47897,8 @@ func newWebAppPasskeyRequestOptionsHandler(p *deps.RequestProvider) http.Handler
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -47767,6 +47929,8 @@ func newWebAppPasskeyRequestOptionsHandler(p *deps.RequestProvider) http.Handler
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -49288,6 +49452,8 @@ func newWebAppFeatureDisabledHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -49318,6 +49484,8 @@ func newWebAppFeatureDisabledHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -50395,6 +50563,8 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -50425,6 +50595,8 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -51670,6 +51842,8 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -51700,6 +51874,8 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -52729,6 +52905,8 @@ func newAPIWorkflowGetHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -52759,6 +52937,8 @@ func newAPIWorkflowGetHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -53740,6 +53920,8 @@ func newAPIWorkflowInputHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -53770,6 +53952,8 @@ func newAPIWorkflowInputHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -54785,6 +54969,8 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -54815,6 +55001,8 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -55846,6 +56034,8 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -55876,6 +56066,8 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -56983,6 +57175,8 @@ func newAPIAuthenticationFlowV1InputHandler(p *deps.RequestProvider) http.Handle
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -57013,6 +57207,8 @@ func newAPIAuthenticationFlowV1InputHandler(p *deps.RequestProvider) http.Handle
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -58088,6 +58284,8 @@ func newAPIAuthenticationFlowV1GetHandler(p *deps.RequestProvider) http.Handler 
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -58118,6 +58316,8 @@ func newAPIAuthenticationFlowV1GetHandler(p *deps.RequestProvider) http.Handler 
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -59246,6 +59446,8 @@ func newAPIAccountManagementV1IdentificationHandler(p *deps.RequestProvider) htt
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -59276,6 +59478,8 @@ func newAPIAccountManagementV1IdentificationHandler(p *deps.RequestProvider) htt
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -60184,6 +60388,8 @@ func newAPIAccountManagementV1IdentificationOAuthHandler(p *deps.RequestProvider
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -60214,6 +60420,8 @@ func newAPIAccountManagementV1IdentificationOAuthHandler(p *deps.RequestProvider
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -61110,6 +61318,8 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -61140,6 +61350,8 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -62350,6 +62562,8 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -62380,6 +62594,8 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -63583,6 +63799,8 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -63613,6 +63831,8 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -64806,6 +65026,8 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -64836,6 +65058,8 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -66026,6 +66250,8 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -66056,6 +66282,8 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -67250,6 +67478,8 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -67280,6 +67510,8 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -68472,6 +68704,8 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -68502,6 +68736,8 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -69692,6 +69928,8 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -69722,6 +69960,8 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -70908,6 +71148,8 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -70938,6 +71180,8 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -72124,6 +72368,8 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -72154,6 +72400,8 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -73345,6 +73593,8 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -73375,6 +73625,8 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -74567,6 +74819,8 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -74597,6 +74851,8 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -75783,6 +76039,8 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -75813,6 +76071,8 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -77003,6 +77263,8 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -77033,6 +77295,8 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -78219,6 +78483,8 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -78249,6 +78515,8 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -79435,6 +79703,8 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -79465,6 +79735,8 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -80651,6 +80923,8 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -80681,6 +80955,8 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -81867,6 +82143,8 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -81897,6 +82175,8 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -83090,6 +83370,8 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -83120,6 +83402,8 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -84308,6 +84592,8 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -84338,6 +84624,8 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -85525,6 +85813,8 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -85555,6 +85845,8 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -86740,6 +87032,8 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -86770,6 +87064,8 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -88050,6 +88346,8 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -88080,6 +88378,8 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -89686,6 +89986,8 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -89716,6 +90018,8 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -90902,6 +91206,8 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -90932,6 +91238,8 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -92118,6 +92426,8 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -92148,6 +92458,8 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -93474,6 +93786,8 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -93504,6 +93818,8 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -94692,6 +95008,8 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -94722,6 +95040,8 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -95887,6 +96207,8 @@ func newSAMLMetadataHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -95917,6 +96239,8 @@ func newSAMLMetadataHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -96804,6 +97128,8 @@ func newSAMLLoginHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -96834,6 +97160,8 @@ func newSAMLLoginHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -97751,6 +98079,8 @@ func newSAMLLoginFinishHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -97781,6 +98111,8 @@ func newSAMLLoginFinishHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -98691,6 +99023,8 @@ func newSAMLLogoutHandler(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -98721,6 +99055,8 @@ func newSAMLLogoutHandler(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -99656,6 +99992,8 @@ func newWebAppAuthflowV2SettingsProfile(p *deps.RequestProvider) http.Handler {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -99686,6 +100024,8 @@ func newWebAppAuthflowV2SettingsProfile(p *deps.RequestProvider) http.Handler {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -100775,6 +101115,8 @@ func newWebAppAuthflowV2SettingsIdentityAddEmailHandler(p *deps.RequestProvider)
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -100805,6 +101147,8 @@ func newWebAppAuthflowV2SettingsIdentityAddEmailHandler(p *deps.RequestProvider)
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -101909,6 +102253,8 @@ func newWebAppAuthflowV2SettingsIdentityEditEmailHandler(p *deps.RequestProvider
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -101939,6 +102285,8 @@ func newWebAppAuthflowV2SettingsIdentityEditEmailHandler(p *deps.RequestProvider
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -103045,6 +103393,8 @@ func newWebAppAuthflowV2SettingsIdentityListEmailHandler(p *deps.RequestProvider
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -103075,6 +103425,8 @@ func newWebAppAuthflowV2SettingsIdentityListEmailHandler(p *deps.RequestProvider
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -104167,6 +104519,8 @@ func newWebAppAuthflowV2SettingsIdentityVerifyEmailHandler(p *deps.RequestProvid
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -104197,6 +104551,8 @@ func newWebAppAuthflowV2SettingsIdentityVerifyEmailHandler(p *deps.RequestProvid
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -105306,6 +105662,8 @@ func newWebAppAuthflowV2SettingsIdentityViewEmailHandler(p *deps.RequestProvider
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -105336,6 +105694,8 @@ func newWebAppAuthflowV2SettingsIdentityViewEmailHandler(p *deps.RequestProvider
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -106451,6 +106811,8 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryEmailHandler(p *deps.Reques
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -106481,6 +106843,8 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryEmailHandler(p *deps.Reques
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -107578,6 +107942,8 @@ func newWebAppAuthflowV2SettingsIdentityAddPhoneHandler(p *deps.RequestProvider)
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -107608,6 +107974,8 @@ func newWebAppAuthflowV2SettingsIdentityAddPhoneHandler(p *deps.RequestProvider)
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -108713,6 +109081,8 @@ func newWebAppAuthflowV2SettingsIdentityEditPhoneHandler(p *deps.RequestProvider
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -108743,6 +109113,8 @@ func newWebAppAuthflowV2SettingsIdentityEditPhoneHandler(p *deps.RequestProvider
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -109850,6 +110222,8 @@ func newWebAppAuthflowV2SettingsIdentityListPhoneHandler(p *deps.RequestProvider
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -109880,6 +110254,8 @@ func newWebAppAuthflowV2SettingsIdentityListPhoneHandler(p *deps.RequestProvider
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -110972,6 +111348,8 @@ func newWebAppAuthflowV2SettingsIdentityViewPhoneHandler(p *deps.RequestProvider
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -111002,6 +111380,8 @@ func newWebAppAuthflowV2SettingsIdentityViewPhoneHandler(p *deps.RequestProvider
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -112112,6 +112492,8 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryPhoneHandler(p *deps.Reques
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -112142,6 +112524,8 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryPhoneHandler(p *deps.Reques
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -113239,6 +113623,8 @@ func newWebAppAuthflowV2SettingsIdentityVerifyPhoneHandler(p *deps.RequestProvid
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -113269,6 +113655,8 @@ func newWebAppAuthflowV2SettingsIdentityVerifyPhoneHandler(p *deps.RequestProvid
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -114378,6 +114766,8 @@ func newWebAppAuthflowV2SettingsIdentityListUsernameHandler(p *deps.RequestProvi
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -114408,6 +114798,8 @@ func newWebAppAuthflowV2SettingsIdentityListUsernameHandler(p *deps.RequestProvi
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -115500,6 +115892,8 @@ func newWebAppAuthflowV2SettingsIdentityNewUsernameHandler(p *deps.RequestProvid
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -115530,6 +115924,8 @@ func newWebAppAuthflowV2SettingsIdentityNewUsernameHandler(p *deps.RequestProvid
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -116635,6 +117031,8 @@ func newWebAppAuthflowV2SettingsIdentityViewUsernameHandler(p *deps.RequestProvi
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -116665,6 +117063,8 @@ func newWebAppAuthflowV2SettingsIdentityViewUsernameHandler(p *deps.RequestProvi
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -117773,6 +118173,8 @@ func newWebAppAuthflowV2SettingsIdentityEditUsernameHandler(p *deps.RequestProvi
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -117803,6 +118205,8 @@ func newWebAppAuthflowV2SettingsIdentityEditUsernameHandler(p *deps.RequestProvi
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -118897,6 +119301,8 @@ func newWebAppAuthflowV2SettingsIdentityListOAuthHandler(p *deps.RequestProvider
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -118927,6 +119333,8 @@ func newWebAppAuthflowV2SettingsIdentityListOAuthHandler(p *deps.RequestProvider
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -120703,6 +121111,8 @@ func newSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -120733,6 +121143,8 @@ func newSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -121607,6 +122019,8 @@ func newWebAppSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -121637,6 +122051,8 @@ func newWebAppSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -122700,6 +123116,8 @@ func newWebAppUIParamMiddleware(p *deps.RequestProvider) httproute.Middleware {
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -122730,6 +123148,8 @@ func newWebAppUIParamMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
@@ -123683,6 +124103,8 @@ func newSettingsSubRoutesMiddleware(p *deps.RequestProvider) httproute.Middlewar
 	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -123713,6 +124135,8 @@ func newSettingsSubRoutesMiddleware(p *deps.RequestProvider) httproute.Middlewar
 		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,

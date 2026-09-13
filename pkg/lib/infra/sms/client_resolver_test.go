@@ -30,9 +30,11 @@ func TestClientResolver(t *testing.T) {
 		}
 
 		type AuthgesrSecretsYAML struct {
-			Nexmo  *config.NexmoCredentials        `json:"nexmo"`
-			Twilio *config.TwilioCredentials       `json:"twilio"`
-			Custom *config.CustomSMSProviderConfig `json:"custom"`
+			Nexmo   *config.NexmoCredentials        `json:"nexmo"`
+			Twilio  *config.TwilioCredentials       `json:"twilio"`
+			Custom  *config.CustomSMSProviderConfig `json:"custom"`
+			Aliyun  *config.AliyunCredentials       `json:"aliyun"`
+			Tencent *config.TencentCredentials      `json:"tencent"`
 		}
 
 		type EnvConfig struct {
@@ -94,10 +96,14 @@ func TestClientResolver(t *testing.T) {
 				var authgearSecretsYAMLNexmo *config.NexmoCredentials
 				var authgearSecretsYAMLTwilio *config.TwilioCredentials
 				var authgearSecretsYAMLCustom *config.CustomSMSProviderConfig
+				var authgearSecretsYAMLAliyun *config.AliyunCredentials
+				var authgearSecretsYAMLTencent *config.TencentCredentials
 				if authgearSecretsYAML != nil {
 					authgearSecretsYAMLNexmo = authgearSecretsYAML.Nexmo
 					authgearSecretsYAMLTwilio = authgearSecretsYAML.Twilio
 					authgearSecretsYAMLCustom = authgearSecretsYAML.Custom
+					authgearSecretsYAMLAliyun = authgearSecretsYAML.Aliyun
+					authgearSecretsYAMLTencent = authgearSecretsYAML.Tencent
 				}
 
 				var smsGatewayEnvironmentConfig config.SMSGatewayEnvironmentConfig
@@ -157,6 +163,8 @@ func TestClientResolver(t *testing.T) {
 					AuthgearSecretsYAMLNexmoCredentials:        authgearSecretsYAMLNexmo,
 					AuthgearSecretsYAMLTwilioCredentials:       authgearSecretsYAMLTwilio,
 					AuthgearSecretsYAMLCustomSMSProviderConfig: authgearSecretsYAMLCustom,
+				AuthgearSecretsYAMLAliyunCredentials:       authgearSecretsYAMLAliyun,
+				AuthgearSecretsYAMLTencentCredentials:      authgearSecretsYAMLTencent,
 					EnvironmentDefaultProvider:                 environmentDefaultProvider,
 					EnvironmentDefaultUseConfigFrom:            environmentDefaultUseConfigFrom,
 					EnvironmentNexmoCredentials:                environmentNexmoCredentials,
@@ -197,6 +205,22 @@ func toMap(c SMSClientCredentials) map[string]any {
 		return map[string]any{
 			"url":     v.URL,
 			"timeout": float64(*v.Timeout),
+		}
+	case *AliyunClientCredentials:
+		return map[string]any{
+			"access_key_id":     v.AccessKeyID,
+			"access_key_secret": v.AccessKeySecret,
+			"sign_name":         v.SignName,
+			"template_code":     v.TemplateCode,
+		}
+	case *TencentClientCredentials:
+		return map[string]any{
+			"secret_id":     v.SecretID,
+			"secret_key":    v.SecretKey,
+			"sdk_app_id":    v.SDKAppID,
+			"region":        v.Region,
+			"sign_name":     v.SignName,
+			"template_code": v.TemplateCode,
 		}
 	}
 	return nil
