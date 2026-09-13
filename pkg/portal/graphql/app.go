@@ -215,6 +215,59 @@ var smsProviderTwilioCredentials = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var smsProviderAliyunCredentials = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "SMSProviderAliyunCredentials",
+	Description: "Aliyun SMS credentials",
+	Fields: graphql.Fields{
+		"accessKeyID": &graphql.Field{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"accessKeySecret": &graphql.Field{
+			Type: graphql.String,
+		},
+		"signName": &graphql.Field{
+			Type: graphql.String,
+		},
+		"templateCode": &graphql.Field{
+			Type: graphql.String,
+		},
+		"templateCodes": &graphql.Field{
+			Type: SMSTemplateCodes,
+		},
+		"overseasTemplateCode": &graphql.Field{
+			Type: graphql.String,
+		},
+	},
+})
+
+var smsProviderTencentCredentials = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "SMSProviderTencentCredentials",
+	Description: "Tencent Cloud SMS credentials",
+	Fields: graphql.Fields{
+		"secretID": &graphql.Field{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"secretKey": &graphql.Field{
+			Type: graphql.String,
+		},
+		"sdkAppID": &graphql.Field{
+			Type: graphql.String,
+		},
+		"region": &graphql.Field{
+			Type: graphql.String,
+		},
+		"signName": &graphql.Field{
+			Type: graphql.String,
+		},
+		"templateCode": &graphql.Field{
+			Type: graphql.String,
+		},
+		"templateCodes": &graphql.Field{
+			Type: SMSTemplateCodes,
+		},
+	},
+})
+
 var smsProviderCustomSmsProviderSecrets = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "SMSProviderCustomSMSProviderSecrets",
 	Description: "Custom SMS Provider configs",
@@ -234,6 +287,12 @@ var smsProviderSecret = graphql.NewObject(graphql.ObjectConfig{
 	Fields: graphql.Fields{
 		"twilioCredentials": &graphql.Field{
 			Type: smsProviderTwilioCredentials,
+		},
+		"aliyunCredentials": &graphql.Field{
+			Type: smsProviderAliyunCredentials,
+		},
+		"tencentCredentials": &graphql.Field{
+			Type: smsProviderTencentCredentials,
 		},
 		"customSMSProviderCredentials": &graphql.Field{
 			Type: smsProviderCustomSmsProviderSecrets,
@@ -349,7 +408,7 @@ var secretKeyToConfigKeyMap map[AppSecretKey][]config.SecretKey = map[AppSecretK
 	AppSecretKeySmtpSecret:                    {config.SMTPServerCredentialsKey},
 	AppSecretKeyOauthClientSecrets:            {config.OAuthClientCredentialsKey},
 	AppSecretKeyBotProtectionProviderSecret:   {config.BotProtectionProviderCredentialsKey},
-	AppSecretKeySMSProviderSecrets:            {config.TwilioCredentialsKey, config.CustomSMSProviderConfigKey},
+	AppSecretKeySMSProviderSecrets:            {config.TwilioCredentialsKey, config.AliyunCredentialsKey, config.TencentCredentialsKey, config.CustomSMSProviderConfigKey},
 }
 
 const typeApp = "App"

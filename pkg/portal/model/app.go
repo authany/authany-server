@@ -152,8 +152,29 @@ type SMSProviderCustomSMSProviderConfigs struct {
 	Timeout *int   `json:"timeout,omitempty"`
 }
 
+type SMSProviderAliyunCredentials struct {
+	AccessKeyID          string            `json:"accessKeyID,omitempty"`
+	AccessKeySecret      *string           `json:"accessKeySecret,omitempty"`
+	SignName             string            `json:"signName,omitempty"`
+	TemplateCode         string            `json:"templateCode,omitempty"`
+	TemplateCodes        map[string]string `json:"templateCodes,omitempty"`
+	OverseasTemplateCode string            `json:"overseasTemplateCode,omitempty"`
+}
+
+type SMSProviderTencentCredentials struct {
+	SecretID      string            `json:"secretID,omitempty"`
+	SecretKey     *string           `json:"secretKey,omitempty"`
+	SDKAppID      string            `json:"sdkAppID,omitempty"`
+	Region        string            `json:"region,omitempty"`
+	SignName      string            `json:"signName,omitempty"`
+	TemplateCode  string            `json:"templateCode,omitempty"`
+	TemplateCodes map[string]string `json:"templateCodes,omitempty"`
+}
+
 type SMSProviderSecrets struct {
 	TwilioCredentials            *SMSProviderTwilioCredentials        `json:"twilioCredentials,omitempty"`
+	AliyunCredentials            *SMSProviderAliyunCredentials        `json:"aliyunCredentials,omitempty"`
+	TencentCredentials           *SMSProviderTencentCredentials       `json:"tencentCredentials,omitempty"`
 	CustomSMSProviderCredentials *SMSProviderCustomSMSProviderConfigs `json:"customSMSProviderCredentials,omitempty"`
 }
 
@@ -345,6 +366,31 @@ func NewSecretConfig(secretConfig *config.SecretConfig, unmaskedSecrets []config
 			smsProviderSecrets.TwilioCredentials.APIKeySecret = &twilioCredentials.APIKeySecret
 		}
 
+	}
+	if aliyunCredentials, ok := secretConfig.LookupData(config.AliyunCredentialsKey).(*config.AliyunCredentials); ok {
+		smsProviderSecrets.AliyunCredentials = &SMSProviderAliyunCredentials{
+			AccessKeyID:          aliyunCredentials.AccessKeyID,
+			SignName:             aliyunCredentials.SignName,
+			TemplateCode:         aliyunCredentials.TemplateCode,
+			TemplateCodes:        aliyunCredentials.TemplateCodes,
+			OverseasTemplateCode: aliyunCredentials.OverseasTemplateCode,
+		}
+		if _, exist := unmaskedSecretsSet[config.AliyunCredentialsKey]; exist {
+			smsProviderSecrets.AliyunCredentials.AccessKeySecret = &aliyunCredentials.AccessKeySecret
+		}
+	}
+	if tencentCredentials, ok := secretConfig.LookupData(config.TencentCredentialsKey).(*config.TencentCredentials); ok {
+		smsProviderSecrets.TencentCredentials = &SMSProviderTencentCredentials{
+			SecretID:      tencentCredentials.SecretID,
+			SDKAppID:      tencentCredentials.SDKAppID,
+			Region:        tencentCredentials.Region,
+			SignName:      tencentCredentials.SignName,
+			TemplateCode:  tencentCredentials.TemplateCode,
+			TemplateCodes: tencentCredentials.TemplateCodes,
+		}
+		if _, exist := unmaskedSecretsSet[config.TencentCredentialsKey]; exist {
+			smsProviderSecrets.TencentCredentials.SecretKey = &tencentCredentials.SecretKey
+		}
 	}
 	if customSMSProviderConfig, ok := secretConfig.LookupData(config.CustomSMSProviderConfigKey).(*config.CustomSMSProviderConfig); ok {
 		smsProviderSecrets.CustomSMSProviderCredentials = &SMSProviderCustomSMSProviderConfigs{

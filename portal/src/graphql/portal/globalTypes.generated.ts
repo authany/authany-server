@@ -22,6 +22,8 @@ export type Scalars = {
   FeatureConfig: { input: GQL_FeatureConfig; output: GQL_FeatureConfig; }
   /** The `ProjectWizardData` scalar type represents form data of project wizard */
   ProjectWizardData: { input: any; output: any; }
+  /** The `SMSTemplateCodes` scalar type represents a mapping from SMS template name to template code */
+  SMSTemplateCodes: { input: any; output: any; }
   /** The `StripeError` scalar type represents Stripe error */
   StripeError: { input: GQL_StripeError; output: GQL_StripeError; }
   /** The `TutorialStatusData` scalar type represents tutorial status data */
@@ -740,18 +742,61 @@ export type SamlSpSigningSecretsUpdateInstructionsInput = {
   setData?: InputMaybe<SamlSpSigningSecretsSetDataInput>;
 };
 
+/** Aliyun SMS credentials */
+export type SmsProviderAliyunCredentials = {
+  __typename?: 'SMSProviderAliyunCredentials';
+  accessKeyID: Scalars['String']['output'];
+  accessKeySecret?: Maybe<Scalars['String']['output']>;
+  overseasTemplateCode?: Maybe<Scalars['String']['output']>;
+  signName?: Maybe<Scalars['String']['output']>;
+  templateCode?: Maybe<Scalars['String']['output']>;
+  templateCodes?: Maybe<Scalars['SMSTemplateCodes']['output']>;
+};
+
+export type SmsProviderAliyunCredentialsInput = {
+  accessKeyID: Scalars['String']['input'];
+  accessKeySecret?: InputMaybe<Scalars['String']['input']>;
+  overseasTemplateCode?: InputMaybe<Scalars['String']['input']>;
+  signName?: InputMaybe<Scalars['String']['input']>;
+  templateCode?: InputMaybe<Scalars['String']['input']>;
+  templateCodes?: InputMaybe<Scalars['SMSTemplateCodes']['input']>;
+};
+
+export type SmsProviderConfigurationAliyunInput = {
+  accessKeyID: Scalars['String']['input'];
+  accessKeySecret: Scalars['String']['input'];
+  overseasTemplateCode?: InputMaybe<Scalars['String']['input']>;
+  signName?: InputMaybe<Scalars['String']['input']>;
+  templateCode?: InputMaybe<Scalars['String']['input']>;
+  templateCodes?: InputMaybe<Scalars['SMSTemplateCodes']['input']>;
+};
+
 export type SmsProviderConfigurationDenoInput = {
   script: Scalars['String']['input'];
   timeout?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type SmsProviderConfigurationInput = {
+  /** Aliyun configuration */
+  aliyun?: InputMaybe<SmsProviderConfigurationAliyunInput>;
   /** Deno hook configuration */
   deno?: InputMaybe<SmsProviderConfigurationDenoInput>;
+  /** Tencent Cloud configuration */
+  tencent?: InputMaybe<SmsProviderConfigurationTencentInput>;
   /** Twilio configuration */
   twilio?: InputMaybe<SmsProviderConfigurationTwilioInput>;
   /** Webhook Configuration */
   webhook?: InputMaybe<SmsProviderConfigurationWebhookInput>;
+};
+
+export type SmsProviderConfigurationTencentInput = {
+  region?: InputMaybe<Scalars['String']['input']>;
+  sdkAppID?: InputMaybe<Scalars['String']['input']>;
+  secretID: Scalars['String']['input'];
+  secretKey: Scalars['String']['input'];
+  signName?: InputMaybe<Scalars['String']['input']>;
+  templateCode?: InputMaybe<Scalars['String']['input']>;
+  templateCodes?: InputMaybe<Scalars['SMSTemplateCodes']['input']>;
 };
 
 export type SmsProviderConfigurationTwilioInput = {
@@ -779,18 +824,44 @@ export type SmsProviderCustomSmsProviderSecrets = {
 /** SMS Provider secrets */
 export type SmsProviderSecrets = {
   __typename?: 'SMSProviderSecrets';
+  aliyunCredentials?: Maybe<SmsProviderAliyunCredentials>;
   customSMSProviderCredentials?: Maybe<SmsProviderCustomSmsProviderSecrets>;
+  tencentCredentials?: Maybe<SmsProviderTencentCredentials>;
   twilioCredentials?: Maybe<SmsProviderTwilioCredentials>;
 };
 
 export type SmsProviderSecretsSetDataInput = {
+  aliyunCredentials?: InputMaybe<SmsProviderAliyunCredentialsInput>;
   customSMSProviderCredentials?: InputMaybe<CustomSmsProviderSecretsInput>;
+  tencentCredentials?: InputMaybe<SmsProviderTencentCredentialsInput>;
   twilioCredentials?: InputMaybe<SmsProviderTwilioCredentialsInput>;
 };
 
 export type SmsProviderSecretsUpdateInstructionsInput = {
   action: Scalars['String']['input'];
   setData?: InputMaybe<SmsProviderSecretsSetDataInput>;
+};
+
+/** Tencent Cloud SMS credentials */
+export type SmsProviderTencentCredentials = {
+  __typename?: 'SMSProviderTencentCredentials';
+  region?: Maybe<Scalars['String']['output']>;
+  sdkAppID?: Maybe<Scalars['String']['output']>;
+  secretID: Scalars['String']['output'];
+  secretKey?: Maybe<Scalars['String']['output']>;
+  signName?: Maybe<Scalars['String']['output']>;
+  templateCode?: Maybe<Scalars['String']['output']>;
+  templateCodes?: Maybe<Scalars['SMSTemplateCodes']['output']>;
+};
+
+export type SmsProviderTencentCredentialsInput = {
+  region?: InputMaybe<Scalars['String']['input']>;
+  sdkAppID?: InputMaybe<Scalars['String']['input']>;
+  secretID: Scalars['String']['input'];
+  secretKey?: InputMaybe<Scalars['String']['input']>;
+  signName?: InputMaybe<Scalars['String']['input']>;
+  templateCode?: InputMaybe<Scalars['String']['input']>;
+  templateCodes?: InputMaybe<Scalars['SMSTemplateCodes']['input']>;
 };
 
 /** Twilio credentials */

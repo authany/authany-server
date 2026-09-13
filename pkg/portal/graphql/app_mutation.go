@@ -156,8 +156,65 @@ var smsProviderSecretsSetDataInput = graphql.NewInputObject(graphql.InputObjectC
 		"twilioCredentials": &graphql.InputObjectFieldConfig{
 			Type: smsProviderTwilioCredentialsInput,
 		},
+		"aliyunCredentials": &graphql.InputObjectFieldConfig{
+			Type: smsProviderAliyunCredentialsInput,
+		},
+		"tencentCredentials": &graphql.InputObjectFieldConfig{
+			Type: smsProviderTencentCredentialsInput,
+		},
 		"customSMSProviderCredentials": &graphql.InputObjectFieldConfig{
 			Type: customSmsProviderSecretsInput,
+		},
+	},
+})
+
+var smsProviderAliyunCredentialsInput = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "SMSProviderAliyunCredentialsInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"accessKeyID": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"accessKeySecret": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"signName": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"templateCode": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"templateCodes": &graphql.InputObjectFieldConfig{
+			Type: SMSTemplateCodes,
+		},
+		"overseasTemplateCode": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+	},
+})
+
+var smsProviderTencentCredentialsInput = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "SMSProviderTencentCredentialsInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"secretID": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"secretKey": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"sdkAppID": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"region": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"signName": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"templateCode": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"templateCodes": &graphql.InputObjectFieldConfig{
+			Type: SMSTemplateCodes,
 		},
 	},
 })
