@@ -1,0 +1,187 @@
+name: Authany - Images
+
+# Authany's own image build and publish.
+#
+# This is a separate workflow instead of a change to run-builds.yaml / ci-tags.yaml
+# because the upstream workflows in this directory are kept untouched so that
+# merging a new base release never conflicts on them, and they are wired to the
+# upstream registry credentials that this repository does not have. They are
+# also disabled in this repository's Actions settings. See .github/README.md.
+#
+# Tag convention: publish by pushing an `authany-YYYY-MM-DD.N` tag (the release
+# date, not the upstream base date). Only that prefix triggers this workflow, so
+# the ~1200 mirrored upstream tags (`YYYY-MM-DD.N`, `staging-*`) never build the
+# upstream tree under an Authany image name. The tag must not contain `/`:
+# `make tag-image` uses GIT_TAG_NAME verbatim as a Docker tag.
+#
+# Resulting Docker tags per image: git-<hash>, <tag>, release-git-<hash>,
+# release-<tag>. Production fills AUTHGEAR_TAG with the `authany-…` tag; both
+# images come from the same commit, so they are consistent by construction.
+#
+# workflow_dispatch inputs:
+# - push_image: build only (false) to smoke-test the workflow without publishing.
+# - amd64_only: fall back to a single-arch (amd64) manifest when the
+#   `ubuntu-24.04-arm` runner is unavailable for this repository.
+
+on:
+  push:
+    tags:
+      - "authany-*"
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: "Push the images to ghcr.io"
+        required: false
+        default: true
+        type: boolean
+      amd64_only:
+        description: "Build amd64 only (arm64 runner unavailable)"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+# Publishing must not be interrupted halfway: no cancel-in-progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AUTHGEAR_IMAGE_NAME: ghcr.io/authany/authany-server
+  PORTAL_IMAGE_NAME: ghcr.io/authany/authany-portal
+  # Tag pushes always publish; workflow_dispatch honours its input.
+  PUSH_IMAGE: ${{ github.event_name == 'workflow_dispatch' && (inputs.push_image && 'true' || 'false') || 'true' }}
+
+jobs:
+  authgear-image-amd64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    outputs:
+      image_digest: ${{ steps.build_image.outputs.image_digest }}
+    steps:
+    - uses: actions/checkout@v4
+    - id: build_image
+      uses: ./.github/actions/build-image
+      with:
+        dockerfile: ./cmd/authgear/Dockerfile
+        image_name: ${{ env.AUTHGEAR_IMAGE_NAME }}
+        push_image: "${{ env.PUSH_IMAGE }}"
+        build_arch: amd64
+        docker_registry: ghcr.io
+        docker_username: ${{ github.actor }}
+        docker_password: ${{ secrets.GITHUB_TOKEN }}
+
+  authgear-image-arm64:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.amd64_only }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    outputs:
+      image_digest: ${{ steps.build_image.outputs.image_digest }}
+    steps:
+    - uses: actions/checkout@v4
+    - id: build_image
+      uses: ./.github/actions/build-image
+      with:
+        dockerfile: ./cmd/authgear/Dockerfile
+        image_name: ${{ env.AUTHGEAR_IMAGE_NAME }}
+        push_image: "${{ env.PUSH_IMAGE }}"
+        build_arch: arm64
+        docker_registry: ghcr.io
+        docker_username: ${{ github.actor }}
+        docker_password: ${{ secrets.GITHUB_TOKEN }}
+
+  authgear-image:
+    # Unlike run-builds.yaml, amd64_only still produces a manifest, from the
+    # amd64 digest alone: SOURCE_DIGESTS is whitespace separated, so the skipped
+    # arm64 job contributes an empty entry.
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.push_image) && !cancelled() && needs.authgear-image-amd64.result == 'success' && (needs.authgear-image-arm64.result == 'success' || needs.authgear-image-arm64.result == 'skipped') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: ["authgear-image-amd64", "authgear-image-arm64"]
+    env:
+      IMAGE_NAME: ghcr.io/authany/authany-server
+      SOURCE_DIGESTS: ${{ format('{0} {1}', needs.authgear-image-amd64.outputs.image_digest, needs.authgear-image-arm64.outputs.image_digest) }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./.github/actions/set-git-tag-name
+      with:
+        github_ref_type: ${{ github.ref_type }}
+        github_ref_name: ${{ github.ref_name }}
+    - name: docker login
+      env:
+        DOCKER_USERNAME: ${{ github.actor }}
+        DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        printf '%s' "$DOCKER_PASSWORD" | docker login --password-stdin --username "$DOCKER_USERNAME" ghcr.io
+    - run: make tag-image
+    - name: docker logout
+      if: ${{ always() }}
+      run: |
+        docker logout ghcr.io
+
+  portal-image-amd64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    outputs:
+      image_digest: ${{ steps.build_image.outputs.image_digest }}
+    steps:
+    - uses: actions/checkout@v4
+    - id: build_image
+      uses: ./.github/actions/build-image
+      with:
+        dockerfile: ./cmd/portal/Dockerfile
+        image_name: ${{ env.PORTAL_IMAGE_NAME }}
+        push_image: "${{ env.PUSH_IMAGE }}"
+        build_arch: amd64
+        docker_registry: ghcr.io
+        docker_username: ${{ github.actor }}
+        docker_password: ${{ secrets.GITHUB_TOKEN }}
+
+
+  portal-image-arm64:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.amd64_only }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    outputs:
+      image_digest: ${{ steps.build_image.outputs.image_digest }}
+    steps:
+    - uses: actions/checkout@v4
+    - id: build_image
+      uses: ./.github/actions/build-image
+      with:
+        dockerfile: ./cmd/portal/Dockerfile
+        image_name: ${{ env.PORTAL_IMAGE_NAME }}
+        push_image: "${{ env.PUSH_IMAGE }}"
+        build_arch: arm64
+        docker_registry: ghcr.io
+        docker_username: ${{ github.actor }}
+        docker_password: ${{ secrets.GITHUB_TOKEN }}
+
+  portal-image:
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.push_image) && !cancelled() && needs.portal-image-amd64.result == 'success' && (needs.portal-image-arm64.result == 'success' || needs.portal-image-arm64.result == 'skipped') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: ["portal-image-amd64", "portal-image-arm64"]
+    env:
+      IMAGE_NAME: ghcr.io/authany/authany-portal
+      SOURCE_DIGESTS: ${{ format('{0} {1}', needs.portal-image-amd64.outputs.image_digest, needs.portal-image-arm64.outputs.image_digest) }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./.github/actions/set-git-tag-name
+      with:
+        github_ref_type: ${{ github.ref_type }}
+        github_ref_name: ${{ github.ref_name }}
+    - name: docker login
+      env:
+        DOCKER_USERNAME: ${{ github.actor }}
+        DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        printf '%s' "$DOCKER_PASSWORD" | docker login --password-stdin --username "$DOCKER_USERNAME" ghcr.io
+    - run: make tag-image
+    - name: docker logout
+      if: ${{ always() }}
+      run: |
+        docker logout ghcr.io
