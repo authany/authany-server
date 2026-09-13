@@ -59,3 +59,9 @@ error: null
 config:
   use_config_from: "authgear.secrets.yaml"
   provider: "gatewayapi"
+---
+name: success-authgear.secrets.yaml-with-provider-smsaero
+error: null
+config:
+  use_config_from: "authgear.secrets.yaml"
+  provider: "smsaero"

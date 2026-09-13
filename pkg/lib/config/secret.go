@@ -365,7 +365,9 @@ const (
 	// nolint: gosec
 	SmsbaoCredentialsKey SecretKey = "sms.smsbao"
 	// nolint: gosec
-	GatewayAPICredentialsKey   SecretKey = "sms.gatewayapi"
+	GatewayAPICredentialsKey SecretKey = "sms.gatewayapi"
+	// nolint: gosec
+	SmsAeroCredentialsKey      SecretKey = "sms.smsaero"
 	CustomSMSProviderConfigKey SecretKey = "sms.custom"
 	OAuthKeyMaterialsKey       SecretKey = "oauth"
 	CSRFKeyMaterialsKey        SecretKey = "csrf"
@@ -423,6 +425,7 @@ var secretItemKeys = map[SecretKey]secretKeyDef{
 	YunpianCredentialsKey:                      {"YunpianCredentials", func() SecretItemData { return &YunpianCredentials{} }},
 	SmsbaoCredentialsKey:                       {"SmsbaoCredentials", func() SecretItemData { return &SmsbaoCredentials{} }},
 	GatewayAPICredentialsKey:                   {"GatewayAPICredentials", func() SecretItemData { return &GatewayAPICredentials{} }},
+	SmsAeroCredentialsKey:                      {"SmsAeroCredentials", func() SecretItemData { return &SmsAeroCredentials{} }},
 	OAuthKeyMaterialsKey:                       {"OAuthKeyMaterials", func() SecretItemData { return &OAuthKeyMaterials{} }},
 	CSRFKeyMaterialsKey:                        {"CSRFKeyMaterials", func() SecretItemData { return &CSRFKeyMaterials{} }},
 	WebhookKeyMaterialsKey:                     {"WebhookKeyMaterials", func() SecretItemData { return &WebhookKeyMaterials{} }},

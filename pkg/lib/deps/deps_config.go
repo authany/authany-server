@@ -136,6 +136,7 @@ var secretDeps = wire.NewSet(
 	ProvideYunpianCredentials,
 	ProvideSmsbaoCredentials,
 	ProvideGatewayAPICredentials,
+	ProvideSmsAeroCredentials,
 	ProvideCustomSMSProviderConfig,
 	ProvideOAuthKeyMaterials,
 	ProvideCSRFKeyMaterials,
@@ -240,6 +241,11 @@ func ProvideSmsbaoCredentials(c *config.SecretConfig) *config.SmsbaoCredentials 
 
 func ProvideGatewayAPICredentials(c *config.SecretConfig) *config.GatewayAPICredentials {
 	s, _ := c.LookupData(config.GatewayAPICredentialsKey).(*config.GatewayAPICredentials)
+	return s
+}
+
+func ProvideSmsAeroCredentials(c *config.SecretConfig) *config.SmsAeroCredentials {
+	s, _ := c.LookupData(config.SmsAeroCredentialsKey).(*config.SmsAeroCredentials)
 	return s
 }
 
