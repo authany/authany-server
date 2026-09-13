@@ -304,6 +304,9 @@
 /pkg/lib/healthz/healthz.go:25:9: requestcontext
 /pkg/lib/infra/middleware/panic.go:41:12: requestcontext
 /pkg/lib/infra/middleware/sentry.go:21:47: requestcontext
+/pkg/lib/infra/sms/smsbao/client.go:252:37: requestcontext
+/pkg/lib/infra/sms/smsbao/client.go:265:18: requestcontext
+/pkg/lib/infra/sms/smsbao/client.go:267:19: requestcontext
 /pkg/lib/oauth/response_mode.go:122:40: requestcontext
 /pkg/lib/oauth/response_mode.go:149:40: requestcontext
 /pkg/lib/oauth/response_mode.go:161:40: requestcontext
