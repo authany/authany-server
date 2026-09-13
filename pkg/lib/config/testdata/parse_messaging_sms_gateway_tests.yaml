@@ -53,3 +53,9 @@ error: null
 config:
   use_config_from: "authgear.secrets.yaml"
   provider: "smsbao"
+---
+name: success-authgear.secrets.yaml-with-provider-gatewayapi
+error: null
+config:
+  use_config_from: "authgear.secrets.yaml"
+  provider: "gatewayapi"
