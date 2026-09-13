@@ -133,6 +133,7 @@ var secretDeps = wire.NewSet(
 	ProvideAliyunCredentials,
 	ProvideAliyunMASCredentials,
 	ProvideTencentCredentials,
+	ProvideYunpianCredentials,
 	ProvideCustomSMSProviderConfig,
 	ProvideOAuthKeyMaterials,
 	ProvideCSRFKeyMaterials,
@@ -222,6 +223,11 @@ func ProvideAliyunMASCredentials(c *config.SecretConfig) *config.AliyunMASCreden
 
 func ProvideTencentCredentials(c *config.SecretConfig) *config.TencentCredentials {
 	s, _ := c.LookupData(config.TencentCredentialsKey).(*config.TencentCredentials)
+	return s
+}
+
+func ProvideYunpianCredentials(c *config.SecretConfig) *config.YunpianCredentials {
+	s, _ := c.LookupData(config.YunpianCredentialsKey).(*config.YunpianCredentials)
 	return s
 }
 

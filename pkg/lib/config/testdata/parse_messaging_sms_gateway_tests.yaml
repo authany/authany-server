@@ -41,3 +41,9 @@ error: null
 config:
   use_config_from: "authgear.secrets.yaml"
   provider: "aliyun_mas"
+---
+name: success-authgear.secrets.yaml-with-provider-yunpian
+error: null
+config:
+  use_config_from: "authgear.secrets.yaml"
+  provider: "yunpian"
