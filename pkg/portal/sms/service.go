@@ -197,11 +197,17 @@ func (s *Service) sendByGatewayAPI(
 	to string,
 	cfg model.SMSProviderConfigurationGatewayAPIInput,
 ) error {
-	gatewayAPIClient := gatewayapi.NewGatewayAPIClient(&config.GatewayAPICredentials{
+	credentials := &config.GatewayAPICredentials{
 		Endpoint: cfg.Endpoint,
 		APIToken: cfg.APIToken,
 		Sender:   cfg.Sender,
-	})
+	}
+	// The secret schema restricts the endpoint to the official base URLs,
+	// but this input does not go through the schema.
+	if err := credentials.ValidateEndpoint(); err != nil {
+		return apierrors.NewInvalid(err.Error())
+	}
+	gatewayAPIClient := gatewayapi.NewGatewayAPIClient(credentials)
 
 	return gatewayAPIClient.Send(ctx, smsapi.SendOptions{
 		To:   to,
