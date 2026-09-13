@@ -131,6 +131,7 @@ var secretDeps = wire.NewSet(
 	ProvideTwilioCredentials,
 	ProvideNexmoCredentials,
 	ProvideAliyunCredentials,
+	ProvideAliyunMASCredentials,
 	ProvideTencentCredentials,
 	ProvideCustomSMSProviderConfig,
 	ProvideOAuthKeyMaterials,
@@ -211,6 +212,11 @@ func ProvideNexmoCredentials(c *config.SecretConfig) *config.NexmoCredentials {
 
 func ProvideAliyunCredentials(c *config.SecretConfig) *config.AliyunCredentials {
 	s, _ := c.LookupData(config.AliyunCredentialsKey).(*config.AliyunCredentials)
+	return s
+}
+
+func ProvideAliyunMASCredentials(c *config.SecretConfig) *config.AliyunMASCredentials {
+	s, _ := c.LookupData(config.AliyunMASCredentialsKey).(*config.AliyunMASCredentials)
 	return s
 }
 

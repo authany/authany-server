@@ -359,7 +359,7 @@ func (c *NexmoCredentials) SensitiveStrings() []string {
 var _ = SecretConfigSchema.Add("SMSTemplateCodes", `
 {
 	"type": "object",
-	"additionalProperties": { "type": "string" },
+	"additionalProperties": { "type": "string", "minLength": 1 },
 	"propertyNames": {
 		"enum": [
 			"verification_sms.txt",
@@ -414,6 +414,38 @@ type AliyunCredentials struct {
 }
 
 func (c *AliyunCredentials) SensitiveStrings() []string {
+	return []string{
+		c.AccessKeyID,
+		c.AccessKeySecret,
+	}
+}
+
+// AliyunMASCredentials configures the Aliyun SMS Authentication Service
+// (Mobile Authentication Service product family). Unlike AliyunCredentials,
+// it has no overseas_template_code because the service only supports Mainland
+// China phone numbers.
+var _ = SecretConfigSchema.Add("AliyunMASCredentials", `
+{
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		"access_key_id": { "type": "string" },
+		"access_key_secret": { "type": "string" },
+		"sign_name": { "type": "string" },
+		"template_code": { "type": "string" },
+		"template_codes": { "$ref": "#/$defs/SMSTemplateCodes" }
+	},
+	"required": ["access_key_id", "access_key_secret", "sign_name", "template_code"]
+}
+`)
+
+type AliyunMASCredentials struct {
+	AccessKeyID     string `json:"access_key_id,omitempty"`
+	AccessKeySecret string `json:"access_key_secret,omitempty"`
+	SMSTemplateCodeConfig
+}
+
+func (c *AliyunMASCredentials) SensitiveStrings() []string {
 	return []string{
 		c.AccessKeyID,
 		c.AccessKeySecret,
