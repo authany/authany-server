@@ -34,7 +34,7 @@ func TestSignatureExampleVector(t *testing.T) {
 		})
 
 		Convey("canonical request", func() {
-			canonicalRequest := makeCanonicalRequest(exampleHost, exampleAction, examplePayload)
+			canonicalRequest := makeCanonicalRequest(exampleHost, exampleAction, ContentType, SignedHeaders, examplePayload)
 			So(canonicalRequest, ShouldEqual, strings.Join([]string{
 				"POST",
 				"/",
@@ -56,7 +56,7 @@ func TestSignatureExampleVector(t *testing.T) {
 			credentialScope := makeCredentialScope(date, "cvm")
 			So(credentialScope, ShouldEqual, "2019-02-25/cvm/tc3_request")
 
-			canonicalRequest := makeCanonicalRequest(exampleHost, exampleAction, examplePayload)
+			canonicalRequest := makeCanonicalRequest(exampleHost, exampleAction, ContentType, SignedHeaders, examplePayload)
 			So(makeStringToSign(exampleTimestamp, credentialScope, canonicalRequest), ShouldEqual, strings.Join([]string{
 				"TC3-HMAC-SHA256",
 				"1551113065",
@@ -68,8 +68,75 @@ func TestSignatureExampleVector(t *testing.T) {
 		// The SecretKey of the example is redacted in the document,
 		// so the signature is asserted against a golden value instead.
 		Convey("authorization", func() {
-			authorization := makeAuthorization("AKIDEXAMPLE", "SECRETKEYEXAMPLE", exampleHost, "cvm", exampleAction, exampleTimestamp, examplePayload)
+			authorization := makeAuthorization(authorizationInput{
+				SecretID:      "AKIDEXAMPLE",
+				SecretKey:     "SECRETKEYEXAMPLE",
+				Host:          exampleHost,
+				Service:       "cvm",
+				Action:        exampleAction,
+				ContentType:   ContentType,
+				SignedHeaders: SignedHeaders,
+				Timestamp:     exampleTimestamp,
+				Payload:       examplePayload,
+			})
 			So(authorization, ShouldEqual, "TC3-HMAC-SHA256 Credential=AKIDEXAMPLE/2019-02-25/cvm/tc3_request, SignedHeaders=content-type;host;x-tc-action, Signature=8cd2b6c0a8c5b1e6aa358096ca9df41f14b09d4b3a5f85014a31f8c0947410f5")
+		})
+	})
+}
+
+// TestSignatureSDKVector asserts that our TC3-HMAC-SHA256 implementation
+// reproduces, byte for byte, the Authorization header of a request sent by the
+// official SDK github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms
+// v20210111 (common v1.3.172).
+//
+// The request was recorded by pointing the SDK client at a local httptest
+// server with an http.RoundTripper that keeps the request untouched, so the
+// signed host is the real sms.tencentcloudapi.com. The credentials are fake.
+//
+// The SDK signs content-type;host and sends "application/json" without the
+// charset parameter, while we sign content-type;host;x-tc-action and send
+// "application/json; charset=utf-8", following the example of
+// https://cloud.tencent.com/document/api/213/30654 . Both header sets are
+// self-consistent, hence accepted by Tencent Cloud; the values are passed in
+// explicitly here to reproduce the recorded request exactly.
+func TestSignatureSDKVector(t *testing.T) {
+	const recordedPayload = `{"PhoneNumberSet":["+85298765432"],"SmsSdkAppId":"1400000000","TemplateId":"1234567","SignName":"Authany 测试","TemplateParamSet":["123456"]}`
+
+	Convey("official SDK recorded request", t, func() {
+		Convey("authorization", func() {
+			authorization := makeAuthorization(authorizationInput{
+				SecretID:      "AKIDzTESTSECRETIDTESTSECRETID00",
+				SecretKey:     "TESTSECRETKEYTESTSECRETKEYTESTSE",
+				Host:          Host,
+				Service:       Service,
+				Action:        Action,
+				ContentType:   "application/json",
+				SignedHeaders: "content-type;host",
+				Timestamp:     1789289821,
+				Payload:       recordedPayload,
+			})
+			So(authorization, ShouldEqual, "TC3-HMAC-SHA256 Credential=AKIDzTESTSECRETIDTESTSECRETID00/2026-09-13/sms/tc3_request, SignedHeaders=content-type;host, Signature=40562024083862acf6365f3bf98706f811767fb7fcac500e98959f34f00747d9")
+		})
+
+		// The SDK builds the same request body field set as we do.
+		Convey("request body", func() {
+			var recorded map[string]interface{}
+			err := json.Unmarshal([]byte(recordedPayload), &recorded)
+			So(err, ShouldBeNil)
+
+			ours, err := json.Marshal(&SendRequest{
+				PhoneNumberSet:   []string{"+85298765432"},
+				SmsSdkAppId:      "1400000000",
+				SignName:         "Authany 测试",
+				TemplateId:       "1234567",
+				TemplateParamSet: []string{"123456"},
+			})
+			So(err, ShouldBeNil)
+
+			var mine map[string]interface{}
+			err = json.Unmarshal(ours, &mine)
+			So(err, ShouldBeNil)
+			So(mine, ShouldResemble, recorded)
 		})
 	})
 }
@@ -145,9 +212,17 @@ func TestTencentClientSend(t *testing.T) {
 			So(receivedHeader.Get("X-TC-Version"), ShouldEqual, "2021-01-11")
 			So(receivedHeader.Get("X-TC-Region"), ShouldEqual, "ap-guangzhou")
 			So(receivedHeader.Get("X-TC-Timestamp"), ShouldEqual, "1551084265")
-			So(receivedHeader.Get("Authorization"), ShouldEqual, makeAuthorization(
-				"secret-id", "secret-key", Host, Service, Action, 1551084265, string(receivedBody),
-			))
+			So(receivedHeader.Get("Authorization"), ShouldEqual, makeAuthorization(authorizationInput{
+				SecretID:      "secret-id",
+				SecretKey:     "secret-key",
+				Host:          Host,
+				Service:       Service,
+				Action:        Action,
+				ContentType:   ContentType,
+				SignedHeaders: SignedHeaders,
+				Timestamp:     1551084265,
+				Payload:       string(receivedBody),
+			}))
 		})
 
 		Convey("template code override", func() {

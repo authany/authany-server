@@ -40,6 +40,34 @@ func TestSignRPCRequest(t *testing.T) {
 		So(SignRPCRequest("GET", values, "testsecret"), ShouldEqual, "9NaGiOspFP5UPcwX8Iwt2YJXXuk=")
 	})
 
+	// The request was recorded by pointing the official SDK
+	// github.com/aliyun/alibaba-cloud-sdk-go/services/dysmsapi (core 1.63.22)
+	// at a local httptest server. The credentials are fake.
+	//
+	// The SDK additionally sends an empty SignatureType parameter, and puts the
+	// parameters in the query string instead of the request body. Both are
+	// accepted by the RPC style API. The recorded parameters are fed to
+	// SignRPCRequest as-is here, so the signature is reproduced byte for byte.
+	Convey("official SDK recorded request", t, func() {
+		values := url.Values{}
+		values.Set("AccessKeyId", "LTAI5tTESTACCESSKEYID")
+		values.Set("Action", "SendSms")
+		values.Set("Format", "JSON")
+		values.Set("PhoneNumbers", "13000000000")
+		values.Set("RegionId", "cn-hangzhou")
+		values.Set("SignName", "Authany 测试")
+		values.Set("SignatureMethod", "HMAC-SHA1")
+		values.Set("SignatureNonce", "2f3f90470b6d0a13c29cda225b18cf30")
+		values.Set("SignatureType", "")
+		values.Set("SignatureVersion", "1.0")
+		values.Set("TemplateCode", "SMS_123456789")
+		values.Set("TemplateParam", `{"code":"123456"}`)
+		values.Set("Timestamp", "2026-09-13T09:02:01Z")
+		values.Set("Version", "2017-05-25")
+
+		So(SignRPCRequest("POST", values, "TESTACCESSKEYSECRETTESTACCESSKE"), ShouldEqual, "5N9h5yOEbKfKdxpUPtsN5VUa6Bw=")
+	})
+
 	Convey("PercentEncode", t, func() {
 		So(PercentEncode(" "), ShouldEqual, "%20")
 		So(PercentEncode("*"), ShouldEqual, "%2A")
