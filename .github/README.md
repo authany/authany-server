@@ -34,13 +34,14 @@ Local development, tests and conventions are documented in [`CONTRIBUTING.md`](.
 
 ## Branches and releases
 
-- `main` is what production runs: the current base release plus Authany commits on top. Authany commits carry a `[Portal]`, `[AuthUI]`, `[Server]` or `[CI]` prefix and end with `(Authany)`.
-- Base release tags (`YYYY-MM-DD.N`) are mirrored in this repository. Currently based on `2026-08-26.0`.
-- Authany changes so far (`git log --oneline <base tag>..main` is the authoritative list; the highlights):
+- `main` is what production runs: the current base release plus Authany commits on top. Authany commits follow [Conventional Commits](https://www.conventionalcommits.org/), `type(scope): subject (Authany)`: the scope is `server`, `portal`, `authui` or `ci`, the common types are `feat`, `fix`, `docs`, `test`, `refactor`, `chore` and `ci`, the subject starts lower case, is imperative and carries no full stop, and every commit has a body saying what changed and why. This convention overrides the commit style of the upstream [`AGENTS.md`](../AGENTS.md).
+- Base release tags (`YYYY-MM-DD.N`) are mirrored in this repository. Currently based on `2026-09-09.0`.
+- Authany changes so far (`git log --oneline <base tag>..main` is the authoritative list; the highlights; the four subjects below were pushed before the convention above and are kept as written):
   - `[Portal] Add locale selection and language switcher (Authany)` — the admin console picks its locale from `localStorage` / browser language and offers a Language submenu; translations are loaded at runtime from the deployment's resource directory.
   - `[Portal] Strip residual upstream vendor links (Authany)` — external links to the base project's website, docs, community and mailboxes render as plain text; header contact/docs links, the Get Started contact and resource columns, the Billing nav entry and the Starter Kit section are removed.
   - `[CI] Replace the upstream CI with an Authany portal check (Authany)` — the workflow below.
   - `[Server] De-brand the collaborator invitation subject (Authany)` — the collaborator invitation email subject says "in Authany". The email body is overridden at deployment level (`PORTAL_CUSTOM_RESOURCE_DIRECTORY/templates/en/messages/`); the subject is hard-coded, so this change only reaches production once the portal image is built from this repository.
+  - `feat(server): add seven native SMS providers (Authany)` — aliyun, aliyun_mas, tencent, yunpian, smsbao, gatewayapi and smsaero each get secret configuration, a sending client, resolver wiring, admin console backend support and a provider form.
 
 Taking a new base release:
 
