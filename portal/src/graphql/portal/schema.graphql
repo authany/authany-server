@@ -976,7 +976,7 @@ input SMSProviderConfigurationGatewayAPIInput {
   apiToken: String!
 
   """"""
-  endpoint: String
+  endpoint: String!
 
   """"""
   sender: String
