@@ -762,10 +762,36 @@ export type SmsProviderAliyunCredentialsInput = {
   templateCodes?: InputMaybe<Scalars['SMSTemplateCodes']['input']>;
 };
 
+/** Aliyun MAS SMS credentials */
+export type SmsProviderAliyunMasCredentials = {
+  __typename?: 'SMSProviderAliyunMASCredentials';
+  accessKeyID: Scalars['String']['output'];
+  accessKeySecret?: Maybe<Scalars['String']['output']>;
+  signName?: Maybe<Scalars['String']['output']>;
+  templateCode?: Maybe<Scalars['String']['output']>;
+  templateCodes?: Maybe<Scalars['SMSTemplateCodes']['output']>;
+};
+
+export type SmsProviderAliyunMasCredentialsInput = {
+  accessKeyID: Scalars['String']['input'];
+  accessKeySecret?: InputMaybe<Scalars['String']['input']>;
+  signName?: InputMaybe<Scalars['String']['input']>;
+  templateCode?: InputMaybe<Scalars['String']['input']>;
+  templateCodes?: InputMaybe<Scalars['SMSTemplateCodes']['input']>;
+};
+
 export type SmsProviderConfigurationAliyunInput = {
   accessKeyID: Scalars['String']['input'];
   accessKeySecret: Scalars['String']['input'];
   overseasTemplateCode?: InputMaybe<Scalars['String']['input']>;
+  signName?: InputMaybe<Scalars['String']['input']>;
+  templateCode?: InputMaybe<Scalars['String']['input']>;
+  templateCodes?: InputMaybe<Scalars['SMSTemplateCodes']['input']>;
+};
+
+export type SmsProviderConfigurationAliyunMasInput = {
+  accessKeyID: Scalars['String']['input'];
+  accessKeySecret: Scalars['String']['input'];
   signName?: InputMaybe<Scalars['String']['input']>;
   templateCode?: InputMaybe<Scalars['String']['input']>;
   templateCodes?: InputMaybe<Scalars['SMSTemplateCodes']['input']>;
@@ -776,17 +802,45 @@ export type SmsProviderConfigurationDenoInput = {
   timeout?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type SmsProviderConfigurationGatewayApiInput = {
+  apiToken: Scalars['String']['input'];
+  endpoint?: InputMaybe<Scalars['String']['input']>;
+  sender?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type SmsProviderConfigurationInput = {
   /** Aliyun configuration */
   aliyun?: InputMaybe<SmsProviderConfigurationAliyunInput>;
+  /** Aliyun MAS configuration */
+  aliyunMAS?: InputMaybe<SmsProviderConfigurationAliyunMasInput>;
   /** Deno hook configuration */
   deno?: InputMaybe<SmsProviderConfigurationDenoInput>;
+  /** GatewayAPI configuration */
+  gatewayAPI?: InputMaybe<SmsProviderConfigurationGatewayApiInput>;
+  /** SMS Aero configuration */
+  smsAero?: InputMaybe<SmsProviderConfigurationSmsAeroInput>;
+  /** SMSBao configuration */
+  smsbao?: InputMaybe<SmsProviderConfigurationSmsbaoInput>;
   /** Tencent Cloud configuration */
   tencent?: InputMaybe<SmsProviderConfigurationTencentInput>;
   /** Twilio configuration */
   twilio?: InputMaybe<SmsProviderConfigurationTwilioInput>;
   /** Webhook Configuration */
   webhook?: InputMaybe<SmsProviderConfigurationWebhookInput>;
+  /** Yunpian configuration */
+  yunpian?: InputMaybe<SmsProviderConfigurationYunpianInput>;
+};
+
+export type SmsProviderConfigurationSmsAeroInput = {
+  apiKey: Scalars['String']['input'];
+  email: Scalars['String']['input'];
+  senderName?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SmsProviderConfigurationSmsbaoInput = {
+  goodsID?: InputMaybe<Scalars['String']['input']>;
+  passwordOrAPIKey: Scalars['String']['input'];
+  username: Scalars['String']['input'];
 };
 
 export type SmsProviderConfigurationTencentInput = {
@@ -814,6 +868,10 @@ export type SmsProviderConfigurationWebhookInput = {
   url: Scalars['String']['input'];
 };
 
+export type SmsProviderConfigurationYunpianInput = {
+  apiKey: Scalars['String']['input'];
+};
+
 /** Custom SMS Provider configs */
 export type SmsProviderCustomSmsProviderSecrets = {
   __typename?: 'SMSProviderCustomSMSProviderSecrets';
@@ -821,25 +879,77 @@ export type SmsProviderCustomSmsProviderSecrets = {
   url: Scalars['String']['output'];
 };
 
+/** GatewayAPI SMS credentials */
+export type SmsProviderGatewayApiCredentials = {
+  __typename?: 'SMSProviderGatewayAPICredentials';
+  apiToken?: Maybe<Scalars['String']['output']>;
+  endpoint?: Maybe<Scalars['String']['output']>;
+  sender?: Maybe<Scalars['String']['output']>;
+};
+
+export type SmsProviderGatewayApiCredentialsInput = {
+  apiToken?: InputMaybe<Scalars['String']['input']>;
+  endpoint?: InputMaybe<Scalars['String']['input']>;
+  sender?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** SMS Provider secrets */
 export type SmsProviderSecrets = {
   __typename?: 'SMSProviderSecrets';
   aliyunCredentials?: Maybe<SmsProviderAliyunCredentials>;
+  aliyunMASCredentials?: Maybe<SmsProviderAliyunMasCredentials>;
   customSMSProviderCredentials?: Maybe<SmsProviderCustomSmsProviderSecrets>;
+  gatewayAPICredentials?: Maybe<SmsProviderGatewayApiCredentials>;
+  smsAeroCredentials?: Maybe<SmsProviderSmsAeroCredentials>;
+  smsbaoCredentials?: Maybe<SmsProviderSmsbaoCredentials>;
   tencentCredentials?: Maybe<SmsProviderTencentCredentials>;
   twilioCredentials?: Maybe<SmsProviderTwilioCredentials>;
+  yunpianCredentials?: Maybe<SmsProviderYunpianCredentials>;
 };
 
 export type SmsProviderSecretsSetDataInput = {
   aliyunCredentials?: InputMaybe<SmsProviderAliyunCredentialsInput>;
+  aliyunMASCredentials?: InputMaybe<SmsProviderAliyunMasCredentialsInput>;
   customSMSProviderCredentials?: InputMaybe<CustomSmsProviderSecretsInput>;
+  gatewayAPICredentials?: InputMaybe<SmsProviderGatewayApiCredentialsInput>;
+  smsAeroCredentials?: InputMaybe<SmsProviderSmsAeroCredentialsInput>;
+  smsbaoCredentials?: InputMaybe<SmsProviderSmsbaoCredentialsInput>;
   tencentCredentials?: InputMaybe<SmsProviderTencentCredentialsInput>;
   twilioCredentials?: InputMaybe<SmsProviderTwilioCredentialsInput>;
+  yunpianCredentials?: InputMaybe<SmsProviderYunpianCredentialsInput>;
 };
 
 export type SmsProviderSecretsUpdateInstructionsInput = {
   action: Scalars['String']['input'];
   setData?: InputMaybe<SmsProviderSecretsSetDataInput>;
+};
+
+/** SMS Aero SMS credentials */
+export type SmsProviderSmsAeroCredentials = {
+  __typename?: 'SMSProviderSmsAeroCredentials';
+  apiKey?: Maybe<Scalars['String']['output']>;
+  email: Scalars['String']['output'];
+  senderName?: Maybe<Scalars['String']['output']>;
+};
+
+export type SmsProviderSmsAeroCredentialsInput = {
+  apiKey?: InputMaybe<Scalars['String']['input']>;
+  email: Scalars['String']['input'];
+  senderName?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** SMSBao SMS credentials */
+export type SmsProviderSmsbaoCredentials = {
+  __typename?: 'SMSProviderSmsbaoCredentials';
+  goodsID?: Maybe<Scalars['String']['output']>;
+  passwordOrAPIKey?: Maybe<Scalars['String']['output']>;
+  username: Scalars['String']['output'];
+};
+
+export type SmsProviderSmsbaoCredentialsInput = {
+  goodsID?: InputMaybe<Scalars['String']['input']>;
+  passwordOrAPIKey?: InputMaybe<Scalars['String']['input']>;
+  username: Scalars['String']['input'];
 };
 
 /** Tencent Cloud SMS credentials */
@@ -884,6 +994,16 @@ export type SmsProviderTwilioCredentialsInput = {
   credentialType: TwilioCredentialType;
   from?: InputMaybe<Scalars['String']['input']>;
   messagingServiceSID?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Yunpian SMS credentials */
+export type SmsProviderYunpianCredentials = {
+  __typename?: 'SMSProviderYunpianCredentials';
+  apiKey?: Maybe<Scalars['String']['output']>;
+};
+
+export type SmsProviderYunpianCredentialsInput = {
+  apiKey?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** SMTP secret */

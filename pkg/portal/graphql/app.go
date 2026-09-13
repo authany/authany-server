@@ -268,6 +268,86 @@ var smsProviderTencentCredentials = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var smsProviderAliyunMASCredentials = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "SMSProviderAliyunMASCredentials",
+	Description: "Aliyun MAS SMS credentials",
+	Fields: graphql.Fields{
+		"accessKeyID": &graphql.Field{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"accessKeySecret": &graphql.Field{
+			Type: graphql.String,
+		},
+		"signName": &graphql.Field{
+			Type: graphql.String,
+		},
+		"templateCode": &graphql.Field{
+			Type: graphql.String,
+		},
+		"templateCodes": &graphql.Field{
+			Type: SMSTemplateCodes,
+		},
+	},
+})
+
+var smsProviderYunpianCredentials = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "SMSProviderYunpianCredentials",
+	Description: "Yunpian SMS credentials",
+	Fields: graphql.Fields{
+		"apiKey": &graphql.Field{
+			Type: graphql.String,
+		},
+	},
+})
+
+var smsProviderSmsbaoCredentials = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "SMSProviderSmsbaoCredentials",
+	Description: "SMSBao SMS credentials",
+	Fields: graphql.Fields{
+		"username": &graphql.Field{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"passwordOrAPIKey": &graphql.Field{
+			Type: graphql.String,
+		},
+		"goodsID": &graphql.Field{
+			Type: graphql.String,
+		},
+	},
+})
+
+var smsProviderGatewayAPICredentials = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "SMSProviderGatewayAPICredentials",
+	Description: "GatewayAPI SMS credentials",
+	Fields: graphql.Fields{
+		"endpoint": &graphql.Field{
+			Type: graphql.String,
+		},
+		"apiToken": &graphql.Field{
+			Type: graphql.String,
+		},
+		"sender": &graphql.Field{
+			Type: graphql.String,
+		},
+	},
+})
+
+var smsProviderSmsAeroCredentials = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "SMSProviderSmsAeroCredentials",
+	Description: "SMS Aero SMS credentials",
+	Fields: graphql.Fields{
+		"email": &graphql.Field{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"apiKey": &graphql.Field{
+			Type: graphql.String,
+		},
+		"senderName": &graphql.Field{
+			Type: graphql.String,
+		},
+	},
+})
+
 var smsProviderCustomSmsProviderSecrets = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "SMSProviderCustomSMSProviderSecrets",
 	Description: "Custom SMS Provider configs",
@@ -291,8 +371,23 @@ var smsProviderSecret = graphql.NewObject(graphql.ObjectConfig{
 		"aliyunCredentials": &graphql.Field{
 			Type: smsProviderAliyunCredentials,
 		},
+		"aliyunMASCredentials": &graphql.Field{
+			Type: smsProviderAliyunMASCredentials,
+		},
 		"tencentCredentials": &graphql.Field{
 			Type: smsProviderTencentCredentials,
+		},
+		"yunpianCredentials": &graphql.Field{
+			Type: smsProviderYunpianCredentials,
+		},
+		"smsbaoCredentials": &graphql.Field{
+			Type: smsProviderSmsbaoCredentials,
+		},
+		"gatewayAPICredentials": &graphql.Field{
+			Type: smsProviderGatewayAPICredentials,
+		},
+		"smsAeroCredentials": &graphql.Field{
+			Type: smsProviderSmsAeroCredentials,
 		},
 		"customSMSProviderCredentials": &graphql.Field{
 			Type: smsProviderCustomSmsProviderSecrets,
@@ -408,7 +503,17 @@ var secretKeyToConfigKeyMap map[AppSecretKey][]config.SecretKey = map[AppSecretK
 	AppSecretKeySmtpSecret:                    {config.SMTPServerCredentialsKey},
 	AppSecretKeyOauthClientSecrets:            {config.OAuthClientCredentialsKey},
 	AppSecretKeyBotProtectionProviderSecret:   {config.BotProtectionProviderCredentialsKey},
-	AppSecretKeySMSProviderSecrets:            {config.TwilioCredentialsKey, config.AliyunCredentialsKey, config.TencentCredentialsKey, config.CustomSMSProviderConfigKey},
+	AppSecretKeySMSProviderSecrets: {
+		config.TwilioCredentialsKey,
+		config.AliyunCredentialsKey,
+		config.AliyunMASCredentialsKey,
+		config.TencentCredentialsKey,
+		config.YunpianCredentialsKey,
+		config.SmsbaoCredentialsKey,
+		config.GatewayAPICredentialsKey,
+		config.SmsAeroCredentialsKey,
+		config.CustomSMSProviderConfigKey,
+	},
 }
 
 const typeApp = "App"

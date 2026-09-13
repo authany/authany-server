@@ -9,10 +9,15 @@ import (
 	"github.com/authgear/authgear-server/pkg/lib/config"
 	"github.com/authgear/authgear-server/pkg/lib/hook"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/aliyun"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/aliyunmas"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/custom"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/gatewayapi"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/smsaero"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/smsapi"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/smsbao"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/tencent"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/twilio"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/yunpian"
 	"github.com/authgear/authgear-server/pkg/portal/model"
 )
 
@@ -121,6 +126,114 @@ func (s *Service) sendByTencent(
 	})
 }
 
+func (s *Service) sendByAliyunMAS(
+	ctx context.Context,
+	to string,
+	cfg model.SMSProviderConfigurationAliyunMASInput,
+) error {
+	aliyunMASClient := aliyunmas.NewAliyunMASClient(&config.AliyunMASCredentials{
+		AccessKeyID:     cfg.AccessKeyID,
+		AccessKeySecret: cfg.AccessKeySecret,
+		SMSTemplateCodeConfig: config.SMSTemplateCodeConfig{
+			SignName:      cfg.SignName,
+			TemplateCode:  cfg.TemplateCode,
+			TemplateCodes: cfg.TemplateCodes,
+		},
+	})
+
+	return aliyunMASClient.Send(ctx, smsapi.SendOptions{
+		To:           to,
+		Body:         makeTestSMSBody(TEST_APP_NAME, TEST_OTP),
+		TemplateName: TestSMSTemplateName,
+		TemplateVariables: &smsapi.TemplateVariables{
+			AppName: TEST_APP_NAME,
+			Code:    TEST_OTP,
+		},
+	})
+}
+
+func (s *Service) sendByYunpian(
+	ctx context.Context,
+	to string,
+	cfg model.SMSProviderConfigurationYunpianInput,
+) error {
+	yunpianClient := yunpian.NewYunpianClient(&config.YunpianCredentials{
+		APIKey: cfg.APIKey,
+	})
+
+	return yunpianClient.Send(ctx, smsapi.SendOptions{
+		To:   to,
+		Body: makeTestSMSBody(TEST_APP_NAME, TEST_OTP),
+		TemplateVariables: &smsapi.TemplateVariables{
+			AppName: TEST_APP_NAME,
+			Code:    TEST_OTP,
+		},
+	})
+}
+
+func (s *Service) sendBySmsbao(
+	ctx context.Context,
+	to string,
+	cfg model.SMSProviderConfigurationSmsbaoInput,
+) error {
+	smsbaoClient := smsbao.NewSmsbaoClient(&config.SmsbaoCredentials{
+		Username:         cfg.Username,
+		PasswordOrAPIKey: cfg.PasswordOrAPIKey,
+		GoodsID:          cfg.GoodsID,
+	})
+
+	return smsbaoClient.Send(ctx, smsapi.SendOptions{
+		To:   to,
+		Body: makeTestSMSBody(TEST_APP_NAME, TEST_OTP),
+		TemplateVariables: &smsapi.TemplateVariables{
+			AppName: TEST_APP_NAME,
+			Code:    TEST_OTP,
+		},
+	})
+}
+
+func (s *Service) sendByGatewayAPI(
+	ctx context.Context,
+	to string,
+	cfg model.SMSProviderConfigurationGatewayAPIInput,
+) error {
+	gatewayAPIClient := gatewayapi.NewGatewayAPIClient(&config.GatewayAPICredentials{
+		Endpoint: cfg.Endpoint,
+		APIToken: cfg.APIToken,
+		Sender:   cfg.Sender,
+	})
+
+	return gatewayAPIClient.Send(ctx, smsapi.SendOptions{
+		To:   to,
+		Body: makeTestSMSBody(TEST_APP_NAME, TEST_OTP),
+		TemplateVariables: &smsapi.TemplateVariables{
+			AppName: TEST_APP_NAME,
+			Code:    TEST_OTP,
+		},
+	})
+}
+
+func (s *Service) sendBySmsAero(
+	ctx context.Context,
+	to string,
+	cfg model.SMSProviderConfigurationSmsAeroInput,
+) error {
+	smsAeroClient := smsaero.NewSmsAeroClient(&config.SmsAeroCredentials{
+		Email:      cfg.Email,
+		APIKey:     cfg.APIKey,
+		SenderName: cfg.SenderName,
+	})
+
+	return smsAeroClient.Send(ctx, smsapi.SendOptions{
+		To:   to,
+		Body: makeTestSMSBody(TEST_APP_NAME, TEST_OTP),
+		TemplateVariables: &smsapi.TemplateVariables{
+			AppName: TEST_APP_NAME,
+			Code:    TEST_OTP,
+		},
+	})
+}
+
 func (s *Service) sendByWebhook(
 	ctx context.Context,
 	secret *config.WebhookKeyMaterials,
@@ -193,8 +306,23 @@ func (s *Service) SendTestSMS(
 	} else if input.Aliyun != nil {
 		return s.sendByAliyun(ctx, to, *input.Aliyun)
 
+	} else if input.AliyunMAS != nil {
+		return s.sendByAliyunMAS(ctx, to, *input.AliyunMAS)
+
 	} else if input.Tencent != nil {
 		return s.sendByTencent(ctx, to, *input.Tencent)
+
+	} else if input.Yunpian != nil {
+		return s.sendByYunpian(ctx, to, *input.Yunpian)
+
+	} else if input.Smsbao != nil {
+		return s.sendBySmsbao(ctx, to, *input.Smsbao)
+
+	} else if input.GatewayAPI != nil {
+		return s.sendByGatewayAPI(ctx, to, *input.GatewayAPI)
+
+	} else if input.SmsAero != nil {
+		return s.sendBySmsAero(ctx, to, *input.SmsAero)
 
 	} else if input.Webhook != nil {
 		webhookSecret, err := webhookSecretLoader(ctx)
