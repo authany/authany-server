@@ -871,14 +871,14 @@ type SMSProviderSecretsUpdateInstructionSetData struct {
 	CustomSMSProviderCredentials *SMSProviderSecretsUpdateInstructionCustomSMSProvider  `json:"customSMSProviderCredentials,omitempty"`
 }
 
-type SMSProviderSecretsUpdateInstructionTencentCredentials struct {
-	SecretID      string            `json:"secretID,omitempty"`
-	SecretKey     string            `json:"secretKey,omitempty"`
-	SDKAppID      string            `json:"sdkAppID,omitempty"`
-	Region        string            `json:"region,omitempty"`
-	SignName      string            `json:"signName,omitempty"`
-	TemplateCode  string            `json:"templateCode,omitempty"`
-	TemplateCodes map[string]string `json:"templateCodes,omitempty"`
+type SMSProviderSecretsUpdateInstructionTwilioCredentials struct {
+	CredentialType      TwilioCredentialType `json:"credentialType,omitempty"`
+	AccountSID          string               `json:"accountSID,omitempty"`
+	AuthToken           string               `json:"authToken,omitempty"`
+	APIKeySID           string               `json:"apiKeySID,omitempty"`
+	APIKeySecret        string               `json:"apiKeySecret,omitempty"`
+	MessagingServiceSID string               `json:"messagingServiceSID,omitempty"`
+	From                string               `json:"from,omitempty"`
 }
 
 type SMSProviderSecretsUpdateInstructionAliyunCredentials struct {
@@ -890,14 +890,14 @@ type SMSProviderSecretsUpdateInstructionAliyunCredentials struct {
 	OverseasTemplateCode string            `json:"overseasTemplateCode,omitempty"`
 }
 
-type SMSProviderSecretsUpdateInstructionTwilioCredentials struct {
-	CredentialType      TwilioCredentialType `json:"credentialType,omitempty"`
-	AccountSID          string               `json:"accountSID,omitempty"`
-	AuthToken           string               `json:"authToken,omitempty"`
-	APIKeySID           string               `json:"apiKeySID,omitempty"`
-	APIKeySecret        string               `json:"apiKeySecret,omitempty"`
-	MessagingServiceSID string               `json:"messagingServiceSID,omitempty"`
-	From                string               `json:"from,omitempty"`
+type SMSProviderSecretsUpdateInstructionTencentCredentials struct {
+	SecretID      string            `json:"secretID,omitempty"`
+	SecretKey     string            `json:"secretKey,omitempty"`
+	SDKAppID      string            `json:"sdkAppID,omitempty"`
+	Region        string            `json:"region,omitempty"`
+	SignName      string            `json:"signName,omitempty"`
+	TemplateCode  string            `json:"templateCode,omitempty"`
+	TemplateCodes map[string]string `json:"templateCodes,omitempty"`
 }
 
 type SMSProviderSecretsUpdateInstructionCustomSMSProvider struct {
@@ -962,95 +962,99 @@ func (i *SMSProviderSecretsUpdateInstruction) set(currentConfig *SecretConfig) (
 		return nil
 	}
 
-	if i.SetData.TwilioCredentials != nil {
-		twilioCredentials := TwilioCredentials{
-			CredentialType_WriteOnly: &i.SetData.TwilioCredentials.CredentialType,
-			AccountSID:               i.SetData.TwilioCredentials.AccountSID,
-		}
-		switch i.SetData.TwilioCredentials.CredentialType {
-		case TwilioCredentialTypeAPIKey:
-			twilioCredentials.APIKeySID = i.SetData.TwilioCredentials.APIKeySID
-			twilioCredentials.APIKeySecret = i.SetData.TwilioCredentials.APIKeySecret
-		case TwilioCredentialTypeAuthToken:
-			twilioCredentials.AuthToken = i.SetData.TwilioCredentials.AuthToken
-		}
-		if i.SetData.TwilioCredentials.MessagingServiceSID != "" {
-			twilioCredentials.MessagingServiceSID = i.SetData.TwilioCredentials.MessagingServiceSID
-		} else if i.SetData.TwilioCredentials.From != "" {
-			twilioCredentials.From = i.SetData.TwilioCredentials.From
-		}
-		err := upsert(TwilioCredentialsKey, twilioCredentials)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := remove(TwilioCredentialsKey)
-		if err != nil {
-			return nil, err
-		}
+	// Every provider is upserted when it is given in SetData, and removed otherwise.
+	// Credentials is nil exactly when the provider is not given.
+	entries := []struct {
+		Key         SecretKey
+		Credentials any
+	}{
+		{Key: TwilioCredentialsKey, Credentials: newTwilioCredentials(i.SetData.TwilioCredentials)},
+		{Key: AliyunCredentialsKey, Credentials: newAliyunCredentials(i.SetData.AliyunCredentials)},
+		{Key: TencentCredentialsKey, Credentials: newTencentCredentials(i.SetData.TencentCredentials)},
+		{Key: CustomSMSProviderConfigKey, Credentials: newCustomSMSProviderConfig(i.SetData.CustomSMSProviderCredentials)},
 	}
 
-	if i.SetData.AliyunCredentials != nil {
-		aliyunCredentials := AliyunCredentials{
-			AccessKeyID:     i.SetData.AliyunCredentials.AccessKeyID,
-			AccessKeySecret: i.SetData.AliyunCredentials.AccessKeySecret,
-			SMSTemplateCodeConfig: SMSTemplateCodeConfig{
-				SignName:      i.SetData.AliyunCredentials.SignName,
-				TemplateCode:  i.SetData.AliyunCredentials.TemplateCode,
-				TemplateCodes: i.SetData.AliyunCredentials.TemplateCodes,
-			},
-			OverseasTemplateCode: i.SetData.AliyunCredentials.OverseasTemplateCode,
+	for _, entry := range entries {
+		var err error
+		if entry.Credentials != nil {
+			err = upsert(entry.Key, entry.Credentials)
+		} else {
+			err = remove(entry.Key)
 		}
-		err := upsert(AliyunCredentialsKey, aliyunCredentials)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := remove(AliyunCredentialsKey)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if i.SetData.TencentCredentials != nil {
-		tencentCredentials := TencentCredentials{
-			SecretID:  i.SetData.TencentCredentials.SecretID,
-			SecretKey: i.SetData.TencentCredentials.SecretKey,
-			SDKAppID:  i.SetData.TencentCredentials.SDKAppID,
-			Region:    i.SetData.TencentCredentials.Region,
-			SMSTemplateCodeConfig: SMSTemplateCodeConfig{
-				SignName:      i.SetData.TencentCredentials.SignName,
-				TemplateCode:  i.SetData.TencentCredentials.TemplateCode,
-				TemplateCodes: i.SetData.TencentCredentials.TemplateCodes,
-			},
-		}
-		err := upsert(TencentCredentialsKey, tencentCredentials)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := remove(TencentCredentialsKey)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if i.SetData.CustomSMSProviderCredentials != nil {
-		customSMSProviderConfig := CustomSMSProviderConfig{
-			URL:     i.SetData.CustomSMSProviderCredentials.URL,
-			Timeout: i.SetData.CustomSMSProviderCredentials.Timeout,
-		}
-		err := upsert(CustomSMSProviderConfigKey, customSMSProviderConfig)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := remove(CustomSMSProviderConfigKey)
 		if err != nil {
 			return nil, err
 		}
 	}
 	return out, nil
+}
+
+// The newXXX functions below return nil when the credentials are not given,
+// so that the caller can tell "not given" from "given" without repeating the nil check.
+
+func newTwilioCredentials(in *SMSProviderSecretsUpdateInstructionTwilioCredentials) any {
+	if in == nil {
+		return nil
+	}
+	out := TwilioCredentials{
+		CredentialType_WriteOnly: &in.CredentialType,
+		AccountSID:               in.AccountSID,
+	}
+	switch in.CredentialType {
+	case TwilioCredentialTypeAPIKey:
+		out.APIKeySID = in.APIKeySID
+		out.APIKeySecret = in.APIKeySecret
+	case TwilioCredentialTypeAuthToken:
+		out.AuthToken = in.AuthToken
+	}
+	if in.MessagingServiceSID != "" {
+		out.MessagingServiceSID = in.MessagingServiceSID
+	} else if in.From != "" {
+		out.From = in.From
+	}
+	return out
+}
+
+func newAliyunCredentials(in *SMSProviderSecretsUpdateInstructionAliyunCredentials) any {
+	if in == nil {
+		return nil
+	}
+	return AliyunCredentials{
+		AccessKeyID:     in.AccessKeyID,
+		AccessKeySecret: in.AccessKeySecret,
+		SMSTemplateCodeConfig: SMSTemplateCodeConfig{
+			SignName:      in.SignName,
+			TemplateCode:  in.TemplateCode,
+			TemplateCodes: in.TemplateCodes,
+		},
+		OverseasTemplateCode: in.OverseasTemplateCode,
+	}
+}
+
+func newTencentCredentials(in *SMSProviderSecretsUpdateInstructionTencentCredentials) any {
+	if in == nil {
+		return nil
+	}
+	return TencentCredentials{
+		SecretID:  in.SecretID,
+		SecretKey: in.SecretKey,
+		SDKAppID:  in.SDKAppID,
+		Region:    in.Region,
+		SMSTemplateCodeConfig: SMSTemplateCodeConfig{
+			SignName:      in.SignName,
+			TemplateCode:  in.TemplateCode,
+			TemplateCodes: in.TemplateCodes,
+		},
+	}
+}
+
+func newCustomSMSProviderConfig(in *SMSProviderSecretsUpdateInstructionCustomSMSProvider) any {
+	if in == nil {
+		return nil
+	}
+	return CustomSMSProviderConfig{
+		URL:     in.URL,
+		Timeout: in.Timeout,
+	}
 }
 
 var _ SecretConfigUpdateInstructionInterface = &SecretConfigUpdateInstruction{}

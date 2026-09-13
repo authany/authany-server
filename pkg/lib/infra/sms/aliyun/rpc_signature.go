@@ -2,6 +2,9 @@ package aliyun
 
 import (
 	"crypto/hmac"
+	// nolint: gosec
+	// G505: The Aliyun RPC style signature protocol mandates HMAC-SHA1.
+	// It is not our choice, and it cannot be replaced with a stronger hash.
 	"crypto/sha1"
 	"encoding/base64"
 	"net/url"
