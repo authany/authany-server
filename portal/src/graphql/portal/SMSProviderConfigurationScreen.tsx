@@ -31,6 +31,7 @@ import {
   PortalAPISecretConfigUpdateInstruction,
   SMSProvider,
   SMSProviderAliyunCredentials,
+  SMSProviderTencentCredentials,
   SMSProviderTwilioCredentials,
   getHookKind,
 } from "../../types";
@@ -40,6 +41,7 @@ import ScreenContent from "../../ScreenContent";
 import styles from "./SMSProviderConfigurationScreen.module.css";
 import logoTwilio from "../../images/twilio_logo.svg";
 import logoAliyun from "../../images/aliyun_logo.svg";
+import logoTencentCloud from "../../images/tencent_cloud_logo.svg";
 import logoWebhook from "../../images/webhook_logo.svg";
 import logoAuthany from "../../images/authany_logo.svg";
 import { startReauthentication } from "./Authenticated";
@@ -67,6 +69,10 @@ import {
   AliyunForm,
   AliyunFormState,
 } from "../../components/sms-provider/AliyunForm";
+import {
+  TencentForm,
+  TencentFormState,
+} from "../../components/sms-provider/TencentForm";
 import {
   SMSTemplateCodes,
   parseSMSTemplateCodes,
@@ -121,6 +127,7 @@ enum SMSProviderType {
   Authgear = "authgear",
   Twilio = "twilio",
   Aliyun = "aliyun",
+  Tencent = "tencent",
   Webhook = "webhook",
   Deno = "deno",
 }
@@ -135,7 +142,7 @@ const MASK = "********";
 // Matches v2 IconRadioCards storybook inner icon size (SquareIcon iconSize).
 const PROVIDER_RADIO_ICON_SIZE = "1.375rem";
 
-interface ConfigFormState extends AliyunFormState {
+interface ConfigFormState extends AliyunFormState, TencentFormState {
   enabled: boolean;
   providerType: SMSProviderType;
   webhookSecretKey: string | null;
@@ -185,6 +192,11 @@ function constructFormState(
   const hasAliyunCredentials =
     secrets.smsProviderSecrets?.aliyunCredentials != null;
 
+  const isSMSGatewayIsTencent =
+    config.messaging?.sms_gateway?.provider === "tencent";
+  const hasTencentCredentials =
+    secrets.smsProviderSecrets?.tencentCredentials != null;
+
   const isSMSGatewayIsCustom =
     config.messaging?.sms_gateway?.provider === "custom";
   const hasCustomProviderSecrets =
@@ -196,6 +208,9 @@ function constructFormState(
   } else if (isSMSGatewayIsAliyun && hasAliyunCredentials) {
     enabled = true;
     providerType = SMSProviderType.Aliyun;
+  } else if (isSMSGatewayIsTencent && hasTencentCredentials) {
+    enabled = true;
+    providerType = SMSProviderType.Tencent;
   } else if (isSMSGatewayIsCustom && hasCustomProviderSecrets) {
     enabled = true;
     if (
@@ -273,6 +288,25 @@ function constructFormState(
     aliyunOverseasTemplateCode = credentials?.overseasTemplateCode ?? "";
   }
 
+  let tencentSecretID = "";
+  let tencentSecretKey: string | null = "";
+  let tencentSDKAppID = "";
+  let tencentRegion = "";
+  let tencentSignName = "";
+  let tencentTemplateCode = "";
+  let tencentTemplateCodes: SMSTemplateCodes = {};
+
+  if (enabled && providerType === SMSProviderType.Tencent) {
+    const credentials = secrets.smsProviderSecrets?.tencentCredentials;
+    tencentSecretID = credentials?.secretID ?? "";
+    tencentSecretKey = credentials != null ? credentials.secretKey ?? null : "";
+    tencentSDKAppID = credentials?.sdkAppID ?? "";
+    tencentRegion = credentials?.region ?? "";
+    tencentSignName = credentials?.signName ?? "";
+    tencentTemplateCode = credentials?.templateCode ?? "";
+    tencentTemplateCodes = parseSMSTemplateCodes(credentials?.templateCodes);
+  }
+
   let webhookURL = "";
   let webhookTimeout = 30;
 
@@ -324,6 +358,14 @@ function constructFormState(
     aliyunTemplateCodes,
     aliyunOverseasTemplateCode,
 
+    tencentSecretID,
+    tencentSecretKey,
+    tencentSDKAppID,
+    tencentRegion,
+    tencentSignName,
+    tencentTemplateCode,
+    tencentTemplateCodes,
+
     webhookURL,
     webhookTimeout,
 
@@ -358,6 +400,9 @@ function constructConfig(
           break;
         case SMSProviderType.Aliyun:
           newProvider = "aliyun";
+          break;
+        case SMSProviderType.Tencent:
+          newProvider = "tencent";
           break;
         case SMSProviderType.Deno:
           newProvider = "custom";
@@ -420,6 +465,23 @@ function constructConfig(
             overseasTemplateCode: currentState.aliyunOverseasTemplateCode,
           };
           secrets.smsProviderSecrets = { aliyunCredentials: aliyunCredentials };
+          break;
+        }
+        case SMSProviderType.Tencent: {
+          const tencentCredentials: SMSProviderTencentCredentials = {
+            secretID: currentState.tencentSecretID,
+            secretKey: currentState.tencentSecretKey,
+            sdkAppID: currentState.tencentSDKAppID,
+            region: currentState.tencentRegion,
+            signName: currentState.tencentSignName,
+            templateCode: currentState.tencentTemplateCode,
+            templateCodes: serializeSMSTemplateCodes(
+              currentState.tencentTemplateCodes
+            ),
+          };
+          secrets.smsProviderSecrets = {
+            tencentCredentials: tencentCredentials,
+          };
           break;
         }
         case SMSProviderType.Webhook:
@@ -515,6 +577,30 @@ function constructSecretUpdateInstruction(
               overseasTemplateCode:
                 secrets.smsProviderSecrets.aliyunCredentials
                   .overseasTemplateCode,
+            },
+          },
+        },
+      };
+    case SMSProviderType.Tencent:
+      if (secrets.smsProviderSecrets.tencentCredentials == null) {
+        console.error("unexpected null tencentCredentials");
+        return undefined;
+      }
+      return {
+        smsProviderSecrets: {
+          action: "set",
+          setData: {
+            tencentCredentials: {
+              secretID: secrets.smsProviderSecrets.tencentCredentials.secretID,
+              secretKey:
+                secrets.smsProviderSecrets.tencentCredentials.secretKey,
+              sdkAppID: secrets.smsProviderSecrets.tencentCredentials.sdkAppID,
+              region: secrets.smsProviderSecrets.tencentCredentials.region,
+              signName: secrets.smsProviderSecrets.tencentCredentials.signName,
+              templateCode:
+                secrets.smsProviderSecrets.tencentCredentials.templateCode,
+              templateCodes:
+                secrets.smsProviderSecrets.tencentCredentials.templateCodes,
             },
           },
         },
@@ -720,6 +806,30 @@ function useTestSMSConfig(
           },
         };
       }
+      case SMSProviderType.Tencent: {
+        if (
+          !state.tencentSecretID ||
+          !state.tencentSecretKey ||
+          !state.tencentSDKAppID ||
+          !state.tencentSignName ||
+          !state.tencentTemplateCode
+        ) {
+          return null;
+        }
+        return {
+          tencent: {
+            secretID: state.tencentSecretID,
+            secretKey: state.tencentSecretKey,
+            sdkAppID: state.tencentSDKAppID,
+            region: state.tencentRegion,
+            signName: state.tencentSignName,
+            templateCode: state.tencentTemplateCode,
+            templateCodes: serializeSMSTemplateCodes(
+              state.tencentTemplateCodes
+            ),
+          },
+        };
+      }
       case SMSProviderType.Webhook:
         if (!state.webhookURL) {
           return null;
@@ -758,6 +868,13 @@ function useTestSMSConfig(
     state.enabled,
     state.providerType,
     state.resources,
+    state.tencentRegion,
+    state.tencentSDKAppID,
+    state.tencentSecretID,
+    state.tencentSecretKey,
+    state.tencentSignName,
+    state.tencentTemplateCode,
+    state.tencentTemplateCodes,
     state.twilioAPIKeySID,
     state.twilioAPIKeySecret,
     state.twilioAuthToken,
@@ -788,6 +905,8 @@ function computeIsSecretMasked(state: FormState): boolean {
       throw new Error("unreachable code");
     case SMSProviderType.Aliyun:
       return state.aliyunAccessKeySecret == null;
+    case SMSProviderType.Tencent:
+      return state.tencentSecretKey == null;
     case SMSProviderType.Webhook:
       return state.webhookSecretKey == null;
     case SMSProviderType.Deno:
@@ -897,6 +1016,7 @@ function SMSProviderConfigurationScreen1({
       smsProviderConfigured:
         secretConfig?.smsProviderSecrets?.twilioCredentials != null ||
         secretConfig?.smsProviderSecrets?.aliyunCredentials != null ||
+        secretConfig?.smsProviderSecrets?.tencentCredentials != null ||
         secretConfig?.smsProviderSecrets?.customSMSProviderCredentials != null,
     };
   }, [
@@ -909,6 +1029,7 @@ function SMSProviderConfigurationScreen1({
     effectiveAppConfig?.verification?.claims?.phone_number?.enabled,
     secretConfig?.smsProviderSecrets?.twilioCredentials,
     secretConfig?.smsProviderSecrets?.aliyunCredentials,
+    secretConfig?.smsProviderSecrets?.tencentCredentials,
     secretConfig?.smsProviderSecrets?.customSMSProviderCredentials,
   ]);
 
@@ -1154,6 +1275,24 @@ function SMSProviderConfigurationContent(props: {
         disabled: isCustomSMSProviderDisabled,
       },
       {
+        value: SMSProviderType.Tencent,
+        icon: (
+          <img
+            src={logoTencentCloud}
+            alt=""
+            className="object-contain"
+            style={{
+              width: PROVIDER_RADIO_ICON_SIZE,
+              height: PROVIDER_RADIO_ICON_SIZE,
+            }}
+          />
+        ),
+        title: (
+          <FormattedMessage id="SMSProviderConfigurationScreen.provider.tencent" />
+        ),
+        disabled: isCustomSMSProviderDisabled,
+      },
+      {
         value: SMSProviderType.Webhook,
         icon: (
           <img
@@ -1216,6 +1355,20 @@ function SMSProviderConfigurationContent(props: {
               // eslint-disable-next-line react/no-unstable-nested-components
               ExternalLink: (chunks: React.ReactNode) => (
                 <ExternalLink href="https://help.aliyun.com/zh/sms/">
+                  {chunks}
+                </ExternalLink>
+              ),
+            }}
+          />
+        );
+      case SMSProviderType.Tencent:
+        return (
+          <FormattedMessage
+            id="SMSProviderConfigurationScreen.provider.tencent.description"
+            values={{
+              // eslint-disable-next-line react/no-unstable-nested-components
+              ExternalLink: (chunks: React.ReactNode) => (
+                <ExternalLink href="https://cloud.tencent.com/document/product/382">
                   {chunks}
                 </ExternalLink>
               ),
@@ -1389,6 +1542,8 @@ function FormSection({
       return <TwilioForm form={form} />;
     case SMSProviderType.Aliyun:
       return <AliyunForm state={form.state} setState={form.setState} />;
+    case SMSProviderType.Tencent:
+      return <TencentForm state={form.state} setState={form.setState} />;
     case SMSProviderType.Webhook:
       return <WebhookForm form={form} onRevealSecrets={onRevealSecrets} />;
     case SMSProviderType.Deno:

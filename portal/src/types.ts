@@ -446,7 +446,7 @@ export interface VerificationRateLimitsSMSConfig {
   trigger_per_user?: RateLimitConfig;
 }
 
-export type SMSProvider = "nexmo" | "twilio" | "custom" | "aliyun";
+export type SMSProvider = "nexmo" | "twilio" | "custom" | "aliyun" | "tencent";
 
 export type SMSGatewayConfigUseConfigFrom =
   | "environment_variable"
@@ -859,6 +859,7 @@ export interface SAMLIdpSigningSecrets {
 export interface SMSProviderSecrets {
   twilioCredentials?: SMSProviderTwilioCredentials | null;
   aliyunCredentials?: SMSProviderAliyunCredentials | null;
+  tencentCredentials?: SMSProviderTencentCredentials | null;
   customSMSProviderCredentials?: SMSProviderCustomSMSProviderSecrets | null;
 }
 
@@ -869,6 +870,16 @@ export interface SMSProviderAliyunCredentials {
   templateCode?: string | null;
   templateCodes?: Record<string, string> | null;
   overseasTemplateCode?: string | null;
+}
+
+export interface SMSProviderTencentCredentials {
+  secretID: string;
+  secretKey?: string | null;
+  sdkAppID?: string | null;
+  region?: string | null;
+  signName?: string | null;
+  templateCode?: string | null;
+  templateCodes?: Record<string, string> | null;
 }
 
 export interface SMSProviderTwilioCredentials {

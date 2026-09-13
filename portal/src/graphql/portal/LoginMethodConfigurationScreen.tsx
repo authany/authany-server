@@ -3845,6 +3845,8 @@ const LoginMethodConfigurationScreen: React.VFC =
             null ||
           secretConfig.secretConfig?.smsProviderSecrets?.aliyunCredentials !=
             null ||
+          secretConfig.secretConfig?.smsProviderSecrets?.tencentCredentials !=
+            null ||
           secretConfig.secretConfig?.smsProviderSecrets
             ?.customSMSProviderCredentials != null,
         smtpConfigured: secretConfig.secretConfig?.smtpSecret != null,
@@ -3860,6 +3862,7 @@ const LoginMethodConfigurationScreen: React.VFC =
       configForm.state,
       secretConfig.secretConfig?.smsProviderSecrets?.twilioCredentials,
       secretConfig.secretConfig?.smsProviderSecrets?.aliyunCredentials,
+      secretConfig.secretConfig?.smsProviderSecrets?.tencentCredentials,
       secretConfig.secretConfig?.smsProviderSecrets
         ?.customSMSProviderCredentials,
       secretConfig.secretConfig?.smtpSecret,
