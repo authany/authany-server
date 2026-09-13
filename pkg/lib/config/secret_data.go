@@ -515,6 +515,34 @@ func (c *YunpianCredentials) SensitiveStrings() []string {
 	}
 }
 
+// SmsbaoCredentials configures SMSBao (短信宝), a body-based SMS provider.
+// GoodsID selects a dedicated sending channel and is optional.
+var _ = SecretConfigSchema.Add("SmsbaoCredentials", `
+{
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		"username": { "type": "string" },
+		"password_or_api_key": { "type": "string" },
+		"goods_id": { "type": "string" }
+	},
+	"required": ["username", "password_or_api_key"]
+}
+`)
+
+type SmsbaoCredentials struct {
+	Username         string `json:"username,omitempty"`
+	PasswordOrAPIKey string `json:"password_or_api_key,omitempty"`
+	GoodsID          string `json:"goods_id,omitempty"`
+}
+
+func (c *SmsbaoCredentials) SensitiveStrings() []string {
+	return []string{
+		c.Username,
+		c.PasswordOrAPIKey,
+	}
+}
+
 var _ = SecretConfigSchema.Add("JWS", `
 {
 	"type": "object",
