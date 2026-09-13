@@ -727,3 +727,137 @@ authgear.secrets.yaml:
 environment_variables:
 result:
 error: no available SMS client
+
+---
+name: test-aliyun-mas-only-secret-defined
+authgear.yaml:
+authgear.secrets.yaml:
+  aliyun_mas:
+    access_key_id: "my-access-key-id"
+    access_key_secret: "my-access-key-secret"
+    sign_name: "my-sign-name"
+    template_code: "SMS_0001"
+environment_variables:
+result:
+  access_key_id: "my-access-key-id"
+  access_key_secret: "my-access-key-secret"
+  sign_name: "my-sign-name"
+  template_code: "SMS_0001"
+
+---
+name: test-yunpian-only-secret-defined
+authgear.yaml:
+authgear.secrets.yaml:
+  yunpian:
+    apikey: "my-apikey"
+environment_variables:
+result:
+  apikey: "my-apikey"
+
+---
+name: test-smsbao-only-secret-defined
+authgear.yaml:
+authgear.secrets.yaml:
+  smsbao:
+    username: "my-username"
+    password_or_api_key: "my-password"
+    goods_id: "my-goods-id"
+environment_variables:
+result:
+  username: "my-username"
+  password_or_api_key: "my-password"
+  goods_id: "my-goods-id"
+
+---
+name: test-gatewayapi-only-secret-defined
+authgear.yaml:
+authgear.secrets.yaml:
+  gatewayapi:
+    endpoint: "https://gatewayapi.com"
+    api_token: "my-api-token"
+    sender: "my-sender"
+environment_variables:
+result:
+  endpoint: "https://gatewayapi.com"
+  api_token: "my-api-token"
+  sender: "my-sender"
+
+---
+name: test-smsaero-only-secret-defined
+authgear.yaml:
+authgear.secrets.yaml:
+  smsaero:
+    email: "my-email@example.com"
+    api_key: "my-api-key"
+    sender_name: "my-sender-name"
+environment_variables:
+result:
+  email: "my-email@example.com"
+  api_key: "my-api-key"
+  sender_name: "my-sender-name"
+
+---
+name: test-smsbao-selected-by-messaging-sms-provider
+authgear.yaml:
+  messaging:
+    sms_provider: smsbao
+authgear.secrets.yaml:
+  yunpian:
+    apikey: "my-apikey"
+  smsbao:
+    username: "my-username"
+    password_or_api_key: "my-password"
+    goods_id: "my-goods-id"
+environment_variables:
+result:
+  username: "my-username"
+  password_or_api_key: "my-password"
+  goods_id: "my-goods-id"
+
+---
+name: test-smsaero-selected-by-sms-gateway-provider
+authgear.yaml:
+  messaging:
+    sms_gateway:
+      use_config_from: authgear.secrets.yaml
+      provider: smsaero
+authgear.secrets.yaml:
+  gatewayapi:
+    endpoint: "https://gatewayapi.com"
+    api_token: "my-api-token"
+    sender: "my-sender"
+  smsaero:
+    email: "my-email@example.com"
+    api_key: "my-api-key"
+    sender_name: "my-sender-name"
+environment_variables:
+result:
+  email: "my-email@example.com"
+  api_key: "my-api-key"
+  sender_name: "my-sender-name"
+
+---
+name: test-yunpian-and-gatewayapi-ambiguous
+authgear.yaml:
+authgear.secrets.yaml:
+  yunpian:
+    apikey: "my-apikey"
+  gatewayapi:
+    endpoint: "https://gatewayapi.com"
+    api_token: "my-api-token"
+    sender: "my-sender"
+environment_variables:
+result:
+error: ambiguous SMS client
+
+---
+name: test-aliyun-mas-selected-but-no-secret
+authgear.yaml:
+  messaging:
+    sms_provider: aliyun_mas
+authgear.secrets.yaml:
+  yunpian:
+    apikey: "my-apikey"
+environment_variables:
+result:
+error: no available SMS client

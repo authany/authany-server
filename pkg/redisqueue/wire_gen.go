@@ -746,7 +746,12 @@ func newUserImportService(ctx context.Context, p *deps.AppProvider) *userimport.
 	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
 	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
 	aliyunCredentials := deps.ProvideAliyunCredentials(secretConfig)
+	aliyunMASCredentials := deps.ProvideAliyunMASCredentials(secretConfig)
 	tencentCredentials := deps.ProvideTencentCredentials(secretConfig)
+	yunpianCredentials := deps.ProvideYunpianCredentials(secretConfig)
+	smsbaoCredentials := deps.ProvideSmsbaoCredentials(secretConfig)
+	gatewayAPICredentials := deps.ProvideGatewayAPICredentials(secretConfig)
+	smsAeroCredentials := deps.ProvideSmsAeroCredentials(secretConfig)
 	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
 	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
 	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
@@ -778,7 +783,12 @@ func newUserImportService(ctx context.Context, p *deps.AppProvider) *userimport.
 		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
 		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
 		AuthgearSecretsYAMLAliyunCredentials:       aliyunCredentials,
+		AuthgearSecretsYAMLAliyunMASCredentials:    aliyunMASCredentials,
 		AuthgearSecretsYAMLTencentCredentials:      tencentCredentials,
+		AuthgearSecretsYAMLYunpianCredentials:      yunpianCredentials,
+		AuthgearSecretsYAMLSmsbaoCredentials:       smsbaoCredentials,
+		AuthgearSecretsYAMLGatewayAPICredentials:   gatewayAPICredentials,
+		AuthgearSecretsYAMLSmsAeroCredentials:      smsAeroCredentials,
 		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
 		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
 		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
