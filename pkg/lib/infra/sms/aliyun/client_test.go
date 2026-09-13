@@ -144,7 +144,9 @@ func TestAliyunClient(t *testing.T) {
 			client, closeServer := newClient(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.ParseForm()
 				form = r.PostForm
-				respondJSON(`{"Code":"OK","Message":"OK","RequestId":"req","BizId":"biz"}`)(w, r)
+				// The 正常返回示例 of
+				// https://help.aliyun.com/zh/sms/developer-reference/api-dysmsapi-2017-05-25-sendsms
+				respondJSON(`{"Code": "OK","Message": "OK","BizId": "9006197469364984****","RequestId": "F655A8D5-B967-440B-8683-DAD6FF8DE990"}`)(w, r)
 			}, credentials())
 			defer closeServer()
 
@@ -230,6 +232,8 @@ func TestAliyunClient(t *testing.T) {
 		})
 
 		Convey("error codes", func() {
+			// The codes are the ones of the 错误码 table of
+			// https://help.aliyun.com/zh/sms/developer-reference/api-error-codes
 			cases := []struct {
 				Code string
 				Kind *apierrors.Kind
@@ -245,7 +249,7 @@ func TestAliyunClient(t *testing.T) {
 			}
 			for _, c := range cases {
 				client, closeServer := newClient(
-					respondJSON(`{"Code":"`+c.Code+`","Message":"message","RequestId":"req"}`),
+					respondJSON(`{"Code":"`+c.Code+`","Message":"message","RequestId":"F655A8D5-B967-440B-8683-DAD6FF8DE990"}`),
 					credentials(),
 				)
 
