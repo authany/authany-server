@@ -744,6 +744,8 @@ const MFAConfigurationScreen: React.VFC = function MFAConfigurationScreen() {
       smsProviderConfigured:
         secretConfig.secretConfig?.smsProviderSecrets?.twilioCredentials !=
           null ||
+        secretConfig.secretConfig?.smsProviderSecrets?.aliyunCredentials !=
+          null ||
         secretConfig.secretConfig?.smsProviderSecrets
           ?.customSMSProviderCredentials != null,
       smtpConfigured: secretConfig.secretConfig?.smtpSecret != null,
@@ -753,6 +755,7 @@ const MFAConfigurationScreen: React.VFC = function MFAConfigurationScreen() {
     featureConfig.effectiveFeatureConfig,
     configForm.state,
     secretConfig.secretConfig?.smsProviderSecrets?.twilioCredentials,
+    secretConfig.secretConfig?.smsProviderSecrets?.aliyunCredentials,
     secretConfig.secretConfig?.smsProviderSecrets?.customSMSProviderCredentials,
     secretConfig.secretConfig?.smtpSecret,
   ]);

@@ -3843,6 +3843,8 @@ const LoginMethodConfigurationScreen: React.VFC =
         smsProviderConfigured:
           secretConfig.secretConfig?.smsProviderSecrets?.twilioCredentials !=
             null ||
+          secretConfig.secretConfig?.smsProviderSecrets?.aliyunCredentials !=
+            null ||
           secretConfig.secretConfig?.smsProviderSecrets
             ?.customSMSProviderCredentials != null,
         smtpConfigured: secretConfig.secretConfig?.smtpSecret != null,
@@ -3857,6 +3859,7 @@ const LoginMethodConfigurationScreen: React.VFC =
       featureConfig.effectiveFeatureConfig?.ui?.phone_input,
       configForm.state,
       secretConfig.secretConfig?.smsProviderSecrets?.twilioCredentials,
+      secretConfig.secretConfig?.smsProviderSecrets?.aliyunCredentials,
       secretConfig.secretConfig?.smsProviderSecrets
         ?.customSMSProviderCredentials,
       secretConfig.secretConfig?.smtpSecret,
