@@ -865,10 +865,19 @@ func (i *SAMLSpSigningSecretsUpdateInstruction) set(currentConfig *SecretConfig)
 }
 
 type SMSProviderSecretsUpdateInstructionSetData struct {
-	TwilioCredentials            *SMSProviderSecretsUpdateInstructionTwilioCredentials  `json:"twilioCredentials,omitempty"`
-	AliyunCredentials            *SMSProviderSecretsUpdateInstructionAliyunCredentials  `json:"aliyunCredentials,omitempty"`
-	TencentCredentials           *SMSProviderSecretsUpdateInstructionTencentCredentials `json:"tencentCredentials,omitempty"`
-	CustomSMSProviderCredentials *SMSProviderSecretsUpdateInstructionCustomSMSProvider  `json:"customSMSProviderCredentials,omitempty"`
+	TwilioCredentials            *SMSProviderSecretsUpdateInstructionTwilioCredentials    `json:"twilioCredentials,omitempty"`
+	AliyunCredentials            *SMSProviderSecretsUpdateInstructionAliyunCredentials    `json:"aliyunCredentials,omitempty"`
+	AliyunMASCredentials         *SMSProviderSecretsUpdateInstructionAliyunMASCredentials `json:"aliyunMASCredentials,omitempty"`
+	TencentCredentials           *SMSProviderSecretsUpdateInstructionTencentCredentials   `json:"tencentCredentials,omitempty"`
+	CustomSMSProviderCredentials *SMSProviderSecretsUpdateInstructionCustomSMSProvider    `json:"customSMSProviderCredentials,omitempty"`
+}
+
+type SMSProviderSecretsUpdateInstructionAliyunMASCredentials struct {
+	AccessKeyID     string            `json:"accessKeyID,omitempty"`
+	AccessKeySecret string            `json:"accessKeySecret,omitempty"`
+	SignName        string            `json:"signName,omitempty"`
+	TemplateCode    string            `json:"templateCode,omitempty"`
+	TemplateCodes   map[string]string `json:"templateCodes,omitempty"`
 }
 
 type SMSProviderSecretsUpdateInstructionTwilioCredentials struct {
@@ -970,6 +979,7 @@ func (i *SMSProviderSecretsUpdateInstruction) set(currentConfig *SecretConfig) (
 	}{
 		{Key: TwilioCredentialsKey, Credentials: newTwilioCredentials(i.SetData.TwilioCredentials)},
 		{Key: AliyunCredentialsKey, Credentials: newAliyunCredentials(i.SetData.AliyunCredentials)},
+		{Key: AliyunMASCredentialsKey, Credentials: newAliyunMASCredentials(i.SetData.AliyunMASCredentials)},
 		{Key: TencentCredentialsKey, Credentials: newTencentCredentials(i.SetData.TencentCredentials)},
 		{Key: CustomSMSProviderConfigKey, Credentials: newCustomSMSProviderConfig(i.SetData.CustomSMSProviderCredentials)},
 	}
@@ -1027,6 +1037,21 @@ func newAliyunCredentials(in *SMSProviderSecretsUpdateInstructionAliyunCredentia
 			TemplateCodes: in.TemplateCodes,
 		},
 		OverseasTemplateCode: in.OverseasTemplateCode,
+	}
+}
+
+func newAliyunMASCredentials(in *SMSProviderSecretsUpdateInstructionAliyunMASCredentials) any {
+	if in == nil {
+		return nil
+	}
+	return AliyunMASCredentials{
+		AccessKeyID:     in.AccessKeyID,
+		AccessKeySecret: in.AccessKeySecret,
+		SMSTemplateCodeConfig: SMSTemplateCodeConfig{
+			SignName:      in.SignName,
+			TemplateCode:  in.TemplateCode,
+			TemplateCodes: in.TemplateCodes,
+		},
 	}
 }
 

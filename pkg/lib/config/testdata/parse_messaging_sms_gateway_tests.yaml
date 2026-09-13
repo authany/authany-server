@@ -35,3 +35,9 @@ error: null
 config:
   use_config_from: "authgear.secrets.yaml"
   provider: "tencent"
+---
+name: success-authgear.secrets.yaml-with-provider-aliyun_mas
+error: null
+config:
+  use_config_from: "authgear.secrets.yaml"
+  provider: "aliyun_mas"
