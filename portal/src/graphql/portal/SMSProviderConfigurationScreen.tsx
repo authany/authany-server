@@ -31,8 +31,13 @@ import {
   PortalAPISecretConfigUpdateInstruction,
   SMSProvider,
   SMSProviderAliyunCredentials,
+  SMSProviderAliyunMASCredentials,
+  SMSProviderGatewayAPICredentials,
+  SMSProviderSmsAeroCredentials,
+  SMSProviderSmsbaoCredentials,
   SMSProviderTencentCredentials,
   SMSProviderTwilioCredentials,
+  SMSProviderYunpianCredentials,
   getHookKind,
 } from "../../types";
 import { produce } from "immer";
@@ -41,7 +46,12 @@ import ScreenContent from "../../ScreenContent";
 import styles from "./SMSProviderConfigurationScreen.module.css";
 import logoTwilio from "../../images/twilio_logo.svg";
 import logoAliyun from "../../images/aliyun_logo.svg";
+import logoAliyunMAS from "../../images/aliyun_mas_logo.svg";
 import logoTencentCloud from "../../images/tencent_cloud_logo.svg";
+import logoYunpian from "../../images/yunpian_logo.svg";
+import logoSMSBao from "../../images/smsbao_logo.svg";
+import logoGatewayAPI from "../../images/gatewayapi_logo.svg";
+import logoSMSAero from "../../images/smsaero_logo.svg";
 import logoWebhook from "../../images/webhook_logo.svg";
 import logoAuthany from "../../images/authany_logo.svg";
 import { startReauthentication } from "./Authenticated";
@@ -70,11 +80,34 @@ import {
   AliyunFormState,
 } from "../../components/sms-provider/AliyunForm";
 import {
+  AliyunMASForm,
+  AliyunMASFormState,
+} from "../../components/sms-provider/AliyunMASForm";
+import {
   TencentForm,
   TencentFormState,
 } from "../../components/sms-provider/TencentForm";
 import {
+  YunpianForm,
+  YunpianFormState,
+} from "../../components/sms-provider/YunpianForm";
+import {
+  SMSBaoForm,
+  SMSBaoFormState,
+} from "../../components/sms-provider/SMSBaoForm";
+import {
+  DEFAULT_GATEWAY_API_ENDPOINT,
+  GatewayAPIForm,
+  GatewayAPIFormState,
+} from "../../components/sms-provider/GatewayAPIForm";
+import {
+  SMSAeroForm,
+  SMSAeroFormState,
+} from "../../components/sms-provider/SMSAeroForm";
+import {
   SMSTemplateCodes,
+  localErrorSignNameRequired,
+  localErrorTemplateCodeRequired,
   parseSMSTemplateCodes,
   serializeSMSTemplateCodes,
 } from "../../components/sms-provider/TemplateCodeFields";
@@ -127,7 +160,12 @@ enum SMSProviderType {
   Authgear = "authgear",
   Twilio = "twilio",
   Aliyun = "aliyun",
+  AliyunMAS = "aliyun_mas",
   Tencent = "tencent",
+  Yunpian = "yunpian",
+  SMSBao = "smsbao",
+  GatewayAPI = "gatewayapi",
+  SMSAero = "smsaero",
   Webhook = "webhook",
   Deno = "deno",
 }
@@ -142,7 +180,14 @@ const MASK = "********";
 // Matches v2 IconRadioCards storybook inner icon size (SquareIcon iconSize).
 const PROVIDER_RADIO_ICON_SIZE = "1.375rem";
 
-interface ConfigFormState extends AliyunFormState, TencentFormState {
+interface ConfigFormState
+  extends AliyunFormState,
+    AliyunMASFormState,
+    TencentFormState,
+    YunpianFormState,
+    SMSBaoFormState,
+    GatewayAPIFormState,
+    SMSAeroFormState {
   enabled: boolean;
   providerType: SMSProviderType;
   webhookSecretKey: string | null;
@@ -192,10 +237,35 @@ function constructFormState(
   const hasAliyunCredentials =
     secrets.smsProviderSecrets?.aliyunCredentials != null;
 
+  const isSMSGatewayIsAliyunMAS =
+    config.messaging?.sms_gateway?.provider === "aliyun_mas";
+  const hasAliyunMASCredentials =
+    secrets.smsProviderSecrets?.aliyunMASCredentials != null;
+
   const isSMSGatewayIsTencent =
     config.messaging?.sms_gateway?.provider === "tencent";
   const hasTencentCredentials =
     secrets.smsProviderSecrets?.tencentCredentials != null;
+
+  const isSMSGatewayIsYunpian =
+    config.messaging?.sms_gateway?.provider === "yunpian";
+  const hasYunpianCredentials =
+    secrets.smsProviderSecrets?.yunpianCredentials != null;
+
+  const isSMSGatewayIsSMSBao =
+    config.messaging?.sms_gateway?.provider === "smsbao";
+  const hasSMSBaoCredentials =
+    secrets.smsProviderSecrets?.smsbaoCredentials != null;
+
+  const isSMSGatewayIsGatewayAPI =
+    config.messaging?.sms_gateway?.provider === "gatewayapi";
+  const hasGatewayAPICredentials =
+    secrets.smsProviderSecrets?.gatewayAPICredentials != null;
+
+  const isSMSGatewayIsSMSAero =
+    config.messaging?.sms_gateway?.provider === "smsaero";
+  const hasSMSAeroCredentials =
+    secrets.smsProviderSecrets?.smsAeroCredentials != null;
 
   const isSMSGatewayIsCustom =
     config.messaging?.sms_gateway?.provider === "custom";
@@ -208,9 +278,24 @@ function constructFormState(
   } else if (isSMSGatewayIsAliyun && hasAliyunCredentials) {
     enabled = true;
     providerType = SMSProviderType.Aliyun;
+  } else if (isSMSGatewayIsAliyunMAS && hasAliyunMASCredentials) {
+    enabled = true;
+    providerType = SMSProviderType.AliyunMAS;
   } else if (isSMSGatewayIsTencent && hasTencentCredentials) {
     enabled = true;
     providerType = SMSProviderType.Tencent;
+  } else if (isSMSGatewayIsYunpian && hasYunpianCredentials) {
+    enabled = true;
+    providerType = SMSProviderType.Yunpian;
+  } else if (isSMSGatewayIsSMSBao && hasSMSBaoCredentials) {
+    enabled = true;
+    providerType = SMSProviderType.SMSBao;
+  } else if (isSMSGatewayIsGatewayAPI && hasGatewayAPICredentials) {
+    enabled = true;
+    providerType = SMSProviderType.GatewayAPI;
+  } else if (isSMSGatewayIsSMSAero && hasSMSAeroCredentials) {
+    enabled = true;
+    providerType = SMSProviderType.SMSAero;
   } else if (isSMSGatewayIsCustom && hasCustomProviderSecrets) {
     enabled = true;
     if (
@@ -288,6 +373,22 @@ function constructFormState(
     aliyunOverseasTemplateCode = credentials?.overseasTemplateCode ?? "";
   }
 
+  let aliyunMASAccessKeyID = "";
+  let aliyunMASAccessKeySecret: string | null = "";
+  let aliyunMASSignName = "";
+  let aliyunMASTemplateCode = "";
+  let aliyunMASTemplateCodes: SMSTemplateCodes = {};
+
+  if (enabled && providerType === SMSProviderType.AliyunMAS) {
+    const credentials = secrets.smsProviderSecrets?.aliyunMASCredentials;
+    aliyunMASAccessKeyID = credentials?.accessKeyID ?? "";
+    aliyunMASAccessKeySecret =
+      credentials != null ? credentials.accessKeySecret ?? null : "";
+    aliyunMASSignName = credentials?.signName ?? "";
+    aliyunMASTemplateCode = credentials?.templateCode ?? "";
+    aliyunMASTemplateCodes = parseSMSTemplateCodes(credentials?.templateCodes);
+  }
+
   let tencentSecretID = "";
   let tencentSecretKey: string | null = "";
   let tencentSDKAppID = "";
@@ -305,6 +406,51 @@ function constructFormState(
     tencentSignName = credentials?.signName ?? "";
     tencentTemplateCode = credentials?.templateCode ?? "";
     tencentTemplateCodes = parseSMSTemplateCodes(credentials?.templateCodes);
+  }
+
+  let yunpianAPIKey: string | null = "";
+
+  if (enabled && providerType === SMSProviderType.Yunpian) {
+    const credentials = secrets.smsProviderSecrets?.yunpianCredentials;
+    yunpianAPIKey = credentials != null ? credentials.apiKey ?? null : "";
+  }
+
+  let smsbaoUsername = "";
+  let smsbaoPasswordOrAPIKey: string | null = "";
+  let smsbaoGoodsID = "";
+
+  if (enabled && providerType === SMSProviderType.SMSBao) {
+    const credentials = secrets.smsProviderSecrets?.smsbaoCredentials;
+    smsbaoUsername = credentials?.username ?? "";
+    smsbaoPasswordOrAPIKey =
+      credentials != null ? credentials.passwordOrAPIKey ?? null : "";
+    smsbaoGoodsID = credentials?.goodsID ?? "";
+  }
+
+  let gatewayAPIEndpoint: string = DEFAULT_GATEWAY_API_ENDPOINT;
+  let gatewayAPIAPIToken: string | null = "";
+  let gatewayAPISender = "";
+
+  if (enabled && providerType === SMSProviderType.GatewayAPI) {
+    const credentials = secrets.smsProviderSecrets?.gatewayAPICredentials;
+    gatewayAPIEndpoint =
+      credentials?.endpoint != null && credentials.endpoint !== ""
+        ? credentials.endpoint
+        : DEFAULT_GATEWAY_API_ENDPOINT;
+    gatewayAPIAPIToken =
+      credentials != null ? credentials.apiToken ?? null : "";
+    gatewayAPISender = credentials?.sender ?? "";
+  }
+
+  let smsAeroEmail = "";
+  let smsAeroAPIKey: string | null = "";
+  let smsAeroSenderName = "";
+
+  if (enabled && providerType === SMSProviderType.SMSAero) {
+    const credentials = secrets.smsProviderSecrets?.smsAeroCredentials;
+    smsAeroEmail = credentials?.email ?? "";
+    smsAeroAPIKey = credentials != null ? credentials.apiKey ?? null : "";
+    smsAeroSenderName = credentials?.senderName ?? "";
   }
 
   let webhookURL = "";
@@ -358,6 +504,12 @@ function constructFormState(
     aliyunTemplateCodes,
     aliyunOverseasTemplateCode,
 
+    aliyunMASAccessKeyID,
+    aliyunMASAccessKeySecret,
+    aliyunMASSignName,
+    aliyunMASTemplateCode,
+    aliyunMASTemplateCodes,
+
     tencentSecretID,
     tencentSecretKey,
     tencentSDKAppID,
@@ -365,6 +517,20 @@ function constructFormState(
     tencentSignName,
     tencentTemplateCode,
     tencentTemplateCodes,
+
+    yunpianAPIKey,
+
+    smsbaoUsername,
+    smsbaoPasswordOrAPIKey,
+    smsbaoGoodsID,
+
+    gatewayAPIEndpoint,
+    gatewayAPIAPIToken,
+    gatewayAPISender,
+
+    smsAeroEmail,
+    smsAeroAPIKey,
+    smsAeroSenderName,
 
     webhookURL,
     webhookTimeout,
@@ -401,8 +567,23 @@ function constructConfig(
         case SMSProviderType.Aliyun:
           newProvider = "aliyun";
           break;
+        case SMSProviderType.AliyunMAS:
+          newProvider = "aliyun_mas";
+          break;
         case SMSProviderType.Tencent:
           newProvider = "tencent";
+          break;
+        case SMSProviderType.Yunpian:
+          newProvider = "yunpian";
+          break;
+        case SMSProviderType.SMSBao:
+          newProvider = "smsbao";
+          break;
+        case SMSProviderType.GatewayAPI:
+          newProvider = "gatewayapi";
+          break;
+        case SMSProviderType.SMSAero:
+          newProvider = "smsaero";
           break;
         case SMSProviderType.Deno:
           newProvider = "custom";
@@ -467,6 +648,21 @@ function constructConfig(
           secrets.smsProviderSecrets = { aliyunCredentials: aliyunCredentials };
           break;
         }
+        case SMSProviderType.AliyunMAS: {
+          const aliyunMASCredentials: SMSProviderAliyunMASCredentials = {
+            accessKeyID: currentState.aliyunMASAccessKeyID,
+            accessKeySecret: currentState.aliyunMASAccessKeySecret,
+            signName: currentState.aliyunMASSignName,
+            templateCode: currentState.aliyunMASTemplateCode,
+            templateCodes: serializeSMSTemplateCodes(
+              currentState.aliyunMASTemplateCodes
+            ),
+          };
+          secrets.smsProviderSecrets = {
+            aliyunMASCredentials: aliyunMASCredentials,
+          };
+          break;
+        }
         case SMSProviderType.Tencent: {
           const tencentCredentials: SMSProviderTencentCredentials = {
             secretID: currentState.tencentSecretID,
@@ -481,6 +677,48 @@ function constructConfig(
           };
           secrets.smsProviderSecrets = {
             tencentCredentials: tencentCredentials,
+          };
+          break;
+        }
+        case SMSProviderType.Yunpian: {
+          const yunpianCredentials: SMSProviderYunpianCredentials = {
+            apiKey: currentState.yunpianAPIKey,
+          };
+          secrets.smsProviderSecrets = {
+            yunpianCredentials: yunpianCredentials,
+          };
+          break;
+        }
+        case SMSProviderType.SMSBao: {
+          const smsbaoCredentials: SMSProviderSmsbaoCredentials = {
+            username: currentState.smsbaoUsername,
+            passwordOrAPIKey: currentState.smsbaoPasswordOrAPIKey,
+            goodsID: currentState.smsbaoGoodsID,
+          };
+          secrets.smsProviderSecrets = {
+            smsbaoCredentials: smsbaoCredentials,
+          };
+          break;
+        }
+        case SMSProviderType.GatewayAPI: {
+          const gatewayAPICredentials: SMSProviderGatewayAPICredentials = {
+            endpoint: currentState.gatewayAPIEndpoint,
+            apiToken: currentState.gatewayAPIAPIToken,
+            sender: currentState.gatewayAPISender,
+          };
+          secrets.smsProviderSecrets = {
+            gatewayAPICredentials: gatewayAPICredentials,
+          };
+          break;
+        }
+        case SMSProviderType.SMSAero: {
+          const smsAeroCredentials: SMSProviderSmsAeroCredentials = {
+            email: currentState.smsAeroEmail,
+            apiKey: currentState.smsAeroAPIKey,
+            senderName: currentState.smsAeroSenderName,
+          };
+          secrets.smsProviderSecrets = {
+            smsAeroCredentials: smsAeroCredentials,
           };
           break;
         }
@@ -581,6 +819,30 @@ function constructSecretUpdateInstruction(
           },
         },
       };
+    case SMSProviderType.AliyunMAS:
+      if (secrets.smsProviderSecrets.aliyunMASCredentials == null) {
+        console.error("unexpected null aliyunMASCredentials");
+        return undefined;
+      }
+      return {
+        smsProviderSecrets: {
+          action: "set",
+          setData: {
+            aliyunMASCredentials: {
+              accessKeyID:
+                secrets.smsProviderSecrets.aliyunMASCredentials.accessKeyID,
+              accessKeySecret:
+                secrets.smsProviderSecrets.aliyunMASCredentials.accessKeySecret,
+              signName:
+                secrets.smsProviderSecrets.aliyunMASCredentials.signName,
+              templateCode:
+                secrets.smsProviderSecrets.aliyunMASCredentials.templateCode,
+              templateCodes:
+                secrets.smsProviderSecrets.aliyunMASCredentials.templateCodes,
+            },
+          },
+        },
+      };
     case SMSProviderType.Tencent:
       if (secrets.smsProviderSecrets.tencentCredentials == null) {
         console.error("unexpected null tencentCredentials");
@@ -601,6 +863,76 @@ function constructSecretUpdateInstruction(
                 secrets.smsProviderSecrets.tencentCredentials.templateCode,
               templateCodes:
                 secrets.smsProviderSecrets.tencentCredentials.templateCodes,
+            },
+          },
+        },
+      };
+    case SMSProviderType.Yunpian:
+      if (secrets.smsProviderSecrets.yunpianCredentials == null) {
+        console.error("unexpected null yunpianCredentials");
+        return undefined;
+      }
+      return {
+        smsProviderSecrets: {
+          action: "set",
+          setData: {
+            yunpianCredentials: {
+              apiKey: secrets.smsProviderSecrets.yunpianCredentials.apiKey,
+            },
+          },
+        },
+      };
+    case SMSProviderType.SMSBao:
+      if (secrets.smsProviderSecrets.smsbaoCredentials == null) {
+        console.error("unexpected null smsbaoCredentials");
+        return undefined;
+      }
+      return {
+        smsProviderSecrets: {
+          action: "set",
+          setData: {
+            smsbaoCredentials: {
+              username: secrets.smsProviderSecrets.smsbaoCredentials.username,
+              passwordOrAPIKey:
+                secrets.smsProviderSecrets.smsbaoCredentials.passwordOrAPIKey,
+              goodsID: secrets.smsProviderSecrets.smsbaoCredentials.goodsID,
+            },
+          },
+        },
+      };
+    case SMSProviderType.GatewayAPI:
+      if (secrets.smsProviderSecrets.gatewayAPICredentials == null) {
+        console.error("unexpected null gatewayAPICredentials");
+        return undefined;
+      }
+      return {
+        smsProviderSecrets: {
+          action: "set",
+          setData: {
+            gatewayAPICredentials: {
+              endpoint:
+                secrets.smsProviderSecrets.gatewayAPICredentials.endpoint,
+              apiToken:
+                secrets.smsProviderSecrets.gatewayAPICredentials.apiToken,
+              sender: secrets.smsProviderSecrets.gatewayAPICredentials.sender,
+            },
+          },
+        },
+      };
+    case SMSProviderType.SMSAero:
+      if (secrets.smsProviderSecrets.smsAeroCredentials == null) {
+        console.error("unexpected null smsAeroCredentials");
+        return undefined;
+      }
+      return {
+        smsProviderSecrets: {
+          action: "set",
+          setData: {
+            smsAeroCredentials: {
+              email: secrets.smsProviderSecrets.smsAeroCredentials.email,
+              apiKey: secrets.smsProviderSecrets.smsAeroCredentials.apiKey,
+              senderName:
+                secrets.smsProviderSecrets.smsAeroCredentials.senderName,
             },
           },
         },
@@ -806,6 +1138,27 @@ function useTestSMSConfig(
           },
         };
       }
+      case SMSProviderType.AliyunMAS: {
+        if (
+          !state.aliyunMASAccessKeyID ||
+          !state.aliyunMASAccessKeySecret ||
+          !state.aliyunMASSignName ||
+          !state.aliyunMASTemplateCode
+        ) {
+          return null;
+        }
+        return {
+          aliyunMAS: {
+            accessKeyID: state.aliyunMASAccessKeyID,
+            accessKeySecret: state.aliyunMASAccessKeySecret,
+            signName: state.aliyunMASSignName,
+            templateCode: state.aliyunMASTemplateCode,
+            templateCodes: serializeSMSTemplateCodes(
+              state.aliyunMASTemplateCodes
+            ),
+          },
+        };
+      }
       case SMSProviderType.Tencent: {
         if (
           !state.tencentSecretID ||
@@ -827,6 +1180,56 @@ function useTestSMSConfig(
             templateCodes: serializeSMSTemplateCodes(
               state.tencentTemplateCodes
             ),
+          },
+        };
+      }
+      case SMSProviderType.Yunpian: {
+        if (!state.yunpianAPIKey) {
+          return null;
+        }
+        return {
+          yunpian: {
+            apiKey: state.yunpianAPIKey,
+          },
+        };
+      }
+      case SMSProviderType.SMSBao: {
+        if (!state.smsbaoUsername || !state.smsbaoPasswordOrAPIKey) {
+          return null;
+        }
+        return {
+          smsbao: {
+            username: state.smsbaoUsername,
+            passwordOrAPIKey: state.smsbaoPasswordOrAPIKey,
+            goodsID: state.smsbaoGoodsID,
+          },
+        };
+      }
+      case SMSProviderType.GatewayAPI: {
+        if (!state.gatewayAPIAPIToken || !state.gatewayAPISender) {
+          return null;
+        }
+        return {
+          gatewayAPI: {
+            endpoint: state.gatewayAPIEndpoint,
+            apiToken: state.gatewayAPIAPIToken,
+            sender: state.gatewayAPISender,
+          },
+        };
+      }
+      case SMSProviderType.SMSAero: {
+        if (
+          !state.smsAeroEmail ||
+          !state.smsAeroAPIKey ||
+          !state.smsAeroSenderName
+        ) {
+          return null;
+        }
+        return {
+          smsAero: {
+            email: state.smsAeroEmail,
+            apiKey: state.smsAeroAPIKey,
+            senderName: state.smsAeroSenderName,
           },
         };
       }
@@ -864,10 +1267,24 @@ function useTestSMSConfig(
     state.aliyunSignName,
     state.aliyunTemplateCode,
     state.aliyunTemplateCodes,
+    state.aliyunMASAccessKeyID,
+    state.aliyunMASAccessKeySecret,
+    state.aliyunMASSignName,
+    state.aliyunMASTemplateCode,
+    state.aliyunMASTemplateCodes,
     state.denoHookTimeout,
     state.enabled,
+    state.gatewayAPIAPIToken,
+    state.gatewayAPIEndpoint,
+    state.gatewayAPISender,
     state.providerType,
     state.resources,
+    state.smsAeroAPIKey,
+    state.smsAeroEmail,
+    state.smsAeroSenderName,
+    state.smsbaoGoodsID,
+    state.smsbaoPasswordOrAPIKey,
+    state.smsbaoUsername,
     state.tencentRegion,
     state.tencentSDKAppID,
     state.tencentSecretID,
@@ -885,6 +1302,7 @@ function useTestSMSConfig(
     state.twilioSenderType,
     state.webhookTimeout,
     state.webhookURL,
+    state.yunpianAPIKey,
   ]);
 }
 
@@ -905,8 +1323,18 @@ function computeIsSecretMasked(state: FormState): boolean {
       throw new Error("unreachable code");
     case SMSProviderType.Aliyun:
       return state.aliyunAccessKeySecret == null;
+    case SMSProviderType.AliyunMAS:
+      return state.aliyunMASAccessKeySecret == null;
     case SMSProviderType.Tencent:
       return state.tencentSecretKey == null;
+    case SMSProviderType.Yunpian:
+      return state.yunpianAPIKey == null;
+    case SMSProviderType.SMSBao:
+      return state.smsbaoPasswordOrAPIKey == null;
+    case SMSProviderType.GatewayAPI:
+      return state.gatewayAPIAPIToken == null;
+    case SMSProviderType.SMSAero:
+      return state.smsAeroAPIKey == null;
     case SMSProviderType.Webhook:
       return state.webhookSecretKey == null;
     case SMSProviderType.Deno:
@@ -1016,7 +1444,12 @@ function SMSProviderConfigurationScreen1({
       smsProviderConfigured:
         secretConfig?.smsProviderSecrets?.twilioCredentials != null ||
         secretConfig?.smsProviderSecrets?.aliyunCredentials != null ||
+        secretConfig?.smsProviderSecrets?.aliyunMASCredentials != null ||
         secretConfig?.smsProviderSecrets?.tencentCredentials != null ||
+        secretConfig?.smsProviderSecrets?.yunpianCredentials != null ||
+        secretConfig?.smsProviderSecrets?.smsbaoCredentials != null ||
+        secretConfig?.smsProviderSecrets?.gatewayAPICredentials != null ||
+        secretConfig?.smsProviderSecrets?.smsAeroCredentials != null ||
         secretConfig?.smsProviderSecrets?.customSMSProviderCredentials != null,
     };
   }, [
@@ -1029,7 +1462,12 @@ function SMSProviderConfigurationScreen1({
     effectiveAppConfig?.verification?.claims?.phone_number?.enabled,
     secretConfig?.smsProviderSecrets?.twilioCredentials,
     secretConfig?.smsProviderSecrets?.aliyunCredentials,
+    secretConfig?.smsProviderSecrets?.aliyunMASCredentials,
     secretConfig?.smsProviderSecrets?.tencentCredentials,
+    secretConfig?.smsProviderSecrets?.yunpianCredentials,
+    secretConfig?.smsProviderSecrets?.smsbaoCredentials,
+    secretConfig?.smsProviderSecrets?.gatewayAPICredentials,
+    secretConfig?.smsProviderSecrets?.smsAeroCredentials,
     secretConfig?.smsProviderSecrets?.customSMSProviderCredentials,
   ]);
 
@@ -1062,6 +1500,20 @@ function SMSProviderConfigurationScreen1({
     },
   };
 
+  const validateTemplateCodeFields = useCallback(
+    (signName: string, templateCode: string) => {
+      if (!signName) {
+        setLocalError(localErrorSignNameRequired);
+        throw new Error("sign name is required");
+      }
+      if (!templateCode) {
+        setLocalError(localErrorTemplateCodeRequired);
+        throw new Error("template code is required");
+      }
+    },
+    []
+  );
+
   const validateForm = useCallback(async () => {
     setLocalError(null);
     if (!form.state.enabled) {
@@ -1084,15 +1536,40 @@ function SMSProviderConfigurationScreen1({
             break;
         }
         break;
+      case SMSProviderType.Aliyun:
+        validateTemplateCodeFields(
+          form.state.aliyunSignName,
+          form.state.aliyunTemplateCode
+        );
+        break;
+      case SMSProviderType.AliyunMAS:
+        validateTemplateCodeFields(
+          form.state.aliyunMASSignName,
+          form.state.aliyunMASTemplateCode
+        );
+        break;
+      case SMSProviderType.Tencent:
+        validateTemplateCodeFields(
+          form.state.tencentSignName,
+          form.state.tencentTemplateCode
+        );
+        break;
       default:
         break;
     }
   }, [
+    form.state.aliyunMASSignName,
+    form.state.aliyunMASTemplateCode,
+    form.state.aliyunSignName,
+    form.state.aliyunTemplateCode,
     form.state.enabled,
     form.state.providerType,
+    form.state.tencentSignName,
+    form.state.tencentTemplateCode,
     form.state.twilioFrom,
     form.state.twilioMessagingServiceSID,
     form.state.twilioSenderType,
+    validateTemplateCodeFields,
   ]);
 
   if (loadingAppConfig || form.isLoading || featureConfig.isLoading) {
@@ -1275,6 +1752,24 @@ function SMSProviderConfigurationContent(props: {
         disabled: isCustomSMSProviderDisabled,
       },
       {
+        value: SMSProviderType.AliyunMAS,
+        icon: (
+          <img
+            src={logoAliyunMAS}
+            alt=""
+            className="object-contain"
+            style={{
+              width: PROVIDER_RADIO_ICON_SIZE,
+              height: PROVIDER_RADIO_ICON_SIZE,
+            }}
+          />
+        ),
+        title: (
+          <FormattedMessage id="SMSProviderConfigurationScreen.provider.aliyunMAS" />
+        ),
+        disabled: isCustomSMSProviderDisabled,
+      },
+      {
         value: SMSProviderType.Tencent,
         icon: (
           <img
@@ -1289,6 +1784,78 @@ function SMSProviderConfigurationContent(props: {
         ),
         title: (
           <FormattedMessage id="SMSProviderConfigurationScreen.provider.tencent" />
+        ),
+        disabled: isCustomSMSProviderDisabled,
+      },
+      {
+        value: SMSProviderType.Yunpian,
+        icon: (
+          <img
+            src={logoYunpian}
+            alt=""
+            className="object-contain"
+            style={{
+              width: PROVIDER_RADIO_ICON_SIZE,
+              height: PROVIDER_RADIO_ICON_SIZE,
+            }}
+          />
+        ),
+        title: (
+          <FormattedMessage id="SMSProviderConfigurationScreen.provider.yunpian" />
+        ),
+        disabled: isCustomSMSProviderDisabled,
+      },
+      {
+        value: SMSProviderType.SMSBao,
+        icon: (
+          <img
+            src={logoSMSBao}
+            alt=""
+            className="object-contain"
+            style={{
+              width: PROVIDER_RADIO_ICON_SIZE,
+              height: PROVIDER_RADIO_ICON_SIZE,
+            }}
+          />
+        ),
+        title: (
+          <FormattedMessage id="SMSProviderConfigurationScreen.provider.smsbao" />
+        ),
+        disabled: isCustomSMSProviderDisabled,
+      },
+      {
+        value: SMSProviderType.GatewayAPI,
+        icon: (
+          <img
+            src={logoGatewayAPI}
+            alt=""
+            className="object-contain"
+            style={{
+              width: PROVIDER_RADIO_ICON_SIZE,
+              height: PROVIDER_RADIO_ICON_SIZE,
+            }}
+          />
+        ),
+        title: (
+          <FormattedMessage id="SMSProviderConfigurationScreen.provider.gatewayapi" />
+        ),
+        disabled: isCustomSMSProviderDisabled,
+      },
+      {
+        value: SMSProviderType.SMSAero,
+        icon: (
+          <img
+            src={logoSMSAero}
+            alt=""
+            className="object-contain"
+            style={{
+              width: PROVIDER_RADIO_ICON_SIZE,
+              height: PROVIDER_RADIO_ICON_SIZE,
+            }}
+          />
+        ),
+        title: (
+          <FormattedMessage id="SMSProviderConfigurationScreen.provider.smsaero" />
         ),
         disabled: isCustomSMSProviderDisabled,
       },
@@ -1361,6 +1928,20 @@ function SMSProviderConfigurationContent(props: {
             }}
           />
         );
+      case SMSProviderType.AliyunMAS:
+        return (
+          <FormattedMessage
+            id="SMSProviderConfigurationScreen.provider.aliyunMAS.description"
+            values={{
+              // eslint-disable-next-line react/no-unstable-nested-components
+              ExternalLink: (chunks: React.ReactNode) => (
+                <ExternalLink href="https://help.aliyun.com/zh/pnvs/">
+                  {chunks}
+                </ExternalLink>
+              ),
+            }}
+          />
+        );
       case SMSProviderType.Tencent:
         return (
           <FormattedMessage
@@ -1369,6 +1950,62 @@ function SMSProviderConfigurationContent(props: {
               // eslint-disable-next-line react/no-unstable-nested-components
               ExternalLink: (chunks: React.ReactNode) => (
                 <ExternalLink href="https://cloud.tencent.com/document/product/382">
+                  {chunks}
+                </ExternalLink>
+              ),
+            }}
+          />
+        );
+      case SMSProviderType.Yunpian:
+        return (
+          <FormattedMessage
+            id="SMSProviderConfigurationScreen.provider.yunpian.description"
+            values={{
+              // eslint-disable-next-line react/no-unstable-nested-components
+              ExternalLink: (chunks: React.ReactNode) => (
+                <ExternalLink href="https://www.yunpian.com/official/document/sms/zh_CN/introduction_api_domains">
+                  {chunks}
+                </ExternalLink>
+              ),
+            }}
+          />
+        );
+      case SMSProviderType.SMSBao:
+        return (
+          <FormattedMessage
+            id="SMSProviderConfigurationScreen.provider.smsbao.description"
+            values={{
+              // eslint-disable-next-line react/no-unstable-nested-components
+              ExternalLink: (chunks: React.ReactNode) => (
+                <ExternalLink href="https://www.smsbao.com/openapi/">
+                  {chunks}
+                </ExternalLink>
+              ),
+            }}
+          />
+        );
+      case SMSProviderType.GatewayAPI:
+        return (
+          <FormattedMessage
+            id="SMSProviderConfigurationScreen.provider.gatewayapi.description"
+            values={{
+              // eslint-disable-next-line react/no-unstable-nested-components
+              ExternalLink: (chunks: React.ReactNode) => (
+                <ExternalLink href="https://gatewayapi.com/docs/apis/rest/">
+                  {chunks}
+                </ExternalLink>
+              ),
+            }}
+          />
+        );
+      case SMSProviderType.SMSAero:
+        return (
+          <FormattedMessage
+            id="SMSProviderConfigurationScreen.provider.smsaero.description"
+            values={{
+              // eslint-disable-next-line react/no-unstable-nested-components
+              ExternalLink: (chunks: React.ReactNode) => (
+                <ExternalLink href="https://smsaero.ru/integration/api/">
                   {chunks}
                 </ExternalLink>
               ),
@@ -1542,8 +2179,18 @@ function FormSection({
       return <TwilioForm form={form} />;
     case SMSProviderType.Aliyun:
       return <AliyunForm state={form.state} setState={form.setState} />;
+    case SMSProviderType.AliyunMAS:
+      return <AliyunMASForm state={form.state} setState={form.setState} />;
     case SMSProviderType.Tencent:
       return <TencentForm state={form.state} setState={form.setState} />;
+    case SMSProviderType.Yunpian:
+      return <YunpianForm state={form.state} setState={form.setState} />;
+    case SMSProviderType.SMSBao:
+      return <SMSBaoForm state={form.state} setState={form.setState} />;
+    case SMSProviderType.GatewayAPI:
+      return <GatewayAPIForm state={form.state} setState={form.setState} />;
+    case SMSProviderType.SMSAero:
+      return <SMSAeroForm state={form.state} setState={form.setState} />;
     case SMSProviderType.Webhook:
       return <WebhookForm form={form} onRevealSecrets={onRevealSecrets} />;
     case SMSProviderType.Deno:
