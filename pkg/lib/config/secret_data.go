@@ -491,6 +491,30 @@ func (c *TencentCredentials) SensitiveStrings() []string {
 	}
 }
 
+// YunpianCredentials configures Yunpian (云片), a body-based SMS provider. The
+// body sent must match a template pre-approved by Yunpian, including the
+// signature enclosed in 【】.
+var _ = SecretConfigSchema.Add("YunpianCredentials", `
+{
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		"apikey": { "type": "string" }
+	},
+	"required": ["apikey"]
+}
+`)
+
+type YunpianCredentials struct {
+	APIKey string `json:"apikey,omitempty"`
+}
+
+func (c *YunpianCredentials) SensitiveStrings() []string {
+	return []string{
+		c.APIKey,
+	}
+}
+
 var _ = SecretConfigSchema.Add("JWS", `
 {
 	"type": "object",

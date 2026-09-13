@@ -869,7 +869,12 @@ type SMSProviderSecretsUpdateInstructionSetData struct {
 	AliyunCredentials            *SMSProviderSecretsUpdateInstructionAliyunCredentials    `json:"aliyunCredentials,omitempty"`
 	AliyunMASCredentials         *SMSProviderSecretsUpdateInstructionAliyunMASCredentials `json:"aliyunMASCredentials,omitempty"`
 	TencentCredentials           *SMSProviderSecretsUpdateInstructionTencentCredentials   `json:"tencentCredentials,omitempty"`
+	YunpianCredentials           *SMSProviderSecretsUpdateInstructionYunpianCredentials   `json:"yunpianCredentials,omitempty"`
 	CustomSMSProviderCredentials *SMSProviderSecretsUpdateInstructionCustomSMSProvider    `json:"customSMSProviderCredentials,omitempty"`
+}
+
+type SMSProviderSecretsUpdateInstructionYunpianCredentials struct {
+	APIKey string `json:"apiKey,omitempty"`
 }
 
 type SMSProviderSecretsUpdateInstructionAliyunMASCredentials struct {
@@ -981,6 +986,7 @@ func (i *SMSProviderSecretsUpdateInstruction) set(currentConfig *SecretConfig) (
 		{Key: AliyunCredentialsKey, Credentials: newAliyunCredentials(i.SetData.AliyunCredentials)},
 		{Key: AliyunMASCredentialsKey, Credentials: newAliyunMASCredentials(i.SetData.AliyunMASCredentials)},
 		{Key: TencentCredentialsKey, Credentials: newTencentCredentials(i.SetData.TencentCredentials)},
+		{Key: YunpianCredentialsKey, Credentials: newYunpianCredentials(i.SetData.YunpianCredentials)},
 		{Key: CustomSMSProviderConfigKey, Credentials: newCustomSMSProviderConfig(i.SetData.CustomSMSProviderCredentials)},
 	}
 
@@ -1069,6 +1075,15 @@ func newTencentCredentials(in *SMSProviderSecretsUpdateInstructionTencentCredent
 			TemplateCode:  in.TemplateCode,
 			TemplateCodes: in.TemplateCodes,
 		},
+	}
+}
+
+func newYunpianCredentials(in *SMSProviderSecretsUpdateInstructionYunpianCredentials) any {
+	if in == nil {
+		return nil
+	}
+	return YunpianCredentials{
+		APIKey: in.APIKey,
 	}
 }
 
