@@ -865,38 +865,15 @@ func (i *SAMLSpSigningSecretsUpdateInstruction) set(currentConfig *SecretConfig)
 }
 
 type SMSProviderSecretsUpdateInstructionSetData struct {
-	TwilioCredentials            *SMSProviderSecretsUpdateInstructionTwilioCredentials    `json:"twilioCredentials,omitempty"`
-	AliyunCredentials            *SMSProviderSecretsUpdateInstructionAliyunCredentials    `json:"aliyunCredentials,omitempty"`
-	AliyunMASCredentials         *SMSProviderSecretsUpdateInstructionAliyunMASCredentials `json:"aliyunMASCredentials,omitempty"`
-	TencentCredentials           *SMSProviderSecretsUpdateInstructionTencentCredentials   `json:"tencentCredentials,omitempty"`
-	YunpianCredentials           *SMSProviderSecretsUpdateInstructionYunpianCredentials   `json:"yunpianCredentials,omitempty"`
-	SmsbaoCredentials            *SMSProviderSecretsUpdateInstructionSmsbaoCredentials    `json:"smsbaoCredentials,omitempty"`
+	TwilioCredentials            *SMSProviderSecretsUpdateInstructionTwilioCredentials     `json:"twilioCredentials,omitempty"`
+	AliyunCredentials            *SMSProviderSecretsUpdateInstructionAliyunCredentials     `json:"aliyunCredentials,omitempty"`
+	AliyunMASCredentials         *SMSProviderSecretsUpdateInstructionAliyunMASCredentials  `json:"aliyunMASCredentials,omitempty"`
+	TencentCredentials           *SMSProviderSecretsUpdateInstructionTencentCredentials    `json:"tencentCredentials,omitempty"`
+	YunpianCredentials           *SMSProviderSecretsUpdateInstructionYunpianCredentials    `json:"yunpianCredentials,omitempty"`
+	SmsbaoCredentials            *SMSProviderSecretsUpdateInstructionSmsbaoCredentials     `json:"smsbaoCredentials,omitempty"`
 	GatewayAPICredentials        *SMSProviderSecretsUpdateInstructionGatewayAPICredentials `json:"gatewayAPICredentials,omitempty"`
-	CustomSMSProviderCredentials *SMSProviderSecretsUpdateInstructionCustomSMSProvider    `json:"customSMSProviderCredentials,omitempty"`
-}
-
-type SMSProviderSecretsUpdateInstructionYunpianCredentials struct {
-	APIKey string `json:"apiKey,omitempty"`
-}
-
-type SMSProviderSecretsUpdateInstructionSmsbaoCredentials struct {
-	Username         string `json:"username,omitempty"`
-	PasswordOrAPIKey string `json:"passwordOrAPIKey,omitempty"`
-	GoodsID          string `json:"goodsID,omitempty"`
-}
-
-type SMSProviderSecretsUpdateInstructionGatewayAPICredentials struct {
-	Endpoint string `json:"endpoint,omitempty"`
-	APIToken string `json:"apiToken,omitempty"`
-	Sender   string `json:"sender,omitempty"`
-}
-
-type SMSProviderSecretsUpdateInstructionAliyunMASCredentials struct {
-	AccessKeyID     string            `json:"accessKeyID,omitempty"`
-	AccessKeySecret string            `json:"accessKeySecret,omitempty"`
-	SignName        string            `json:"signName,omitempty"`
-	TemplateCode    string            `json:"templateCode,omitempty"`
-	TemplateCodes   map[string]string `json:"templateCodes,omitempty"`
+	SmsAeroCredentials           *SMSProviderSecretsUpdateInstructionSmsAeroCredentials    `json:"smsAeroCredentials,omitempty"`
+	CustomSMSProviderCredentials *SMSProviderSecretsUpdateInstructionCustomSMSProvider     `json:"customSMSProviderCredentials,omitempty"`
 }
 
 type SMSProviderSecretsUpdateInstructionTwilioCredentials struct {
@@ -918,6 +895,14 @@ type SMSProviderSecretsUpdateInstructionAliyunCredentials struct {
 	OverseasTemplateCode string            `json:"overseasTemplateCode,omitempty"`
 }
 
+type SMSProviderSecretsUpdateInstructionAliyunMASCredentials struct {
+	AccessKeyID     string            `json:"accessKeyID,omitempty"`
+	AccessKeySecret string            `json:"accessKeySecret,omitempty"`
+	SignName        string            `json:"signName,omitempty"`
+	TemplateCode    string            `json:"templateCode,omitempty"`
+	TemplateCodes   map[string]string `json:"templateCodes,omitempty"`
+}
+
 type SMSProviderSecretsUpdateInstructionTencentCredentials struct {
 	SecretID      string            `json:"secretID,omitempty"`
 	SecretKey     string            `json:"secretKey,omitempty"`
@@ -926,6 +911,28 @@ type SMSProviderSecretsUpdateInstructionTencentCredentials struct {
 	SignName      string            `json:"signName,omitempty"`
 	TemplateCode  string            `json:"templateCode,omitempty"`
 	TemplateCodes map[string]string `json:"templateCodes,omitempty"`
+}
+
+type SMSProviderSecretsUpdateInstructionYunpianCredentials struct {
+	APIKey string `json:"apiKey,omitempty"`
+}
+
+type SMSProviderSecretsUpdateInstructionSmsbaoCredentials struct {
+	Username         string `json:"username,omitempty"`
+	PasswordOrAPIKey string `json:"passwordOrAPIKey,omitempty"`
+	GoodsID          string `json:"goodsID,omitempty"`
+}
+
+type SMSProviderSecretsUpdateInstructionGatewayAPICredentials struct {
+	Endpoint string `json:"endpoint,omitempty"`
+	APIToken string `json:"apiToken,omitempty"`
+	Sender   string `json:"sender,omitempty"`
+}
+
+type SMSProviderSecretsUpdateInstructionSmsAeroCredentials struct {
+	Email      string `json:"email,omitempty"`
+	APIKey     string `json:"apiKey,omitempty"`
+	SenderName string `json:"senderName,omitempty"`
 }
 
 type SMSProviderSecretsUpdateInstructionCustomSMSProvider struct {
@@ -1003,6 +1010,7 @@ func (i *SMSProviderSecretsUpdateInstruction) set(currentConfig *SecretConfig) (
 		{Key: YunpianCredentialsKey, Credentials: newYunpianCredentials(i.SetData.YunpianCredentials)},
 		{Key: SmsbaoCredentialsKey, Credentials: newSmsbaoCredentials(i.SetData.SmsbaoCredentials)},
 		{Key: GatewayAPICredentialsKey, Credentials: newGatewayAPICredentials(i.SetData.GatewayAPICredentials)},
+		{Key: SmsAeroCredentialsKey, Credentials: newSmsAeroCredentials(i.SetData.SmsAeroCredentials)},
 		{Key: CustomSMSProviderConfigKey, Credentials: newCustomSMSProviderConfig(i.SetData.CustomSMSProviderCredentials)},
 	}
 
@@ -1122,6 +1130,17 @@ func newGatewayAPICredentials(in *SMSProviderSecretsUpdateInstructionGatewayAPIC
 		Endpoint: in.Endpoint,
 		APIToken: in.APIToken,
 		Sender:   in.Sender,
+	}
+}
+
+func newSmsAeroCredentials(in *SMSProviderSecretsUpdateInstructionSmsAeroCredentials) any {
+	if in == nil {
+		return nil
+	}
+	return SmsAeroCredentials{
+		Email:      in.Email,
+		APIKey:     in.APIKey,
+		SenderName: in.SenderName,
 	}
 }
 

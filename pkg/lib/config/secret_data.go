@@ -571,6 +571,34 @@ func (c *GatewayAPICredentials) SensitiveStrings() []string {
 	}
 }
 
+// SmsAeroCredentials configures SMS Aero (https://smsaero.ru), a body-based
+// SMS provider that authenticates with HTTP Basic (Email:APIKey).
+var _ = SecretConfigSchema.Add("SmsAeroCredentials", `
+{
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		"email": { "type": "string" },
+		"api_key": { "type": "string" },
+		"sender_name": { "type": "string" }
+	},
+	"required": ["email", "api_key", "sender_name"]
+}
+`)
+
+type SmsAeroCredentials struct {
+	Email      string `json:"email,omitempty"`
+	APIKey     string `json:"api_key,omitempty"`
+	SenderName string `json:"sender_name,omitempty"`
+}
+
+func (c *SmsAeroCredentials) SensitiveStrings() []string {
+	return []string{
+		c.Email,
+		c.APIKey,
+	}
+}
+
 var _ = SecretConfigSchema.Add("JWS", `
 {
 	"type": "object",
