@@ -47,3 +47,9 @@ error: null
 config:
   use_config_from: "authgear.secrets.yaml"
   provider: "yunpian"
+---
+name: success-authgear.secrets.yaml-with-provider-smsbao
+error: null
+config:
+  use_config_from: "authgear.secrets.yaml"
+  provider: "smsbao"
