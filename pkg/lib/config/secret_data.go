@@ -2,6 +2,8 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
+	"slices"
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
 
@@ -543,29 +545,55 @@ func (c *SmsbaoCredentials) SensitiveStrings() []string {
 	}
 }
 
+// GatewayAPIEndpoints is the list of the official GatewayAPI REST base URLs.
+// It is the single source of truth of the endpoint allowlist,
+// shared by the secret schema and GatewayAPICredentials.ValidateEndpoint.
+var GatewayAPIEndpoints = []string{
+	"https://gatewayapi.com",
+	"https://gatewayapi.eu",
+}
+
+var gatewayAPIEndpointsSchemaEnum = func() string {
+	b, err := json.Marshal(GatewayAPIEndpoints)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}()
+
 // GatewayAPICredentials configures GatewayAPI (https://gatewayapi.com), a
 // body-based SMS provider. Endpoint is the REST base URL, e.g.
 // https://gatewayapi.com or https://gatewayapi.eu.
-var _ = SecretConfigSchema.Add("GatewayAPICredentials", `
+var _ = SecretConfigSchema.Add("GatewayAPICredentials", fmt.Sprintf(`
 {
 	"type": "object",
 	"additionalProperties": false,
 	"properties": {
 		"endpoint": {
 			"type": "string",
-			"enum": ["https://gatewayapi.com", "https://gatewayapi.eu"]
+			"enum": %s
 		},
 		"api_token": { "type": "string" },
 		"sender": { "type": "string" }
 	},
 	"required": ["endpoint", "api_token", "sender"]
 }
-`)
+`, gatewayAPIEndpointsSchemaEnum))
 
 type GatewayAPICredentials struct {
 	Endpoint string `json:"endpoint,omitempty"`
 	APIToken string `json:"api_token,omitempty"`
 	Sender   string `json:"sender,omitempty"`
+}
+
+// ValidateEndpoint returns an error if Endpoint is not one of GatewayAPIEndpoints.
+// The secret schema enforces the same allowlist,
+// this is for the callers that construct the credentials without going through the schema.
+func (c *GatewayAPICredentials) ValidateEndpoint() error {
+	if slices.Contains(GatewayAPIEndpoints, c.Endpoint) {
+		return nil
+	}
+	return fmt.Errorf("endpoint must be one of %s", gatewayAPIEndpointsSchemaEnum)
 }
 
 func (c *GatewayAPICredentials) SensitiveStrings() []string {
