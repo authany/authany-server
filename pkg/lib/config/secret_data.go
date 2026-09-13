@@ -551,7 +551,10 @@ var _ = SecretConfigSchema.Add("GatewayAPICredentials", `
 	"type": "object",
 	"additionalProperties": false,
 	"properties": {
-		"endpoint": { "type": "string" },
+		"endpoint": {
+			"type": "string",
+			"enum": ["https://gatewayapi.com", "https://gatewayapi.eu"]
+		},
 		"api_token": { "type": "string" },
 		"sender": { "type": "string" }
 	},
