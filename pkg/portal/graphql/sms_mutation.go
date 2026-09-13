@@ -38,6 +38,14 @@ var smsProviderConfigurationInput = graphql.NewInputObject(graphql.InputObjectCo
 			Type:        smsProviderConfigurationTwilioInput,
 			Description: "Twilio configuration",
 		},
+		"aliyun": &graphql.InputObjectFieldConfig{
+			Type:        smsProviderConfigurationAliyunInput,
+			Description: "Aliyun configuration",
+		},
+		"tencent": &graphql.InputObjectFieldConfig{
+			Type:        smsProviderConfigurationTencentInput,
+			Description: "Tencent Cloud configuration",
+		},
 		"webhook": &graphql.InputObjectFieldConfig{
 			Type:        smsProviderConfigurationWebhookInput,
 			Description: "Webhook Configuration",
@@ -72,6 +80,57 @@ var smsProviderConfigurationTwilioInput = graphql.NewInputObject(graphql.InputOb
 		},
 		"from": &graphql.InputObjectFieldConfig{
 			Type: graphql.String,
+		},
+	},
+})
+
+var smsProviderConfigurationAliyunInput = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "SMSProviderConfigurationAliyunInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"accessKeyID": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"accessKeySecret": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"signName": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"templateCode": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"templateCodes": &graphql.InputObjectFieldConfig{
+			Type: SMSTemplateCodes,
+		},
+		"overseasTemplateCode": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+	},
+})
+
+var smsProviderConfigurationTencentInput = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "SMSProviderConfigurationTencentInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"secretID": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"secretKey": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"sdkAppID": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"region": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"signName": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"templateCode": &graphql.InputObjectFieldConfig{
+			Type: graphql.String,
+		},
+		"templateCodes": &graphql.InputObjectFieldConfig{
+			Type: SMSTemplateCodes,
 		},
 	},
 })

@@ -8,8 +8,10 @@ import (
 	"github.com/authgear/authgear-server/pkg/api/apierrors"
 	"github.com/authgear/authgear-server/pkg/lib/config"
 	"github.com/authgear/authgear-server/pkg/lib/hook"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/aliyun"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/custom"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/smsapi"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/tencent"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/twilio"
 	"github.com/authgear/authgear-server/pkg/portal/model"
 )
@@ -20,6 +22,10 @@ type Service struct {
 
 const TEST_OTP = "000000"
 const TEST_APP_NAME = "Test"
+
+// TestSMSTemplateName is the template used to resolve the template code of
+// template code based providers when sending a test SMS.
+const TestSMSTemplateName = "verification_sms.txt"
 
 func makeTestSMSBody(appName string, code string) string {
 	return fmt.Sprintf("[%s] Your one-time password is %s", appName, code)
@@ -51,6 +57,63 @@ func (s *Service) sendByTwilio(
 		Sender: sender,
 		To:     to,
 		Body:   makeTestSMSBody(TEST_APP_NAME, TEST_OTP),
+		TemplateVariables: &smsapi.TemplateVariables{
+			AppName: TEST_APP_NAME,
+			Code:    TEST_OTP,
+		},
+	})
+}
+
+func (s *Service) sendByAliyun(
+	ctx context.Context,
+	to string,
+	cfg model.SMSProviderConfigurationAliyunInput,
+) error {
+	aliyunClient := aliyun.NewAliyunClient(&config.AliyunCredentials{
+		AccessKeyID:     cfg.AccessKeyID,
+		AccessKeySecret: cfg.AccessKeySecret,
+		SMSTemplateCodeConfig: config.SMSTemplateCodeConfig{
+			SignName:      cfg.SignName,
+			TemplateCode:  cfg.TemplateCode,
+			TemplateCodes: cfg.TemplateCodes,
+		},
+		OverseasTemplateCode: cfg.OverseasTemplateCode,
+	})
+
+	return aliyunClient.Send(ctx, smsapi.SendOptions{
+		To:           to,
+		Body:         makeTestSMSBody(TEST_APP_NAME, TEST_OTP),
+		TemplateName: TestSMSTemplateName,
+		TemplateVariables: &smsapi.TemplateVariables{
+			AppName: TEST_APP_NAME,
+			Code:    TEST_OTP,
+		},
+	})
+}
+
+func (s *Service) sendByTencent(
+	ctx context.Context,
+	to string,
+	cfg model.SMSProviderConfigurationTencentInput,
+) error {
+	credentials := &config.TencentCredentials{
+		SecretID:  cfg.SecretID,
+		SecretKey: cfg.SecretKey,
+		SDKAppID:  cfg.SDKAppID,
+		Region:    cfg.Region,
+		SMSTemplateCodeConfig: config.SMSTemplateCodeConfig{
+			SignName:      cfg.SignName,
+			TemplateCode:  cfg.TemplateCode,
+			TemplateCodes: cfg.TemplateCodes,
+		},
+	}
+	credentials.SetDefaults()
+	tencentClient := tencent.NewTencentClient(credentials)
+
+	return tencentClient.Send(ctx, smsapi.SendOptions{
+		To:           to,
+		Body:         makeTestSMSBody(TEST_APP_NAME, TEST_OTP),
+		TemplateName: TestSMSTemplateName,
 		TemplateVariables: &smsapi.TemplateVariables{
 			AppName: TEST_APP_NAME,
 			Code:    TEST_OTP,
@@ -126,6 +189,12 @@ func (s *Service) SendTestSMS(
 	input model.SMSProviderConfigurationInput) error {
 	if input.Twilio != nil {
 		return s.sendByTwilio(ctx, app, to, *input.Twilio)
+
+	} else if input.Aliyun != nil {
+		return s.sendByAliyun(ctx, to, *input.Aliyun)
+
+	} else if input.Tencent != nil {
+		return s.sendByTencent(ctx, to, *input.Tencent)
 
 	} else if input.Webhook != nil {
 		webhookSecret, err := webhookSecretLoader(ctx)

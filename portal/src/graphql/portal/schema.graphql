@@ -844,6 +844,69 @@ input SAMLSpSigningSecretsUpdateInstructionsInput {
   setData: SAMLSpSigningSecretsSetDataInput
 }
 
+"""Aliyun SMS credentials"""
+type SMSProviderAliyunCredentials {
+  """"""
+  accessKeyID: String!
+
+  """"""
+  accessKeySecret: String
+
+  """"""
+  overseasTemplateCode: String
+
+  """"""
+  signName: String
+
+  """"""
+  templateCode: String
+
+  """"""
+  templateCodes: SMSTemplateCodes
+}
+
+""""""
+input SMSProviderAliyunCredentialsInput {
+  """"""
+  accessKeyID: String!
+
+  """"""
+  accessKeySecret: String
+
+  """"""
+  overseasTemplateCode: String
+
+  """"""
+  signName: String
+
+  """"""
+  templateCode: String
+
+  """"""
+  templateCodes: SMSTemplateCodes
+}
+
+""""""
+input SMSProviderConfigurationAliyunInput {
+  """"""
+  accessKeyID: String!
+
+  """"""
+  accessKeySecret: String!
+
+  """"""
+  overseasTemplateCode: String
+
+  """"""
+  signName: String
+
+  """"""
+  templateCode: String
+
+  """"""
+  templateCodes: SMSTemplateCodes
+}
+
 """"""
 input SMSProviderConfigurationDenoInput {
   """"""
@@ -855,14 +918,44 @@ input SMSProviderConfigurationDenoInput {
 
 """"""
 input SMSProviderConfigurationInput {
+  """Aliyun configuration"""
+  aliyun: SMSProviderConfigurationAliyunInput
+
   """Deno hook configuration"""
   deno: SMSProviderConfigurationDenoInput
+
+  """Tencent Cloud configuration"""
+  tencent: SMSProviderConfigurationTencentInput
 
   """Twilio configuration"""
   twilio: SMSProviderConfigurationTwilioInput
 
   """Webhook Configuration"""
   webhook: SMSProviderConfigurationWebhookInput
+}
+
+""""""
+input SMSProviderConfigurationTencentInput {
+  """"""
+  region: String
+
+  """"""
+  sdkAppID: String
+
+  """"""
+  secretID: String!
+
+  """"""
+  secretKey: String!
+
+  """"""
+  signName: String
+
+  """"""
+  templateCode: String
+
+  """"""
+  templateCodes: SMSTemplateCodes
 }
 
 """"""
@@ -910,7 +1003,13 @@ type SMSProviderCustomSMSProviderSecrets {
 """SMS Provider secrets"""
 type SMSProviderSecrets {
   """"""
+  aliyunCredentials: SMSProviderAliyunCredentials
+
+  """"""
   customSMSProviderCredentials: SMSProviderCustomSMSProviderSecrets
+
+  """"""
+  tencentCredentials: SMSProviderTencentCredentials
 
   """"""
   twilioCredentials: SMSProviderTwilioCredentials
@@ -919,7 +1018,13 @@ type SMSProviderSecrets {
 """"""
 input SMSProviderSecretsSetDataInput {
   """"""
+  aliyunCredentials: SMSProviderAliyunCredentialsInput
+
+  """"""
   customSMSProviderCredentials: CustomSmsProviderSecretsInput
+
+  """"""
+  tencentCredentials: SMSProviderTencentCredentialsInput
 
   """"""
   twilioCredentials: SMSProviderTwilioCredentialsInput
@@ -932,6 +1037,54 @@ input SMSProviderSecretsUpdateInstructionsInput {
 
   """"""
   setData: SMSProviderSecretsSetDataInput
+}
+
+"""Tencent Cloud SMS credentials"""
+type SMSProviderTencentCredentials {
+  """"""
+  region: String
+
+  """"""
+  sdkAppID: String
+
+  """"""
+  secretID: String!
+
+  """"""
+  secretKey: String
+
+  """"""
+  signName: String
+
+  """"""
+  templateCode: String
+
+  """"""
+  templateCodes: SMSTemplateCodes
+}
+
+""""""
+input SMSProviderTencentCredentialsInput {
+  """"""
+  region: String
+
+  """"""
+  sdkAppID: String
+
+  """"""
+  secretID: String!
+
+  """"""
+  secretKey: String
+
+  """"""
+  signName: String
+
+  """"""
+  templateCode: String
+
+  """"""
+  templateCodes: SMSTemplateCodes
 }
 
 """Twilio credentials"""
@@ -981,6 +1134,11 @@ input SMSProviderTwilioCredentialsInput {
   """"""
   messagingServiceSID: String
 }
+
+"""
+The `SMSTemplateCodes` scalar type represents a mapping from SMS template name to template code
+"""
+scalar SMSTemplateCodes
 
 """SMTP secret"""
 type SMTPSecret {

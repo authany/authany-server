@@ -26,3 +26,8 @@ var StripeError = graphqlutil.NewJSONObjectScalar(
 	"StripeError",
 	"The `StripeError` scalar type represents Stripe error",
 )
+
+var SMSTemplateCodes = graphqlutil.NewJSONObjectScalar(
+	"SMSTemplateCodes",
+	"The `SMSTemplateCodes` scalar type represents a mapping from SMS template name to template code",
+)
