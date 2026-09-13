@@ -1008,6 +1008,23 @@ const messagingServiceSIDErrorRules: ErrorParseRule[] = [
   ),
 ];
 
+const localErrorFieldRequired: LocalError = {
+  errorName: "__local",
+  reason: "__local",
+  info: {
+    error: {
+      messageID: "errors.validation.required",
+    },
+  },
+};
+
+const fieldRequiredErrorRules: ErrorParseRule[] = [
+  makeLocalErrorParseRule(
+    localErrorFieldRequired,
+    localErrorFieldRequired.info.error
+  ),
+];
+
 function makeSpecifiersFromState(state: ConfigFormState): ResourceSpecifier[] {
   const specifiers: ResourceSpecifier[] = [];
   if (state.denoHookURL) {
@@ -1514,6 +1531,16 @@ function SMSProviderConfigurationScreen1({
     []
   );
 
+  const validateRequiredFields = useCallback((values: (string | null)[]) => {
+    for (const value of values) {
+      // A null value means the secret is masked and is kept unchanged.
+      if (value === "") {
+        setLocalError(localErrorFieldRequired);
+        throw new Error("field is required");
+      }
+    }
+  }, []);
+
   const validateForm = useCallback(async () => {
     setLocalError(null);
     if (!form.state.enabled) {
@@ -1537,38 +1564,89 @@ function SMSProviderConfigurationScreen1({
         }
         break;
       case SMSProviderType.Aliyun:
+        validateRequiredFields([
+          form.state.aliyunAccessKeyID,
+          form.state.aliyunAccessKeySecret,
+        ]);
         validateTemplateCodeFields(
           form.state.aliyunSignName,
           form.state.aliyunTemplateCode
         );
         break;
       case SMSProviderType.AliyunMAS:
+        validateRequiredFields([
+          form.state.aliyunMASAccessKeyID,
+          form.state.aliyunMASAccessKeySecret,
+        ]);
         validateTemplateCodeFields(
           form.state.aliyunMASSignName,
           form.state.aliyunMASTemplateCode
         );
         break;
       case SMSProviderType.Tencent:
+        validateRequiredFields([
+          form.state.tencentSecretID,
+          form.state.tencentSecretKey,
+        ]);
         validateTemplateCodeFields(
           form.state.tencentSignName,
           form.state.tencentTemplateCode
         );
         break;
+      case SMSProviderType.Yunpian:
+        validateRequiredFields([form.state.yunpianAPIKey]);
+        break;
+      case SMSProviderType.SMSBao:
+        validateRequiredFields([
+          form.state.smsbaoUsername,
+          form.state.smsbaoPasswordOrAPIKey,
+        ]);
+        break;
+      case SMSProviderType.GatewayAPI:
+        validateRequiredFields([
+          form.state.gatewayAPIEndpoint,
+          form.state.gatewayAPIAPIToken,
+          form.state.gatewayAPISender,
+        ]);
+        break;
+      case SMSProviderType.SMSAero:
+        validateRequiredFields([
+          form.state.smsAeroEmail,
+          form.state.smsAeroAPIKey,
+          form.state.smsAeroSenderName,
+        ]);
+        break;
       default:
         break;
     }
   }, [
+    form.state.aliyunAccessKeyID,
+    form.state.aliyunAccessKeySecret,
+    form.state.aliyunMASAccessKeyID,
+    form.state.aliyunMASAccessKeySecret,
     form.state.aliyunMASSignName,
     form.state.aliyunMASTemplateCode,
     form.state.aliyunSignName,
     form.state.aliyunTemplateCode,
     form.state.enabled,
+    form.state.gatewayAPIAPIToken,
+    form.state.gatewayAPIEndpoint,
+    form.state.gatewayAPISender,
     form.state.providerType,
+    form.state.smsAeroAPIKey,
+    form.state.smsAeroEmail,
+    form.state.smsAeroSenderName,
+    form.state.smsbaoPasswordOrAPIKey,
+    form.state.smsbaoUsername,
+    form.state.tencentSecretID,
+    form.state.tencentSecretKey,
     form.state.tencentSignName,
     form.state.tencentTemplateCode,
     form.state.twilioFrom,
     form.state.twilioMessagingServiceSID,
     form.state.twilioSenderType,
+    form.state.yunpianAPIKey,
+    validateRequiredFields,
     validateTemplateCodeFields,
   ]);
 
@@ -1596,6 +1674,7 @@ function SMSProviderConfigurationScreen1({
       localError={
         checkDenoHookHandle.error ?? sendTestSMSHandle.error ?? localError
       }
+      errorRules={fieldRequiredErrorRules}
     >
       <SMSProviderConfigurationContent
         form={form}
