@@ -804,7 +804,7 @@ export type SmsProviderConfigurationDenoInput = {
 
 export type SmsProviderConfigurationGatewayApiInput = {
   apiToken: Scalars['String']['input'];
-  endpoint?: InputMaybe<Scalars['String']['input']>;
+  endpoint: Scalars['String']['input'];
   sender?: InputMaybe<Scalars['String']['input']>;
 };
 

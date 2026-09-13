@@ -204,7 +204,7 @@ var smsProviderConfigurationGatewayAPIInput = graphql.NewInputObject(graphql.Inp
 	Name: "SMSProviderConfigurationGatewayAPIInput",
 	Fields: graphql.InputObjectConfigFieldMap{
 		"endpoint": &graphql.InputObjectFieldConfig{
-			Type: graphql.String,
+			Type: graphql.NewNonNull(graphql.String),
 		},
 		"apiToken": &graphql.InputObjectFieldConfig{
 			Type: graphql.NewNonNull(graphql.String),
