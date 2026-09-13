@@ -75,14 +75,21 @@ func hmacsha256(key []byte, s string) []byte {
 // The following signing functions are written against
 // https://cloud.tencent.com/document/api/213/30654
 
-func makeCanonicalRequest(host string, action string, payload string) string {
-	canonicalHeaders := fmt.Sprintf("content-type:%s\nhost:%s\nx-tc-action:%s\n", ContentType, host, strings.ToLower(action))
+// makeCanonicalRequest builds the canonical request.
+// contentType and signedHeaders are parameters instead of the package level
+// constants so that a request recorded from the official SDK, which signs a
+// different set of headers, can be reproduced in a test.
+func makeCanonicalRequest(host string, action string, contentType string, signedHeaders string, payload string) string {
+	canonicalHeaders := fmt.Sprintf("content-type:%s\nhost:%s\n", contentType, host)
+	if strings.Contains(signedHeaders, "x-tc-action") {
+		canonicalHeaders += fmt.Sprintf("x-tc-action:%s\n", strings.ToLower(action))
+	}
 	return strings.Join([]string{
 		"POST",
 		"/",
 		"",
 		canonicalHeaders,
-		SignedHeaders,
+		signedHeaders,
 		sha256hex(payload),
 	}, "\n")
 }
@@ -107,16 +114,29 @@ func makeSignature(secretKey string, date string, service string, stringToSign s
 	return hex.EncodeToString(hmacsha256(secretSigning, stringToSign))
 }
 
+// authorizationInput is the input of makeAuthorization.
+type authorizationInput struct {
+	SecretID      string
+	SecretKey     string
+	Host          string
+	Service       string
+	Action        string
+	ContentType   string
+	SignedHeaders string
+	Timestamp     int64
+	Payload       string
+}
+
 // makeAuthorization computes the TC3-HMAC-SHA256 Authorization header.
-func makeAuthorization(secretID string, secretKey string, host string, service string, action string, timestamp int64, payload string) string {
-	date := time.Unix(timestamp, 0).UTC().Format("2006-01-02")
-	credentialScope := makeCredentialScope(date, service)
-	canonicalRequest := makeCanonicalRequest(host, action, payload)
-	stringToSign := makeStringToSign(timestamp, credentialScope, canonicalRequest)
-	signature := makeSignature(secretKey, date, service, stringToSign)
+func makeAuthorization(in authorizationInput) string {
+	date := time.Unix(in.Timestamp, 0).UTC().Format("2006-01-02")
+	credentialScope := makeCredentialScope(date, in.Service)
+	canonicalRequest := makeCanonicalRequest(in.Host, in.Action, in.ContentType, in.SignedHeaders, in.Payload)
+	stringToSign := makeStringToSign(in.Timestamp, credentialScope, canonicalRequest)
+	signature := makeSignature(in.SecretKey, date, in.Service, stringToSign)
 
 	return fmt.Sprintf("%s Credential=%s/%s, SignedHeaders=%s, Signature=%s",
-		Algorithm, secretID, credentialScope, SignedHeaders, signature)
+		Algorithm, in.SecretID, credentialScope, in.SignedHeaders, signature)
 }
 
 func (t *TencentClient) send0(ctx context.Context, opts smsapi.SendOptions) ([]byte, []byte, error) {
@@ -151,15 +171,17 @@ func (t *TencentClient) send0(ctx context.Context, opts smsapi.SendOptions) ([]b
 	req.Header.Set("X-TC-Version", Version)
 	req.Header.Set("X-TC-Region", t.TencentCredentials.Region)
 	req.Header.Set("X-TC-Timestamp", strconv.FormatInt(timestamp, 10))
-	req.Header.Set("Authorization", makeAuthorization(
-		t.TencentCredentials.SecretID,
-		t.TencentCredentials.SecretKey,
-		Host,
-		Service,
-		Action,
-		timestamp,
-		string(requestBody),
-	))
+	req.Header.Set("Authorization", makeAuthorization(authorizationInput{
+		SecretID:      t.TencentCredentials.SecretID,
+		SecretKey:     t.TencentCredentials.SecretKey,
+		Host:          Host,
+		Service:       Service,
+		Action:        Action,
+		ContentType:   ContentType,
+		SignedHeaders: SignedHeaders,
+		Timestamp:     timestamp,
+		Payload:       string(requestBody),
+	}))
 
 	resp, err := t.Client.Do(req)
 	if err != nil {

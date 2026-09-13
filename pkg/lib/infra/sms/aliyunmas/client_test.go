@@ -19,6 +19,39 @@ import (
 	"github.com/authgear/authgear-server/pkg/util/clock"
 )
 
+// TestSignatureSDKVector asserts that the shared RPC style signature
+// reproduces, byte for byte, the Signature parameter of a SendSmsVerifyCode
+// request sent by the official SDK
+// github.com/aliyun/alibaba-cloud-sdk-go/services/dypnsapi (core 1.63.22).
+//
+// The request was recorded by pointing the SDK at a local httptest server.
+// The credentials are fake. The SDK additionally sends an empty SignatureType
+// parameter, and puts the parameters in the query string instead of the
+// request body; both are accepted by the RPC style API. The recorded
+// parameters are fed to SignRPCRequest as-is here.
+func TestSignatureSDKVector(t *testing.T) {
+	Convey("official SDK recorded request", t, func() {
+		values := url.Values{}
+		values.Set("AccessKeyId", "LTAI5tTESTACCESSKEYID")
+		values.Set("Action", "SendSmsVerifyCode")
+		values.Set("CountryCode", "86")
+		values.Set("Format", "JSON")
+		values.Set("PhoneNumber", "13000000000")
+		values.Set("RegionId", "cn-hangzhou")
+		values.Set("SignName", "Authany 测试")
+		values.Set("SignatureMethod", "HMAC-SHA1")
+		values.Set("SignatureNonce", "d8525ea95c4287bbb3c3c76898d44272")
+		values.Set("SignatureType", "")
+		values.Set("SignatureVersion", "1.0")
+		values.Set("TemplateCode", "SMS_987654321")
+		values.Set("TemplateParam", `{"code":"123456"}`)
+		values.Set("Timestamp", "2026-09-13T08:56:57Z")
+		values.Set("Version", "2017-05-25")
+
+		So(aliyun.SignRPCRequest("POST", values, "TESTACCESSKEYSECRETTESTACCESSKE"), ShouldEqual, "7uejeSsPry0Tscoup4tjn2Ay/Nk=")
+	})
+}
+
 func TestAliyunMASClient(t *testing.T) {
 	newClient := func(handler http.HandlerFunc, credentials *config.AliyunMASCredentials) (*AliyunMASClient, func()) {
 		server := httptest.NewServer(handler)
