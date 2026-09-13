@@ -30,6 +30,7 @@ import {
   PortalAPISecretConfig,
   PortalAPISecretConfigUpdateInstruction,
   SMSProvider,
+  SMSProviderAliyunCredentials,
   SMSProviderTwilioCredentials,
   getHookKind,
 } from "../../types";
@@ -38,6 +39,7 @@ import { FormattedMessage, Context as MessageContext } from "../../intl";
 import ScreenContent from "../../ScreenContent";
 import styles from "./SMSProviderConfigurationScreen.module.css";
 import logoTwilio from "../../images/twilio_logo.svg";
+import logoAliyun from "../../images/aliyun_logo.svg";
 import logoWebhook from "../../images/webhook_logo.svg";
 import logoAuthany from "../../images/authany_logo.svg";
 import { startReauthentication } from "./Authenticated";
@@ -61,6 +63,15 @@ import { ErrorParseRule, makeLocalErrorParseRule } from "../../error/parse";
 import { APIError, LocalError } from "../../error/error";
 import { ConfirmationDialog } from "../../components/v2/ConfirmationDialog/ConfirmationDialog";
 import { TestSMSDialog } from "../../components/sms-provider/TestSMSDialog";
+import {
+  AliyunForm,
+  AliyunFormState,
+} from "../../components/sms-provider/AliyunForm";
+import {
+  SMSTemplateCodes,
+  parseSMSTemplateCodes,
+  serializeSMSTemplateCodes,
+} from "../../components/sms-provider/TemplateCodeFields";
 import { useSystemConfig } from "../../context/SystemConfigContext";
 import { RedMessageBar_RemindConfigureSMSProviderInSMSProviderScreen } from "../../RedMessageBar";
 import ExternalLink from "../../ExternalLink";
@@ -109,6 +120,7 @@ export type FormModel = Omit<
 enum SMSProviderType {
   Authgear = "authgear",
   Twilio = "twilio",
+  Aliyun = "aliyun",
   Webhook = "webhook",
   Deno = "deno",
 }
@@ -123,7 +135,7 @@ const MASK = "********";
 // Matches v2 IconRadioCards storybook inner icon size (SquareIcon iconSize).
 const PROVIDER_RADIO_ICON_SIZE = "1.375rem";
 
-interface ConfigFormState {
+interface ConfigFormState extends AliyunFormState {
   enabled: boolean;
   providerType: SMSProviderType;
   webhookSecretKey: string | null;
@@ -168,6 +180,11 @@ function constructFormState(
   const hasCustomTwilioCredentials =
     secrets.smsProviderSecrets?.twilioCredentials != null;
 
+  const isSMSGatewayIsAliyun =
+    config.messaging?.sms_gateway?.provider === "aliyun";
+  const hasAliyunCredentials =
+    secrets.smsProviderSecrets?.aliyunCredentials != null;
+
   const isSMSGatewayIsCustom =
     config.messaging?.sms_gateway?.provider === "custom";
   const hasCustomProviderSecrets =
@@ -176,6 +193,9 @@ function constructFormState(
   if (isSMSGatewayIsTwilio && hasCustomTwilioCredentials) {
     enabled = true;
     providerType = SMSProviderType.Twilio;
+  } else if (isSMSGatewayIsAliyun && hasAliyunCredentials) {
+    enabled = true;
+    providerType = SMSProviderType.Aliyun;
   } else if (isSMSGatewayIsCustom && hasCustomProviderSecrets) {
     enabled = true;
     if (
@@ -235,6 +255,24 @@ function constructFormState(
     }
   }
 
+  let aliyunAccessKeyID = "";
+  let aliyunAccessKeySecret: string | null = "";
+  let aliyunSignName = "";
+  let aliyunTemplateCode = "";
+  let aliyunTemplateCodes: SMSTemplateCodes = {};
+  let aliyunOverseasTemplateCode = "";
+
+  if (enabled && providerType === SMSProviderType.Aliyun) {
+    const credentials = secrets.smsProviderSecrets?.aliyunCredentials;
+    aliyunAccessKeyID = credentials?.accessKeyID ?? "";
+    aliyunAccessKeySecret =
+      credentials != null ? credentials.accessKeySecret ?? null : "";
+    aliyunSignName = credentials?.signName ?? "";
+    aliyunTemplateCode = credentials?.templateCode ?? "";
+    aliyunTemplateCodes = parseSMSTemplateCodes(credentials?.templateCodes);
+    aliyunOverseasTemplateCode = credentials?.overseasTemplateCode ?? "";
+  }
+
   let webhookURL = "";
   let webhookTimeout = 30;
 
@@ -279,6 +317,13 @@ function constructFormState(
     twilioMessagingServiceSID,
     twilioFrom,
 
+    aliyunAccessKeyID,
+    aliyunAccessKeySecret,
+    aliyunSignName,
+    aliyunTemplateCode,
+    aliyunTemplateCodes,
+    aliyunOverseasTemplateCode,
+
     webhookURL,
     webhookTimeout,
 
@@ -310,6 +355,9 @@ function constructConfig(
           return;
         case SMSProviderType.Twilio:
           newProvider = "twilio";
+          break;
+        case SMSProviderType.Aliyun:
+          newProvider = "aliyun";
           break;
         case SMSProviderType.Deno:
           newProvider = "custom";
@@ -358,6 +406,20 @@ function constructConfig(
               break;
           }
           secrets.smsProviderSecrets = { twilioCredentials: twilioCredentials };
+          break;
+        }
+        case SMSProviderType.Aliyun: {
+          const aliyunCredentials: SMSProviderAliyunCredentials = {
+            accessKeyID: currentState.aliyunAccessKeyID,
+            accessKeySecret: currentState.aliyunAccessKeySecret,
+            signName: currentState.aliyunSignName,
+            templateCode: currentState.aliyunTemplateCode,
+            templateCodes: serializeSMSTemplateCodes(
+              currentState.aliyunTemplateCodes
+            ),
+            overseasTemplateCode: currentState.aliyunOverseasTemplateCode,
+          };
+          secrets.smsProviderSecrets = { aliyunCredentials: aliyunCredentials };
           break;
         }
         case SMSProviderType.Webhook:
@@ -427,6 +489,32 @@ function constructSecretUpdateInstruction(
                 secrets.smsProviderSecrets.twilioCredentials
                   .messagingServiceSID,
               from: secrets.smsProviderSecrets.twilioCredentials.from,
+            },
+          },
+        },
+      };
+    case SMSProviderType.Aliyun:
+      if (secrets.smsProviderSecrets.aliyunCredentials == null) {
+        console.error("unexpected null aliyunCredentials");
+        return undefined;
+      }
+      return {
+        smsProviderSecrets: {
+          action: "set",
+          setData: {
+            aliyunCredentials: {
+              accessKeyID:
+                secrets.smsProviderSecrets.aliyunCredentials.accessKeyID,
+              accessKeySecret:
+                secrets.smsProviderSecrets.aliyunCredentials.accessKeySecret,
+              signName: secrets.smsProviderSecrets.aliyunCredentials.signName,
+              templateCode:
+                secrets.smsProviderSecrets.aliyunCredentials.templateCode,
+              templateCodes:
+                secrets.smsProviderSecrets.aliyunCredentials.templateCodes,
+              overseasTemplateCode:
+                secrets.smsProviderSecrets.aliyunCredentials
+                  .overseasTemplateCode,
             },
           },
         },
@@ -612,6 +700,26 @@ function useTestSMSConfig(
           },
         };
       }
+      case SMSProviderType.Aliyun: {
+        if (
+          !state.aliyunAccessKeyID ||
+          !state.aliyunAccessKeySecret ||
+          !state.aliyunSignName ||
+          !state.aliyunTemplateCode
+        ) {
+          return null;
+        }
+        return {
+          aliyun: {
+            accessKeyID: state.aliyunAccessKeyID,
+            accessKeySecret: state.aliyunAccessKeySecret,
+            signName: state.aliyunSignName,
+            templateCode: state.aliyunTemplateCode,
+            templateCodes: serializeSMSTemplateCodes(state.aliyunTemplateCodes),
+            overseasTemplateCode: state.aliyunOverseasTemplateCode,
+          },
+        };
+      }
       case SMSProviderType.Webhook:
         if (!state.webhookURL) {
           return null;
@@ -640,6 +748,12 @@ function useTestSMSConfig(
     }
   }, [
     denoResourceIdx,
+    state.aliyunAccessKeyID,
+    state.aliyunAccessKeySecret,
+    state.aliyunOverseasTemplateCode,
+    state.aliyunSignName,
+    state.aliyunTemplateCode,
+    state.aliyunTemplateCodes,
     state.denoHookTimeout,
     state.enabled,
     state.providerType,
@@ -672,6 +786,8 @@ function computeIsSecretMasked(state: FormState): boolean {
           return state.twilioAuthToken == null;
       }
       throw new Error("unreachable code");
+    case SMSProviderType.Aliyun:
+      return state.aliyunAccessKeySecret == null;
     case SMSProviderType.Webhook:
       return state.webhookSecretKey == null;
     case SMSProviderType.Deno:
@@ -780,6 +896,7 @@ function SMSProviderConfigurationScreen1({
 
       smsProviderConfigured:
         secretConfig?.smsProviderSecrets?.twilioCredentials != null ||
+        secretConfig?.smsProviderSecrets?.aliyunCredentials != null ||
         secretConfig?.smsProviderSecrets?.customSMSProviderCredentials != null,
     };
   }, [
@@ -791,6 +908,7 @@ function SMSProviderConfigurationScreen1({
     effectiveAppConfig?.authentication?.secondary_authentication_mode,
     effectiveAppConfig?.verification?.claims?.phone_number?.enabled,
     secretConfig?.smsProviderSecrets?.twilioCredentials,
+    secretConfig?.smsProviderSecrets?.aliyunCredentials,
     secretConfig?.smsProviderSecrets?.customSMSProviderCredentials,
   ]);
 
@@ -1018,6 +1136,24 @@ function SMSProviderConfigurationContent(props: {
         disabled: isCustomSMSProviderDisabled,
       },
       {
+        value: SMSProviderType.Aliyun,
+        icon: (
+          <img
+            src={logoAliyun}
+            alt=""
+            className="object-contain"
+            style={{
+              width: PROVIDER_RADIO_ICON_SIZE,
+              height: PROVIDER_RADIO_ICON_SIZE,
+            }}
+          />
+        ),
+        title: (
+          <FormattedMessage id="SMSProviderConfigurationScreen.provider.aliyun" />
+        ),
+        disabled: isCustomSMSProviderDisabled,
+      },
+      {
         value: SMSProviderType.Webhook,
         icon: (
           <img
@@ -1066,6 +1202,20 @@ function SMSProviderConfigurationContent(props: {
               // eslint-disable-next-line react/no-unstable-nested-components
               ExternalLink: (chunks: React.ReactNode) => (
                 <ExternalLink href="https://docs.authgear.com/customization/custom-providers/twilio">
+                  {chunks}
+                </ExternalLink>
+              ),
+            }}
+          />
+        );
+      case SMSProviderType.Aliyun:
+        return (
+          <FormattedMessage
+            id="SMSProviderConfigurationScreen.provider.aliyun.description"
+            values={{
+              // eslint-disable-next-line react/no-unstable-nested-components
+              ExternalLink: (chunks: React.ReactNode) => (
+                <ExternalLink href="https://help.aliyun.com/zh/sms/">
                   {chunks}
                 </ExternalLink>
               ),
@@ -1237,6 +1387,8 @@ function FormSection({
       return null;
     case SMSProviderType.Twilio:
       return <TwilioForm form={form} />;
+    case SMSProviderType.Aliyun:
+      return <AliyunForm state={form.state} setState={form.setState} />;
     case SMSProviderType.Webhook:
       return <WebhookForm form={form} onRevealSecrets={onRevealSecrets} />;
     case SMSProviderType.Deno:
