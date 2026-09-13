@@ -6,11 +6,16 @@ import (
 
 	"github.com/authgear/authgear-server/pkg/lib/config"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/aliyun"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/aliyunmas"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/custom"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/gatewayapi"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/nexmo"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/smsaero"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/smsapi"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/smsbao"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/tencent"
 	"github.com/authgear/authgear-server/pkg/lib/infra/sms/twilio"
+	"github.com/authgear/authgear-server/pkg/lib/infra/sms/yunpian"
 )
 
 func NewTwilioClientCredentialsFromSecrets(secret *config.TwilioCredentials) *TwilioClientCredentials {
@@ -88,19 +93,136 @@ type TencentClientCredentials struct {
 
 func (TencentClientCredentials) smsClientCredentials() {}
 
+type AliyunMASClientCredentials struct {
+	AccessKeyID     string
+	AccessKeySecret string
+	SignName        string
+	TemplateCode    string
+	TemplateCodes   map[string]string
+}
+
+func (AliyunMASClientCredentials) smsClientCredentials() {}
+
+type YunpianClientCredentials struct {
+	APIKey string
+}
+
+func (YunpianClientCredentials) smsClientCredentials() {}
+
+type SmsbaoClientCredentials struct {
+	Username         string
+	PasswordOrAPIKey string
+	GoodsID          string
+}
+
+func (SmsbaoClientCredentials) smsClientCredentials() {}
+
+type GatewayAPIClientCredentials struct {
+	Endpoint string
+	APIToken string
+	Sender   string
+}
+
+func (GatewayAPIClientCredentials) smsClientCredentials() {}
+
+type SmsAeroClientCredentials struct {
+	Email      string
+	APIKey     string
+	SenderName string
+}
+
+func (SmsAeroClientCredentials) smsClientCredentials() {}
+
 // rawClients is the set of clients resolved from a single configuration source,
 // together with the credentials each client was constructed from.
 type rawClients struct {
-	nexmo              *nexmo.NexmoClient
-	nexmoCredentials   *NexmoClientCredentials
-	twilio             *twilio.TwilioClient
-	twilioCredentials  *TwilioClientCredentials
-	custom             *custom.CustomClient
-	customCredentials  *CustomClientCredentials
-	aliyun             *aliyun.AliyunClient
-	aliyunCredentials  *AliyunClientCredentials
-	tencent            *tencent.TencentClient
-	tencentCredentials *TencentClientCredentials
+	nexmo                 *nexmo.NexmoClient
+	nexmoCredentials      *NexmoClientCredentials
+	twilio                *twilio.TwilioClient
+	twilioCredentials     *TwilioClientCredentials
+	custom                *custom.CustomClient
+	customCredentials     *CustomClientCredentials
+	aliyun                *aliyun.AliyunClient
+	aliyunCredentials     *AliyunClientCredentials
+	aliyunMAS             *aliyunmas.AliyunMASClient
+	aliyunMASCredentials  *AliyunMASClientCredentials
+	tencent               *tencent.TencentClient
+	tencentCredentials    *TencentClientCredentials
+	yunpian               *yunpian.YunpianClient
+	yunpianCredentials    *YunpianClientCredentials
+	smsbao                *smsbao.SmsbaoClient
+	smsbaoCredentials     *SmsbaoClientCredentials
+	gatewayAPI            *gatewayapi.GatewayAPIClient
+	gatewayAPICredentials *GatewayAPIClientCredentials
+	smsAero               *smsaero.SmsAeroClient
+	smsAeroCredentials    *SmsAeroClientCredentials
+}
+
+// availableClient is a resolved client together with the credentials it was
+// constructed from. RawClient is nil when the client is not available.
+type availableClient struct {
+	RawClient            smsapi.Client
+	SMSClientCredentials SMSClientCredentials
+}
+
+// providerEntry associates a provider name with its resolved client.
+type providerEntry struct {
+	provider config.SMSProvider
+	client   availableClient
+}
+
+// newAvailableClient keeps RawClient nil when the concrete client pointer is
+// nil, so that the interface value stays nil.
+func newAvailableClient[T interface {
+	smsapi.Client
+	comparable
+}](client T, credentials SMSClientCredentials) availableClient {
+	var zero T
+	if client == zero {
+		return availableClient{}
+	}
+	return availableClient{
+		RawClient:            client,
+		SMSClientCredentials: credentials,
+	}
+}
+
+// entries lists every provider in the order used to detect ambiguity.
+func (c rawClients) entries() []providerEntry {
+	return []providerEntry{
+		{config.SMSProviderNexmo, newAvailableClient(c.nexmo, c.nexmoCredentials)},
+		{config.SMSProviderTwilio, newAvailableClient(c.twilio, c.twilioCredentials)},
+		{config.SMSProviderCustom, newAvailableClient(c.custom, c.customCredentials)},
+		{config.SMSProviderAliyun, newAvailableClient(c.aliyun, c.aliyunCredentials)},
+		{config.SMSProviderTencent, newAvailableClient(c.tencent, c.tencentCredentials)},
+		{config.SMSProviderAliyunMAS, newAvailableClient(c.aliyunMAS, c.aliyunMASCredentials)},
+		{config.SMSProviderYunpian, newAvailableClient(c.yunpian, c.yunpianCredentials)},
+		{config.SMSProviderSmsbao, newAvailableClient(c.smsbao, c.smsbaoCredentials)},
+		{config.SMSProviderGatewayAPI, newAvailableClient(c.gatewayAPI, c.gatewayAPICredentials)},
+		{config.SMSProviderSmsAero, newAvailableClient(c.smsAero, c.smsAeroCredentials)},
+	}
+}
+
+// byProvider returns the client of the given provider.
+// known is false when provider is not a known provider name.
+func (c rawClients) byProvider(provider config.SMSProvider) (resolved availableClient, known bool) {
+	for _, entry := range c.entries() {
+		if entry.provider == provider {
+			return entry.client, true
+		}
+	}
+	return availableClient{}, false
+}
+
+// availableClients returns the clients that are available.
+func (c rawClients) availableClients() []availableClient {
+	var availableClients []availableClient = []availableClient{}
+	for _, entry := range c.entries() {
+		if entry.client.RawClient != nil {
+			availableClients = append(availableClients, entry.client)
+		}
+	}
+	return availableClients
 }
 
 type ClientResolver struct {
@@ -111,7 +233,12 @@ type ClientResolver struct {
 	AuthgearSecretsYAMLTwilioCredentials       *config.TwilioCredentials
 	AuthgearSecretsYAMLCustomSMSProviderConfig *config.CustomSMSProviderConfig
 	AuthgearSecretsYAMLAliyunCredentials       *config.AliyunCredentials
+	AuthgearSecretsYAMLAliyunMASCredentials    *config.AliyunMASCredentials
 	AuthgearSecretsYAMLTencentCredentials      *config.TencentCredentials
+	AuthgearSecretsYAMLYunpianCredentials      *config.YunpianCredentials
+	AuthgearSecretsYAMLSmsbaoCredentials       *config.SmsbaoCredentials
+	AuthgearSecretsYAMLGatewayAPICredentials   *config.GatewayAPICredentials
+	AuthgearSecretsYAMLSmsAeroCredentials      *config.SmsAeroCredentials
 
 	EnvironmentDefaultProvider      config.SMSGatewayEnvironmentDefaultProvider
 	EnvironmentDefaultUseConfigFrom config.SMSGatewayEnvironmentDefaultUseConfigFrom
@@ -128,87 +255,23 @@ func (r *ClientResolver) ResolveClient() (smsapi.Client, SMSClientCredentials, e
 	raw := r.resolveRawClients()
 	provider := r.resolveProvider()
 
-	type availableClient struct {
-		RawClient            smsapi.Client
-		SMSClientCredentials SMSClientCredentials
+	if resolved, known := raw.byProvider(provider); known {
+		if resolved.RawClient == nil {
+			return nil, nil, smsapi.ErrNoAvailableClient
+		}
+		return resolved.RawClient, resolved.SMSClientCredentials, nil
 	}
 
-	var client smsapi.Client
-	var smsClientCredentials SMSClientCredentials
-	switch provider {
-	case config.SMSProviderNexmo:
-		if raw.nexmo == nil {
-			return nil, nil, smsapi.ErrNoAvailableClient
-		}
-		client = raw.nexmo
-		smsClientCredentials = raw.nexmoCredentials
-	case config.SMSProviderTwilio:
-		if raw.twilio == nil {
-			return nil, nil, smsapi.ErrNoAvailableClient
-		}
-		client = raw.twilio
-		smsClientCredentials = raw.twilioCredentials
-	case config.SMSProviderCustom:
-		if raw.custom == nil {
-			return nil, nil, smsapi.ErrNoAvailableClient
-		}
-		client = raw.custom
-		smsClientCredentials = raw.customCredentials
-	case config.SMSProviderAliyun:
-		if raw.aliyun == nil {
-			return nil, nil, smsapi.ErrNoAvailableClient
-		}
-		client = raw.aliyun
-		smsClientCredentials = raw.aliyunCredentials
-	case config.SMSProviderTencent:
-		if raw.tencent == nil {
-			return nil, nil, smsapi.ErrNoAvailableClient
-		}
-		client = raw.tencent
-		smsClientCredentials = raw.tencentCredentials
-	default:
-		var availableClients []availableClient = []availableClient{}
-
-		if raw.nexmo != nil {
-			availableClients = append(availableClients, availableClient{
-				RawClient:            raw.nexmo,
-				SMSClientCredentials: raw.nexmoCredentials,
-			})
-		}
-		if raw.twilio != nil {
-			availableClients = append(availableClients, availableClient{
-				RawClient:            raw.twilio,
-				SMSClientCredentials: raw.twilioCredentials,
-			})
-		}
-		if raw.custom != nil {
-			availableClients = append(availableClients, availableClient{
-				RawClient:            raw.custom,
-				SMSClientCredentials: raw.customCredentials,
-			})
-		}
-		if raw.aliyun != nil {
-			availableClients = append(availableClients, availableClient{
-				RawClient:            raw.aliyun,
-				SMSClientCredentials: raw.aliyunCredentials,
-			})
-		}
-		if raw.tencent != nil {
-			availableClients = append(availableClients, availableClient{
-				RawClient:            raw.tencent,
-				SMSClientCredentials: raw.tencentCredentials,
-			})
-		}
-		if len(availableClients) == 0 {
-			return nil, nil, smsapi.ErrNoAvailableClient
-		}
-		if len(availableClients) > 1 {
-			return nil, nil, smsapi.ErrAmbiguousClient
-		}
-		client = availableClients[0].RawClient
-		smsClientCredentials = availableClients[0].SMSClientCredentials
+	// provider is not a known provider name.
+	// It is determined from application logic instead.
+	availableClients := raw.availableClients()
+	if len(availableClients) == 0 {
+		return nil, nil, smsapi.ErrNoAvailableClient
 	}
-	return client, smsClientCredentials, nil
+	if len(availableClients) > 1 {
+		return nil, nil, smsapi.ErrAmbiguousClient
+	}
+	return availableClients[0].RawClient, availableClients[0].SMSClientCredentials, nil
 }
 
 func (r *ClientResolver) resolveProvider() config.SMSProvider {
@@ -276,7 +339,12 @@ func (r *ClientResolver) clientsFromAuthgearSecretsYAML() rawClients {
 	var twilioClientCredentials *TwilioClientCredentials
 	var customClientCredentials *CustomClientCredentials
 	var aliyunClientCredentials *AliyunClientCredentials
+	var aliyunMASClientCredentials *AliyunMASClientCredentials
 	var tencentClientCredentials *TencentClientCredentials
+	var yunpianClientCredentials *YunpianClientCredentials
+	var smsbaoClientCredentials *SmsbaoClientCredentials
+	var gatewayAPIClientCredentials *GatewayAPIClientCredentials
+	var smsAeroClientCredentials *SmsAeroClientCredentials
 
 	if r.AuthgearSecretsYAMLNexmoCredentials != nil {
 		nexmoClientCredentials = &NexmoClientCredentials{
@@ -328,17 +396,67 @@ func (r *ClientResolver) clientsFromAuthgearSecretsYAML() rawClients {
 		}
 	}
 
+	if r.AuthgearSecretsYAMLAliyunMASCredentials != nil {
+		aliyunMASClientCredentials = &AliyunMASClientCredentials{
+			AccessKeyID:     r.AuthgearSecretsYAMLAliyunMASCredentials.AccessKeyID,
+			AccessKeySecret: r.AuthgearSecretsYAMLAliyunMASCredentials.AccessKeySecret,
+			SignName:        r.AuthgearSecretsYAMLAliyunMASCredentials.SignName,
+			TemplateCode:    r.AuthgearSecretsYAMLAliyunMASCredentials.TemplateCode,
+			TemplateCodes:   r.AuthgearSecretsYAMLAliyunMASCredentials.TemplateCodes,
+		}
+	}
+
+	if r.AuthgearSecretsYAMLYunpianCredentials != nil {
+		yunpianClientCredentials = &YunpianClientCredentials{
+			APIKey: r.AuthgearSecretsYAMLYunpianCredentials.APIKey,
+		}
+	}
+
+	if r.AuthgearSecretsYAMLSmsbaoCredentials != nil {
+		smsbaoClientCredentials = &SmsbaoClientCredentials{
+			Username:         r.AuthgearSecretsYAMLSmsbaoCredentials.Username,
+			PasswordOrAPIKey: r.AuthgearSecretsYAMLSmsbaoCredentials.PasswordOrAPIKey,
+			GoodsID:          r.AuthgearSecretsYAMLSmsbaoCredentials.GoodsID,
+		}
+	}
+
+	if r.AuthgearSecretsYAMLGatewayAPICredentials != nil {
+		gatewayAPIClientCredentials = &GatewayAPIClientCredentials{
+			Endpoint: r.AuthgearSecretsYAMLGatewayAPICredentials.Endpoint,
+			APIToken: r.AuthgearSecretsYAMLGatewayAPICredentials.APIToken,
+			Sender:   r.AuthgearSecretsYAMLGatewayAPICredentials.Sender,
+		}
+	}
+
+	if r.AuthgearSecretsYAMLSmsAeroCredentials != nil {
+		smsAeroClientCredentials = &SmsAeroClientCredentials{
+			Email:      r.AuthgearSecretsYAMLSmsAeroCredentials.Email,
+			APIKey:     r.AuthgearSecretsYAMLSmsAeroCredentials.APIKey,
+			SenderName: r.AuthgearSecretsYAMLSmsAeroCredentials.SenderName,
+		}
+	}
+
 	return rawClients{
-		nexmo:              nexmo.NewNexmoClient(r.AuthgearSecretsYAMLNexmoCredentials),
-		nexmoCredentials:   nexmoClientCredentials,
-		twilio:             twilio.NewTwilioClient(r.AuthgearSecretsYAMLTwilioCredentials),
-		twilioCredentials:  twilioClientCredentials,
-		custom:             custom.NewCustomClient(r.AuthgearSecretsYAMLCustomSMSProviderConfig, r.SMSDenoHook, r.SMSWebHook),
-		customCredentials:  customClientCredentials,
-		aliyun:             aliyun.NewAliyunClient(r.AuthgearSecretsYAMLAliyunCredentials),
-		aliyunCredentials:  aliyunClientCredentials,
-		tencent:            tencent.NewTencentClient(r.AuthgearSecretsYAMLTencentCredentials),
-		tencentCredentials: tencentClientCredentials,
+		nexmo:                 nexmo.NewNexmoClient(r.AuthgearSecretsYAMLNexmoCredentials),
+		nexmoCredentials:      nexmoClientCredentials,
+		twilio:                twilio.NewTwilioClient(r.AuthgearSecretsYAMLTwilioCredentials),
+		twilioCredentials:     twilioClientCredentials,
+		custom:                custom.NewCustomClient(r.AuthgearSecretsYAMLCustomSMSProviderConfig, r.SMSDenoHook, r.SMSWebHook),
+		customCredentials:     customClientCredentials,
+		aliyun:                aliyun.NewAliyunClient(r.AuthgearSecretsYAMLAliyunCredentials),
+		aliyunCredentials:     aliyunClientCredentials,
+		aliyunMAS:             aliyunmas.NewAliyunMASClient(r.AuthgearSecretsYAMLAliyunMASCredentials),
+		aliyunMASCredentials:  aliyunMASClientCredentials,
+		tencent:               tencent.NewTencentClient(r.AuthgearSecretsYAMLTencentCredentials),
+		tencentCredentials:    tencentClientCredentials,
+		yunpian:               yunpian.NewYunpianClient(r.AuthgearSecretsYAMLYunpianCredentials),
+		yunpianCredentials:    yunpianClientCredentials,
+		smsbao:                smsbao.NewSmsbaoClient(r.AuthgearSecretsYAMLSmsbaoCredentials),
+		smsbaoCredentials:     smsbaoClientCredentials,
+		gatewayAPI:            gatewayapi.NewGatewayAPIClient(r.AuthgearSecretsYAMLGatewayAPICredentials),
+		gatewayAPICredentials: gatewayAPIClientCredentials,
+		smsAero:               smsaero.NewSmsAeroClient(r.AuthgearSecretsYAMLSmsAeroCredentials),
+		smsAeroCredentials:    smsAeroClientCredentials,
 	}
 }
 

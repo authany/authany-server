@@ -30,11 +30,16 @@ func TestClientResolver(t *testing.T) {
 		}
 
 		type AuthgesrSecretsYAML struct {
-			Nexmo   *config.NexmoCredentials        `json:"nexmo"`
-			Twilio  *config.TwilioCredentials       `json:"twilio"`
-			Custom  *config.CustomSMSProviderConfig `json:"custom"`
-			Aliyun  *config.AliyunCredentials       `json:"aliyun"`
-			Tencent *config.TencentCredentials      `json:"tencent"`
+			Nexmo      *config.NexmoCredentials        `json:"nexmo"`
+			Twilio     *config.TwilioCredentials       `json:"twilio"`
+			Custom     *config.CustomSMSProviderConfig `json:"custom"`
+			Aliyun     *config.AliyunCredentials       `json:"aliyun"`
+			AliyunMAS  *config.AliyunMASCredentials    `json:"aliyun_mas"`
+			Tencent    *config.TencentCredentials      `json:"tencent"`
+			Yunpian    *config.YunpianCredentials      `json:"yunpian"`
+			Smsbao     *config.SmsbaoCredentials       `json:"smsbao"`
+			GatewayAPI *config.GatewayAPICredentials   `json:"gatewayapi"`
+			SmsAero    *config.SmsAeroCredentials      `json:"smsaero"`
 		}
 
 		type EnvConfig struct {
@@ -97,13 +102,23 @@ func TestClientResolver(t *testing.T) {
 				var authgearSecretsYAMLTwilio *config.TwilioCredentials
 				var authgearSecretsYAMLCustom *config.CustomSMSProviderConfig
 				var authgearSecretsYAMLAliyun *config.AliyunCredentials
+				var authgearSecretsYAMLAliyunMAS *config.AliyunMASCredentials
 				var authgearSecretsYAMLTencent *config.TencentCredentials
+				var authgearSecretsYAMLYunpian *config.YunpianCredentials
+				var authgearSecretsYAMLSmsbao *config.SmsbaoCredentials
+				var authgearSecretsYAMLGatewayAPI *config.GatewayAPICredentials
+				var authgearSecretsYAMLSmsAero *config.SmsAeroCredentials
 				if authgearSecretsYAML != nil {
 					authgearSecretsYAMLNexmo = authgearSecretsYAML.Nexmo
 					authgearSecretsYAMLTwilio = authgearSecretsYAML.Twilio
 					authgearSecretsYAMLCustom = authgearSecretsYAML.Custom
 					authgearSecretsYAMLAliyun = authgearSecretsYAML.Aliyun
+					authgearSecretsYAMLAliyunMAS = authgearSecretsYAML.AliyunMAS
 					authgearSecretsYAMLTencent = authgearSecretsYAML.Tencent
+					authgearSecretsYAMLYunpian = authgearSecretsYAML.Yunpian
+					authgearSecretsYAMLSmsbao = authgearSecretsYAML.Smsbao
+					authgearSecretsYAMLGatewayAPI = authgearSecretsYAML.GatewayAPI
+					authgearSecretsYAMLSmsAero = authgearSecretsYAML.SmsAero
 				}
 
 				var smsGatewayEnvironmentConfig config.SMSGatewayEnvironmentConfig
@@ -163,8 +178,13 @@ func TestClientResolver(t *testing.T) {
 					AuthgearSecretsYAMLNexmoCredentials:        authgearSecretsYAMLNexmo,
 					AuthgearSecretsYAMLTwilioCredentials:       authgearSecretsYAMLTwilio,
 					AuthgearSecretsYAMLCustomSMSProviderConfig: authgearSecretsYAMLCustom,
-				AuthgearSecretsYAMLAliyunCredentials:       authgearSecretsYAMLAliyun,
-				AuthgearSecretsYAMLTencentCredentials:      authgearSecretsYAMLTencent,
+					AuthgearSecretsYAMLAliyunCredentials:       authgearSecretsYAMLAliyun,
+					AuthgearSecretsYAMLAliyunMASCredentials:    authgearSecretsYAMLAliyunMAS,
+					AuthgearSecretsYAMLTencentCredentials:      authgearSecretsYAMLTencent,
+					AuthgearSecretsYAMLYunpianCredentials:      authgearSecretsYAMLYunpian,
+					AuthgearSecretsYAMLSmsbaoCredentials:       authgearSecretsYAMLSmsbao,
+					AuthgearSecretsYAMLGatewayAPICredentials:   authgearSecretsYAMLGatewayAPI,
+					AuthgearSecretsYAMLSmsAeroCredentials:      authgearSecretsYAMLSmsAero,
 					EnvironmentDefaultProvider:                 environmentDefaultProvider,
 					EnvironmentDefaultUseConfigFrom:            environmentDefaultUseConfigFrom,
 					EnvironmentNexmoCredentials:                environmentNexmoCredentials,
@@ -221,6 +241,35 @@ func toMap(c SMSClientCredentials) map[string]any {
 			"region":        v.Region,
 			"sign_name":     v.SignName,
 			"template_code": v.TemplateCode,
+		}
+	case *AliyunMASClientCredentials:
+		return map[string]any{
+			"access_key_id":     v.AccessKeyID,
+			"access_key_secret": v.AccessKeySecret,
+			"sign_name":         v.SignName,
+			"template_code":     v.TemplateCode,
+		}
+	case *YunpianClientCredentials:
+		return map[string]any{
+			"apikey": v.APIKey,
+		}
+	case *SmsbaoClientCredentials:
+		return map[string]any{
+			"username":            v.Username,
+			"password_or_api_key": v.PasswordOrAPIKey,
+			"goods_id":            v.GoodsID,
+		}
+	case *GatewayAPIClientCredentials:
+		return map[string]any{
+			"endpoint":  v.Endpoint,
+			"api_token": v.APIToken,
+			"sender":    v.Sender,
+		}
+	case *SmsAeroClientCredentials:
+		return map[string]any{
+			"email":       v.Email,
+			"api_key":     v.APIKey,
+			"sender_name": v.SenderName,
 		}
 	}
 	return nil
