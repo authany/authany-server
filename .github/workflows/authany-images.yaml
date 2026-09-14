@@ -8,15 +8,23 @@ name: Authany - Images
 # upstream registry credentials that this repository does not have. They are
 # also disabled in this repository's Actions settings. See .github/README.md.
 #
-# Tag convention: publish by pushing an `authany-YYYY-MM-DD.N` tag (the release
-# date, not the upstream base date). Only that prefix triggers this workflow, so
-# the ~1200 mirrored upstream tags (`YYYY-MM-DD.N`, `staging-*`) never build the
-# upstream tree under an Authany image name. The tag must not contain `/`:
-# `make tag-image` uses GIT_TAG_NAME verbatim as a Docker tag.
+# Tag convention: publish by pushing a `vMAJOR.MINOR.PATCH` tag (`v1.0.0`).
+# Only that pattern triggers this workflow, so the ~1200 mirrored upstream tags
+# (`YYYY-MM-DD.N`, `staging-*`) never build the upstream tree under an Authany
+# image name, and the `prepare` job re-checks the name so a near miss such as
+# `v1.0` or `v1.0.0-rc1` fails loudly instead of publishing.
 #
-# Resulting Docker tags per image: git-<hash>, <tag>, release-git-<hash>,
-# release-<tag>. Production fills AUTHGEAR_TAG with the `authany-…` tag; both
-# images come from the same commit, so they are consistent by construction.
+# Resulting Docker tags per image: `vX.Y.Z` and `git-<12 hex>`; workflow_dispatch
+# has no tag and publishes `git-<hash>` alone. Nothing floating (`latest`, `v1`,
+# `v1.0`) is ever pushed. The upstream base release is not part of the version;
+# it is recorded in the image labels. Production fills AUTHGEAR_TAG with the
+# `vX.Y.Z` tag; both images come from the same commit, so they are consistent by
+# construction.
+#
+# The Docker tags are created here with `docker buildx imagetools create` rather
+# than with `make tag-image`, because the upstream target also pushes
+# `release-<tag>` and `release-git-<hash>`, and upstream files are kept
+# untouched so base-release merges never conflict on them.
 #
 # workflow_dispatch inputs:
 # - push_image: build only (false) to smoke-test the workflow without publishing.
@@ -26,7 +34,7 @@ name: Authany - Images
 on:
   push:
     tags:
-      - "authany-*"
+      - "v[0-9]*.[0-9]*.[0-9]*"
   workflow_dispatch:
     inputs:
       push_image:
@@ -56,11 +64,57 @@ env:
   PUSH_IMAGE: ${{ github.event_name == 'workflow_dispatch' && (inputs.push_image && 'true' || 'false') || 'true' }}
 
 jobs:
+  prepare:
+    # Resolves, and validates, everything the other jobs need to know about this
+    # run: the release tag, the git tag, and the upstream base release that the
+    # images are built from. `fetch-depth: 0` is what makes the mirrored upstream
+    # tags available to `git describe`.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version_tag: ${{ steps.resolve.outputs.version_tag }}
+      git_tag: ${{ steps.resolve.outputs.git_tag }}
+      image_version: ${{ steps.resolve.outputs.image_version }}
+      base_release: ${{ steps.resolve.outputs.base_release }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - id: resolve
+      env:
+        REF_TYPE: ${{ github.ref_type }}
+        REF_NAME: ${{ github.ref_name }}
+      run: |
+        set -euo pipefail
+        VERSION_TAG=""
+        if [ "$REF_TYPE" = "tag" ]; then
+          if ! printf '%s' "$REF_NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::'$REF_NAME' is not a release tag. Releases are tagged vMAJOR.MINOR.PATCH, for example v1.0.0. See .github/README.md."
+            exit 1
+          fi
+          VERSION_TAG="$REF_NAME"
+        fi
+        GIT_TAG="git-$(git rev-parse --short=12 HEAD)"
+        BASE_RELEASE="$(git describe --tags --match '[0-9][0-9][0-9][0-9]-*' --abbrev=0 2>/dev/null || true)"
+        {
+          echo "version_tag=$VERSION_TAG"
+          echo "git_tag=$GIT_TAG"
+          echo "image_version=${VERSION_TAG:-$GIT_TAG}"
+          echo "base_release=${BASE_RELEASE:-unknown}"
+        } >> "$GITHUB_OUTPUT"
+
   authgear-image-amd64:
+    needs: ["prepare"]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     outputs:
       image_digest: ${{ steps.build_image.outputs.image_digest }}
+    env:
+      EXTRA_BUILD_OPTS: >-
+        --label org.opencontainers.image.version=${{ needs.prepare.outputs.image_version }}
+        --label org.opencontainers.image.revision=${{ github.sha }}
+        --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        --label com.authany.base-release=${{ needs.prepare.outputs.base_release }}
     steps:
     - uses: actions/checkout@v4
     - id: build_image
@@ -76,10 +130,17 @@ jobs:
 
   authgear-image-arm64:
     if: ${{ github.event_name != 'workflow_dispatch' || !inputs.amd64_only }}
+    needs: ["prepare"]
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 60
     outputs:
       image_digest: ${{ steps.build_image.outputs.image_digest }}
+    env:
+      EXTRA_BUILD_OPTS: >-
+        --label org.opencontainers.image.version=${{ needs.prepare.outputs.image_version }}
+        --label org.opencontainers.image.revision=${{ github.sha }}
+        --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        --label com.authany.base-release=${{ needs.prepare.outputs.base_release }}
     steps:
     - uses: actions/checkout@v4
     - id: build_image
@@ -96,37 +157,59 @@ jobs:
   authgear-image:
     # Unlike run-builds.yaml, amd64_only still produces a manifest, from the
     # amd64 digest alone: SOURCE_DIGESTS is whitespace separated, so the skipped
-    # arm64 job contributes an empty entry.
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.push_image) && !cancelled() && needs.authgear-image-amd64.result == 'success' && (needs.authgear-image-arm64.result == 'success' || needs.authgear-image-arm64.result == 'skipped') }}
+    # arm64 job contributes an empty entry, and the unquoted `for` below drops
+    # it the way `make tag-image`'s `$(foreach)` did.
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.push_image) && !cancelled() && needs.prepare.result == 'success' && needs.authgear-image-amd64.result == 'success' && (needs.authgear-image-arm64.result == 'success' || needs.authgear-image-arm64.result == 'skipped') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    needs: ["authgear-image-amd64", "authgear-image-arm64"]
+    needs: ["prepare", "authgear-image-amd64", "authgear-image-arm64"]
     env:
       IMAGE_NAME: ghcr.io/authany/authany-server
       SOURCE_DIGESTS: ${{ format('{0} {1}', needs.authgear-image-amd64.outputs.image_digest, needs.authgear-image-arm64.outputs.image_digest) }}
+      VERSION_TAG: ${{ needs.prepare.outputs.version_tag }}
+      GIT_TAG: ${{ needs.prepare.outputs.git_tag }}
     steps:
-    - uses: actions/checkout@v4
-    - uses: ./.github/actions/set-git-tag-name
-      with:
-        github_ref_type: ${{ github.ref_type }}
-        github_ref_name: ${{ github.ref_name }}
     - name: docker login
       env:
         DOCKER_USERNAME: ${{ github.actor }}
         DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
       run: |
         printf '%s' "$DOCKER_PASSWORD" | docker login --password-stdin --username "$DOCKER_USERNAME" ghcr.io
-    - run: make tag-image
+    - name: tag image
+      run: |
+        set -euo pipefail
+        TAGS=(--tag "$IMAGE_NAME:$GIT_TAG")
+        if [ -n "$VERSION_TAG" ]; then
+          TAGS+=(--tag "$IMAGE_NAME:$VERSION_TAG")
+        fi
+        SOURCES=()
+        SOURCE_COUNT=0
+        for digest in $SOURCE_DIGESTS; do
+          SOURCES+=("$IMAGE_NAME@$digest")
+          SOURCE_COUNT=$((SOURCE_COUNT + 1))
+        done
+        if [ "$SOURCE_COUNT" -eq 0 ]; then
+          echo "::error::No image digest to build a manifest from."
+          exit 1
+        fi
+        docker buildx imagetools create "${TAGS[@]}" "${SOURCES[@]}"
     - name: docker logout
       if: ${{ always() }}
       run: |
         docker logout ghcr.io
 
   portal-image-amd64:
+    needs: ["prepare"]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     outputs:
       image_digest: ${{ steps.build_image.outputs.image_digest }}
+    env:
+      EXTRA_BUILD_OPTS: >-
+        --label org.opencontainers.image.version=${{ needs.prepare.outputs.image_version }}
+        --label org.opencontainers.image.revision=${{ github.sha }}
+        --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        --label com.authany.base-release=${{ needs.prepare.outputs.base_release }}
     steps:
     - uses: actions/checkout@v4
     - id: build_image
@@ -143,10 +226,17 @@ jobs:
 
   portal-image-arm64:
     if: ${{ github.event_name != 'workflow_dispatch' || !inputs.amd64_only }}
+    needs: ["prepare"]
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 60
     outputs:
       image_digest: ${{ steps.build_image.outputs.image_digest }}
+    env:
+      EXTRA_BUILD_OPTS: >-
+        --label org.opencontainers.image.version=${{ needs.prepare.outputs.image_version }}
+        --label org.opencontainers.image.revision=${{ github.sha }}
+        --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        --label com.authany.base-release=${{ needs.prepare.outputs.base_release }}
     steps:
     - uses: actions/checkout@v4
     - id: build_image
@@ -161,26 +251,40 @@ jobs:
         docker_password: ${{ secrets.GITHUB_TOKEN }}
 
   portal-image:
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.push_image) && !cancelled() && needs.portal-image-amd64.result == 'success' && (needs.portal-image-arm64.result == 'success' || needs.portal-image-arm64.result == 'skipped') }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.push_image) && !cancelled() && needs.prepare.result == 'success' && needs.portal-image-amd64.result == 'success' && (needs.portal-image-arm64.result == 'success' || needs.portal-image-arm64.result == 'skipped') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    needs: ["portal-image-amd64", "portal-image-arm64"]
+    needs: ["prepare", "portal-image-amd64", "portal-image-arm64"]
     env:
       IMAGE_NAME: ghcr.io/authany/authany-portal
       SOURCE_DIGESTS: ${{ format('{0} {1}', needs.portal-image-amd64.outputs.image_digest, needs.portal-image-arm64.outputs.image_digest) }}
+      VERSION_TAG: ${{ needs.prepare.outputs.version_tag }}
+      GIT_TAG: ${{ needs.prepare.outputs.git_tag }}
     steps:
-    - uses: actions/checkout@v4
-    - uses: ./.github/actions/set-git-tag-name
-      with:
-        github_ref_type: ${{ github.ref_type }}
-        github_ref_name: ${{ github.ref_name }}
     - name: docker login
       env:
         DOCKER_USERNAME: ${{ github.actor }}
         DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
       run: |
         printf '%s' "$DOCKER_PASSWORD" | docker login --password-stdin --username "$DOCKER_USERNAME" ghcr.io
-    - run: make tag-image
+    - name: tag image
+      run: |
+        set -euo pipefail
+        TAGS=(--tag "$IMAGE_NAME:$GIT_TAG")
+        if [ -n "$VERSION_TAG" ]; then
+          TAGS+=(--tag "$IMAGE_NAME:$VERSION_TAG")
+        fi
+        SOURCES=()
+        SOURCE_COUNT=0
+        for digest in $SOURCE_DIGESTS; do
+          SOURCES+=("$IMAGE_NAME@$digest")
+          SOURCE_COUNT=$((SOURCE_COUNT + 1))
+        done
+        if [ "$SOURCE_COUNT" -eq 0 ]; then
+          echo "::error::No image digest to build a manifest from."
+          exit 1
+        fi
+        docker buildx imagetools create "${TAGS[@]}" "${SOURCES[@]}"
     - name: docker logout
       if: ${{ always() }}
       run: |
