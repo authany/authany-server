@@ -8,18 +8,28 @@ name: Authany - Images
 # upstream registry credentials that this repository does not have. They are
 # also disabled in this repository's Actions settings. See .github/README.md.
 #
-# Tag convention: publish by pushing a `vMAJOR.MINOR.PATCH` tag (`v1.0.0`).
-# Only that pattern triggers this workflow, so the ~1200 mirrored upstream tags
-# (`YYYY-MM-DD.N`, `staging-*`) never build the upstream tree under an Authany
-# image name, and the `prepare` job re-checks the name so a near miss such as
-# `v1.0` or `v1.0.0-rc1` fails loudly instead of publishing.
+# Tag convention: publish by pushing a `<base release>-authany.<M>` tag
+# (`2026-09-09.0-authany.1`). The first half is literally the upstream base
+# release tag (`YYYY-MM-DD.N`) these images are built from, not the Authany
+# release date; `M` starts at 1 and counts Authany releases on that base, so
+# another release on the same base increments it and merging a new base swaps
+# the first half and resets it to 1. The `-authany.` suffix is what keeps the
+# name distinct from the ~1200 mirrored upstream tags (`YYYY-MM-DD.N`,
+# `staging-*`): only the suffixed pattern triggers this workflow, so those tags
+# never build the upstream tree under an Authany image name, and the `prepare`
+# job re-checks the name so a near miss such as `2026-09-09-authany.1` or
+# `2026-09-09.0-authany` fails loudly instead of publishing.
 #
-# Resulting Docker tags per image: `vX.Y.Z` and `git-<12 hex>`; workflow_dispatch
-# has no tag and publishes `git-<hash>` alone. Nothing floating (`latest`, `v1`,
-# `v1.0`) is ever pushed. The upstream base release is not part of the version;
-# it is recorded in the image labels. Production fills AUTHGEAR_TAG with the
-# `vX.Y.Z` tag; both images come from the same commit, so they are consistent by
-# construction.
+# Because the base release is part of the tag, `prepare` takes it from the tag
+# name and cross-checks it against `git describe`: a tag claiming a base that
+# the git history does not show fails the run instead of silently labelling the
+# images with the wrong base release.
+#
+# Resulting Docker tags per image: the version tag and `git-<12 hex>`;
+# workflow_dispatch has no tag and publishes `git-<hash>` alone. Nothing
+# floating (`latest`, a bare base release) is ever pushed. Production fills
+# AUTHGEAR_TAG with the version tag; both images come from the same commit, so
+# they are consistent by construction.
 #
 # The Docker tags are created here with `docker buildx imagetools create` rather
 # than with `make tag-image`, because the upstream target also pushes
@@ -34,7 +44,7 @@ name: Authany - Images
 on:
   push:
     tags:
-      - "v[0-9]*.[0-9]*.[0-9]*"
+      - "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].[0-9]*-authany.[0-9]*"
   workflow_dispatch:
     inputs:
       push_image:
@@ -86,16 +96,22 @@ jobs:
         REF_NAME: ${{ github.ref_name }}
       run: |
         set -euo pipefail
+        DESCRIBED="$(git describe --tags --match '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].[0-9]*' --exclude '*-authany.*' --abbrev=0 2>/dev/null || true)"
         VERSION_TAG=""
+        BASE_RELEASE="$DESCRIBED"
         if [ "$REF_TYPE" = "tag" ]; then
-          if ! printf '%s' "$REF_NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::'$REF_NAME' is not a release tag. Releases are tagged vMAJOR.MINOR.PATCH, for example v1.0.0. See .github/README.md."
+          if ! printf '%s' "$REF_NAME" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]+-authany\.[0-9]+$'; then
+            echo "::error::'$REF_NAME' is not a release tag. Releases are tagged <upstream base release>-authany.<M>, for example 2026-09-09.0-authany.1. See .github/README.md."
             exit 1
           fi
           VERSION_TAG="$REF_NAME"
+          BASE_RELEASE="${REF_NAME%-authany.*}"
+          if [ "$BASE_RELEASE" != "$DESCRIBED" ]; then
+            echo "::error::'$REF_NAME' claims base release '$BASE_RELEASE' but git history says '${DESCRIBED:-none}'. The tag's base release does not match the git history: check that the base release tag was pushed (git push origin main --tags), or that the tag name names the right base. See .github/README.md."
+            exit 1
+          fi
         fi
         GIT_TAG="git-$(git rev-parse --short=12 HEAD)"
-        BASE_RELEASE="$(git describe --tags --match '[0-9][0-9][0-9][0-9]-*' --abbrev=0 2>/dev/null || true)"
         {
           echo "version_tag=$VERSION_TAG"
           echo "git_tag=$GIT_TAG"
