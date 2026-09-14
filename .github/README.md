@@ -35,7 +35,7 @@ Local development, tests and conventions are documented in [`CONTRIBUTING.md`](.
 ## Branches and releases
 
 - `main` is what production runs: the current base release plus Authany commits on top. Authany commits follow [Conventional Commits](https://www.conventionalcommits.org/), `type(scope): subject (Authany)`: the scope is `server`, `portal`, `authui` or `ci`, the common types are `feat`, `fix`, `docs`, `test`, `refactor`, `chore` and `ci`, the subject starts lower case, is imperative and carries no full stop, and every commit has a body saying what changed and why. This convention overrides the commit style of the upstream [`AGENTS.md`](../AGENTS.md).
-- Base release tags (`YYYY-MM-DD.N`) are mirrored in this repository. Currently based on `2026-09-09.0`.
+- Base release tags (`YYYY-MM-DD.N`) are mirrored in this repository. Currently based on `2026-09-09.0`, which is also the first half of the release tags below.
 - Authany changes so far (`git log --oneline <base tag>..main` is the authoritative list; the highlights; the four subjects below were pushed before the convention above and are kept as written):
   - `[Portal] Add locale selection and language switcher (Authany)` — the admin console picks its locale from `localStorage` / browser language and offers a Language submenu; translations are loaded at runtime from the deployment's resource directory.
   - `[Portal] Strip residual upstream vendor links (Authany)` — external links to the base project's website, docs, community and mailboxes render as plain text; header contact/docs links, the Get Started contact and resource columns, the Billing nav entry and the Starter Kit section are removed.
@@ -51,30 +51,33 @@ git merge <tag>                # conflicts, if any, are confined to the portal f
 git push origin main --tags
 ```
 
-Releases are versioned `vMAJOR.MINOR.PATCH`. Which position moves:
+**The `--tags` on that last push is not optional.** The release tag names the base release it is built on, and the image build cross-checks that name against `git describe`, which only sees base release tags that reached `origin`. Forget `--tags` and the next release fails its cross-check instead of publishing images labelled with the wrong base release — that failure is the point.
 
-| Change | Position |
+Releases are versioned `<upstream base release>-authany.<M>`, for example `2026-09-09.0-authany.1`. The first half is literally the upstream base release tag the images are built from, not the Authany release date; `M` counts Authany releases on that base. Which half moves:
+
+| Change | Tag |
 |---|---|
-| Bug fix, configuration change, wording change | PATCH |
-| New Authany feature, or merging a new upstream base release | MINOR |
-| Deployment-incompatible change: an environment variable renamed, the compose structure changed, a manual migration needed | MAJOR |
+| Another release on the same base release: Authany feature, bug fix, configuration or wording change | Same first half, `M` + 1 |
+| Merging a new upstream base release | First half becomes the new base release tag, `M` back to 1 |
+
+The tag carries no compatibility semantics: a deployment-incompatible change (an environment variable renamed, the compose structure changed, a manual migration needed) is called out in the release notes, not in the version.
 
 Releasing, once `main` holds what production should run:
 
 ```bash
 git push origin main                            # never --tags, see below
-git tag v1.0.0                                  # vMAJOR.MINOR.PATCH
-git push origin v1.0.0                          # this is what triggers the image build
+git tag -a 2026-09-09.0-authany.1               # <upstream base release>-authany.<M>
+git push origin 2026-09-09.0-authany.1          # this is what triggers the image build
 # wait for "Authany - Images" to finish, then, in the deployment repository:
-deploy/scripts/upgrade.sh v1.0.0
+deploy/scripts/upgrade.sh 2026-09-09.0-authany.1
 ```
 
 Pushing the tag makes [`authany-images.yaml`](workflows/authany-images.yaml) build both images for amd64 and arm64 and publish them to `ghcr.io/authany/authany-server` and `ghcr.io/authany/authany-portal`; `upgrade.sh` fills `AUTHGEAR_TAG` with the same tag. Both images come from one commit, so they are consistent by construction.
 
-- Each image gets exactly two Docker tags: `vX.Y.Z` and `git-<12 hex>`. Nothing floating (`latest`, `v1`, `v1.0`) is published, so a deployment can never quietly move to a different build.
-- The upstream base release is not part of the version. It is recorded on the image as the `com.authany.base-release` label, next to the usual `org.opencontainers.image.version`, `.revision` and `.source`; `docker buildx imagetools inspect --format '{{json .Image}}' <image>:<tag>` shows them.
+- Each image gets exactly two Docker tags: the release tag and `git-<12 hex>`. Nothing floating (`latest`, a bare base release) is published, so a deployment can never quietly move to a different build.
+- The base release is both the first half of the tag and the `com.authany.base-release` label on the image, next to the usual `org.opencontainers.image.version`, `.revision` and `.source`; `docker buildx imagetools inspect --format '{{json .Image}}' <image>:<tag>` shows them. The workflow takes the label from the tag name and cross-checks it against `git describe`, so a tag naming a base release the git history does not show fails the run.
 - Push the release tag explicitly. Releasing does not use `git push origin main --tags`: that pushes the ~1200 mirrored upstream tags (`YYYY-MM-DD.N`, `staging-*`) along with it, which is wanted exactly once, when taking a base release above, and not on every release.
-- Only `vX.Y.Z` triggers the workflow, which is what keeps those mirrored upstream tags from building the upstream tree under an Authany image name, and the workflow re-checks the tag name, so a near miss such as `v1.0` or `v1.0.0-rc1` fails the run instead of publishing under an odd Docker tag.
+- Only the `-authany.<M>` suffixed pattern triggers the workflow, which is what keeps those mirrored upstream tags from building the upstream tree under an Authany image name, and the workflow re-checks the tag name, so a near miss such as `2026-09-09-authany.1` or `2026-09-09.0-authany` fails the run instead of publishing under an odd Docker tag.
 - If the `ubuntu-24.04-arm` runner is unavailable for this repository, run the workflow from `workflow_dispatch` with `amd64_only` (and `push_image` off for a build-only smoke test); that still publishes a manifest, from the amd64 build alone.
 - The packages are private, so the production host needs `docker login ghcr.io` with a PAT carrying `read:packages` before it can pull.
 
@@ -86,7 +89,7 @@ Three workflows run here; everything else is disabled.
 |---|---|---|
 | [`authany-portal.yaml`](workflows/authany-portal.yaml) | pushes to `main` and pull requests touching `portal/`, plus `workflow_dispatch` | typecheck, eslint, stylelint, prettier, tests and a build of `portal/`; ~10 minutes |
 | [`authany-server.yaml`](workflows/authany-server.yaml) | pushes to `main` and pull requests touching `pkg/**`, `cmd/**`, `go.mod` or `go.sum`, plus `workflow_dispatch` | `go build ./cmd/... ./pkg/...`, the config, SMS, messaging and portal tests, and `gofmt -l pkg cmd`; ~10-15 minutes |
-| [`authany-images.yaml`](workflows/authany-images.yaml) | `vX.Y.Z` tag pushes and `workflow_dispatch` only | two images times two architectures plus two manifests; ~9 minutes of wall clock measured, ~30 billed minutes (arm64 runners bill at a higher rate) |
+| [`authany-images.yaml`](workflows/authany-images.yaml) | `<base release>-authany.<M>` tag pushes and `workflow_dispatch` only | two images times two architectures plus two manifests; ~9 minutes of wall clock measured, ~30 billed minutes (arm64 runners bill at a higher rate) |
 
 Nothing builds an image on an ordinary push: the Free plan's 2000 minutes a month go a long way with two cheap checks per change, and not far at all if every push builds four images.
 
