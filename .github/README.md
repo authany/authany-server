@@ -51,20 +51,30 @@ git merge <tag>                # conflicts, if any, are confined to the portal f
 git push origin main --tags
 ```
 
+Releases are versioned `vMAJOR.MINOR.PATCH`. Which position moves:
+
+| Change | Position |
+|---|---|
+| Bug fix, configuration change, wording change | PATCH |
+| New Authany feature, or merging a new upstream base release | MINOR |
+| Deployment-incompatible change: an environment variable renamed, the compose structure changed, a manual migration needed | MAJOR |
+
 Releasing, once `main` holds what production should run:
 
 ```bash
 git push origin main                            # never --tags, see below
-git tag authany-2026-09-13.0                    # authany-YYYY-MM-DD.N, the release date
-git push origin authany-2026-09-13.0            # this is what triggers the image build
+git tag v1.0.0                                  # vMAJOR.MINOR.PATCH
+git push origin v1.0.0                          # this is what triggers the image build
 # wait for "Authany - Images" to finish, then, in the deployment repository:
-deploy/scripts/upgrade.sh authany-2026-09-13.0
+deploy/scripts/upgrade.sh v1.0.0
 ```
 
 Pushing the tag makes [`authany-images.yaml`](workflows/authany-images.yaml) build both images for amd64 and arm64 and publish them to `ghcr.io/authany/authany-server` and `ghcr.io/authany/authany-portal`; `upgrade.sh` fills `AUTHGEAR_TAG` with the same tag. Both images come from one commit, so they are consistent by construction.
 
+- Each image gets exactly two Docker tags: `vX.Y.Z` and `git-<12 hex>`. Nothing floating (`latest`, `v1`, `v1.0`) is published, so a deployment can never quietly move to a different build.
+- The upstream base release is not part of the version. It is recorded on the image as the `com.authany.base-release` label, next to the usual `org.opencontainers.image.version`, `.revision` and `.source`; `docker buildx imagetools inspect --format '{{json .Image}}' <image>:<tag>` shows them.
 - Push the release tag explicitly. Releasing does not use `git push origin main --tags`: that pushes the ~1200 mirrored upstream tags (`YYYY-MM-DD.N`, `staging-*`) along with it, which is wanted exactly once, when taking a base release above, and not on every release.
-- The tag must not contain `/`: `make tag-image` uses `GIT_TAG_NAME` verbatim as a Docker tag. The `authany-` prefix is also what keeps those mirrored upstream tags from building the upstream tree under an Authany image name.
+- Only `vX.Y.Z` triggers the workflow, which is what keeps those mirrored upstream tags from building the upstream tree under an Authany image name, and the workflow re-checks the tag name, so a near miss such as `v1.0` or `v1.0.0-rc1` fails the run instead of publishing under an odd Docker tag.
 - If the `ubuntu-24.04-arm` runner is unavailable for this repository, run the workflow from `workflow_dispatch` with `amd64_only` (and `push_image` off for a build-only smoke test); that still publishes a manifest, from the amd64 build alone.
 - The packages are private, so the production host needs `docker login ghcr.io` with a PAT carrying `read:packages` before it can pull.
 
@@ -76,7 +86,7 @@ Three workflows run here; everything else is disabled.
 |---|---|---|
 | [`authany-portal.yaml`](workflows/authany-portal.yaml) | pushes to `main` and pull requests touching `portal/`, plus `workflow_dispatch` | typecheck, eslint, stylelint, prettier, tests and a build of `portal/`; ~10 minutes |
 | [`authany-server.yaml`](workflows/authany-server.yaml) | pushes to `main` and pull requests touching `pkg/**`, `cmd/**`, `go.mod` or `go.sum`, plus `workflow_dispatch` | `go build ./cmd/... ./pkg/...`, the config, SMS, messaging and portal tests, and `gofmt -l pkg cmd`; ~10-15 minutes |
-| [`authany-images.yaml`](workflows/authany-images.yaml) | `authany-*` tag pushes and `workflow_dispatch` only | two images times two architectures plus two manifests; ~8-14 minutes of wall clock, ~26-52 billed minutes (arm64 runners bill at a higher rate) |
+| [`authany-images.yaml`](workflows/authany-images.yaml) | `vX.Y.Z` tag pushes and `workflow_dispatch` only | two images times two architectures plus two manifests; ~9 minutes of wall clock measured, ~30 billed minutes (arm64 runners bill at a higher rate) |
 
 Nothing builds an image on an ordinary push: the Free plan's 2000 minutes a month go a long way with two cheap checks per change, and not far at all if every push builds four images.
 
