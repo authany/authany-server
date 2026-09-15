@@ -637,7 +637,7 @@ const SMTPConfigurationScreenContent: React.VFC<SMTPConfigurationScreenContentPr
           {providerDescription != null ? (
             <Text
               as="p"
-              size="1"
+              size="2"
               color="gray"
               className={styles.providerDescription}
             >

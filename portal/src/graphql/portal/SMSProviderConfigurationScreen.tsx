@@ -180,6 +180,9 @@ const MASK = "********";
 // Matches v2 IconRadioCards storybook inner icon size (SquareIcon iconSize).
 const PROVIDER_RADIO_ICON_SIZE = "1.375rem";
 
+// Wide enough to keep the longest provider name on a single line.
+const PROVIDER_RADIO_ITEM_MIN_WIDTH = 270;
+
 interface ConfigFormState
   extends AliyunFormState,
     AliyunMASFormState,
@@ -2164,12 +2167,13 @@ function SMSProviderConfigurationContent(props: {
             value={state.providerType}
             onValueChange={onChangeProviderType}
             options={providerOptions}
+            itemMinWidth={PROVIDER_RADIO_ITEM_MIN_WIDTH}
             itemFillSpaces={true}
           />
           {providerDescription != null ? (
             <Text
               as="p"
-              size="1"
+              size="2"
               color="gray"
               className={styles.providerDescription}
             >

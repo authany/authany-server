@@ -5,7 +5,7 @@
 }
 
 .providerSelector {
-  @apply flex flex-col gap-1;
+  @apply flex flex-col gap-3;
 }
 
 .pageHeader {
@@ -23,11 +23,6 @@
 .pageDescription,
 .providerDescription {
   color: var(--gray-a11);
-}
-
-.providerDescription {
-  font-size: 12px;
-  line-height: 16px;
 }
 
 .contentWithSaveBar {
