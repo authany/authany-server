@@ -180,7 +180,7 @@ const MASK = "********";
 // Matches v2 IconRadioCards storybook inner icon size (SquareIcon iconSize).
 const PROVIDER_RADIO_ICON_SIZE = "1.375rem";
 
-// Wide enough to keep the longest provider name on a single line.
+// 270px yields 3 columns in the 848px (span 9) widget, keeping all zh-CN provider names on one line; the longest en name still wraps.
 const PROVIDER_RADIO_ITEM_MIN_WIDTH = 270;
 
 interface ConfigFormState
