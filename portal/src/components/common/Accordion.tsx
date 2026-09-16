@@ -7,13 +7,15 @@ import styles from "./Accordion.module.css";
 export function Accordion({
   className,
   text,
+  defaultExpanded = false,
   children,
 }: {
   className?: string;
   text: React.ReactNode;
+  defaultExpanded?: boolean;
   children?: React.ReactNode;
 }): React.ReactElement {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   const toggle = useCallback(() => {
     setIsExpanded((prev) => !prev);
