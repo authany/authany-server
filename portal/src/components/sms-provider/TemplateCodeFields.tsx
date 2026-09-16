@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import { Text } from "@radix-ui/themes";
-import { FormattedMessage } from "../../intl";
+import { Context as MFContext, FormattedMessage } from "../../intl";
 import { Accordion } from "../common/Accordion";
 import { TextField } from "../v2/TextField/TextField";
 import { ErrorParseRule, makeLocalErrorParseRule } from "../../error/parse";
@@ -53,6 +53,20 @@ export type SMSTemplateName = (typeof SMS_TEMPLATE_NAMES)[number];
 
 export type SMSTemplateCodes = Partial<Record<SMSTemplateName, string>>;
 
+/**
+ * The provider-specific noun for the template identifier, so that the labels
+ * match the wording of the provider console. Tencent Cloud calls it a template
+ * ID while Alibaba Cloud calls it a template code.
+ */
+export type SMSTemplateTerm = "templateID" | "templateCode";
+
+const templateTermMessageIDs: Record<SMSTemplateTerm, string> = {
+  templateID:
+    "SMSProviderConfigurationScreen.form.templateCodes.term.templateID",
+  templateCode:
+    "SMSProviderConfigurationScreen.form.templateCodes.term.templateCode",
+};
+
 const templateNameMessageIDs: Record<SMSTemplateName, string> = {
   "verification_sms.txt":
     "SMSProviderConfigurationScreen.form.templateCodes.template.verification",
@@ -99,11 +113,13 @@ export function serializeSMSTemplateCodes(
 function TemplateCodeOverrideField({
   templateName,
   value,
+  placeholder,
   disabled,
   onChange,
 }: {
   templateName: SMSTemplateName;
   value: string;
+  placeholder: string;
   disabled?: boolean;
   onChange: (templateName: SMSTemplateName, value: string) => void;
 }): React.ReactElement {
@@ -124,6 +140,7 @@ function TemplateCodeOverrideField({
         <FormattedMessage id={`${templateNameMessageIDs[templateName]}.hint`} />
       }
       optional={true}
+      placeholder={placeholder}
       value={value}
       onChange={onChangeValue}
       disabled={disabled}
@@ -134,6 +151,8 @@ function TemplateCodeOverrideField({
 }
 
 export interface TemplateCodeFieldsProps {
+  /** The noun this provider uses for the template identifier. */
+  term: SMSTemplateTerm;
   signName: string;
   templateCode: string;
   templateCodes: SMSTemplateCodes;
@@ -147,6 +166,7 @@ export interface TemplateCodeFieldsProps {
 }
 
 export function TemplateCodeFields({
+  term,
   signName,
   templateCode,
   templateCodes,
@@ -157,6 +177,14 @@ export function TemplateCodeFields({
   onChangeTemplateCodes,
   onChangeOverseasTemplateCode,
 }: TemplateCodeFieldsProps): React.ReactElement {
+  const { renderToString } = useContext(MFContext);
+  const termText = renderToString(templateTermMessageIDs[term]);
+  const termValues = useMemo(() => ({ term: termText }), [termText]);
+  const overridePlaceholder = renderToString(
+    "SMSProviderConfigurationScreen.form.templateCodes.overrides.placeholder",
+    { term: termText }
+  );
+
   // Only the value on mount matters, so that expanding or collapsing the
   // overrides afterwards is not undone by editing the fields inside.
   const [hasTemplateCodeOverride] = useState(() =>
@@ -225,10 +253,16 @@ export function TemplateCodeFields({
         labelSize="2"
         type="text"
         label={
-          <FormattedMessage id="SMSProviderConfigurationScreen.form.templateCodes.templateCode" />
+          <FormattedMessage
+            id="SMSProviderConfigurationScreen.form.templateCodes.templateCode"
+            values={termValues}
+          />
         }
         hint={
-          <FormattedMessage id="SMSProviderConfigurationScreen.form.templateCodes.templateCode.hint" />
+          <FormattedMessage
+            id="SMSProviderConfigurationScreen.form.templateCodes.templateCode.hint"
+            values={termValues}
+          />
         }
         required={true}
         value={templateCode}
@@ -244,7 +278,10 @@ export function TemplateCodeFields({
           labelSize="2"
           type="text"
           label={
-            <FormattedMessage id="SMSProviderConfigurationScreen.form.templateCodes.overseasTemplateCode" />
+            <FormattedMessage
+              id="SMSProviderConfigurationScreen.form.templateCodes.overseasTemplateCode"
+              values={termValues}
+            />
           }
           hint={
             <FormattedMessage id="SMSProviderConfigurationScreen.form.templateCodes.overseasTemplateCode.hint" />
@@ -259,19 +296,26 @@ export function TemplateCodeFields({
       ) : null}
       <Accordion
         text={
-          <FormattedMessage id="SMSProviderConfigurationScreen.form.templateCodes.overrides.label" />
+          <FormattedMessage
+            id="SMSProviderConfigurationScreen.form.templateCodes.overrides.label"
+            values={termValues}
+          />
         }
         defaultExpanded={hasTemplateCodeOverride}
       >
         <div className="flex flex-col gap-y-4">
           <Text as="p" size="1" color="gray">
-            <FormattedMessage id="SMSProviderConfigurationScreen.form.templateCodes.overrides.description" />
+            <FormattedMessage
+              id="SMSProviderConfigurationScreen.form.templateCodes.overrides.description"
+              values={termValues}
+            />
           </Text>
           {SMS_TEMPLATE_NAMES.map((templateName) => (
             <TemplateCodeOverrideField
               key={templateName}
               templateName={templateName}
               value={templateCodes[templateName] ?? ""}
+              placeholder={overridePlaceholder}
               disabled={disabled}
               onChange={onTemplateCodeOverrideChange}
             />

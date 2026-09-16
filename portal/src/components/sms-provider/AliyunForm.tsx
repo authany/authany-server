@@ -100,6 +100,7 @@ export function AliyunForm<T extends AliyunFormState>({
         fieldName="access_key_secret"
       />
       <TemplateCodeFields
+        term="templateCode"
         signName={state.aliyunSignName}
         templateCode={state.aliyunTemplateCode}
         templateCodes={state.aliyunTemplateCodes}

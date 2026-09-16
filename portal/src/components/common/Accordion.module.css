@@ -23,6 +23,8 @@
 
 .accordionContent {
   @apply block;
+  @apply mt-2 pl-4;
+  border-left: 2px solid var(--gray-6);
 }
 
 .accordionContent--hide {
