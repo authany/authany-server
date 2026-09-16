@@ -96,6 +96,7 @@ export function AliyunMASForm<T extends AliyunMASFormState>({
         fieldName="access_key_secret"
       />
       <TemplateCodeFields
+        term="templateCode"
         signName={state.aliyunMASSignName}
         templateCode={state.aliyunMASTemplateCode}
         templateCodes={state.aliyunMASTemplateCodes}

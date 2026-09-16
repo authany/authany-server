@@ -1,9 +1,31 @@
-import React, { useCallback } from "react";
-import { FormattedMessage } from "../../intl";
+import React, { useCallback, useContext, useMemo } from "react";
+import { Select } from "@radix-ui/themes";
+import { Context as MFContext, FormattedMessage } from "../../intl";
+import { useFormField } from "../../form";
+import { FormField } from "../v2/FormField/FormField";
 import { TextField } from "../v2/TextField/TextField";
 import { SMSTemplateCodes, TemplateCodeFields } from "./TemplateCodeFields";
 
 const MASK = "********";
+
+// The Tencent Cloud SMS API only serves these three regions.
+// An empty stored value means the backend default, which is ap-guangzhou.
+const DEFAULT_REGION = "ap-guangzhou";
+
+const REGIONS: { value: string; messageID: string }[] = [
+  {
+    value: DEFAULT_REGION,
+    messageID: "SMSProviderConfigurationScreen.form.tencent.region.guangzhou",
+  },
+  {
+    value: "ap-beijing",
+    messageID: "SMSProviderConfigurationScreen.form.tencent.region.beijing",
+  },
+  {
+    value: "ap-nanjing",
+    messageID: "SMSProviderConfigurationScreen.form.tencent.region.nanjing",
+  },
+];
 
 export interface TencentFormState {
   tencentSecretID: string;
@@ -25,6 +47,10 @@ export function TencentForm<T extends TencentFormState>({
   setState,
 }: TencentFormProps<T>): React.ReactElement {
   const isSecretMasked = state.tencentSecretKey == null;
+  const { renderToString } = useContext(MFContext);
+  // The other fields are TextField, which disables itself while the form is
+  // saving. Select does not, so read the same flag here.
+  const { loading: isFormLoading } = useFormField(undefined);
 
   const onSecretIDChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,12 +77,30 @@ export function TencentForm<T extends TencentFormState>({
   );
 
   const onRegionChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
+    (value: string) => {
       setState((prev) => ({ ...prev, tencentRegion: value }));
     },
     [setState]
   );
+
+  // An unknown stored region is kept as an extra option so that saving the
+  // form does not silently rewrite it.
+  const regionOptions = useMemo(() => {
+    const options = REGIONS.map((region) => ({
+      value: region.value,
+      label: renderToString(region.messageID),
+    }));
+    if (
+      state.tencentRegion !== "" &&
+      !REGIONS.some((region) => region.value === state.tencentRegion)
+    ) {
+      options.push({
+        value: state.tencentRegion,
+        label: state.tencentRegion,
+      });
+    }
+    return options;
+  }, [renderToString, state.tencentRegion]);
 
   const onChangeSignName = useCallback(
     (value: string) => {
@@ -123,24 +167,38 @@ export function TencentForm<T extends TencentFormState>({
         parentJSONPointer={/\/secrets\/\d+\/data/}
         fieldName="sdk_app_id"
       />
-      <TextField
+      <FormField
         size="2"
         labelSize="2"
-        type="text"
         label={
           <FormattedMessage id="SMSProviderConfigurationScreen.form.tencent.region" />
         }
         hint={
           <FormattedMessage id="SMSProviderConfigurationScreen.form.tencent.region.hint" />
         }
-        optional={true}
-        value={state.tencentRegion}
-        onChange={onRegionChange}
-        disabled={isSecretMasked}
+        labelSpace="1"
         parentJSONPointer={/\/secrets\/\d+\/data/}
         fieldName="region"
-      />
+      >
+        <Select.Root
+          value={
+            state.tencentRegion === "" ? DEFAULT_REGION : state.tencentRegion
+          }
+          onValueChange={onRegionChange}
+          disabled={isSecretMasked || isFormLoading}
+        >
+          <Select.Trigger variant="surface" />
+          <Select.Content>
+            {regionOptions.map((option) => (
+              <Select.Item key={option.value} value={option.value}>
+                {option.label}
+              </Select.Item>
+            ))}
+          </Select.Content>
+        </Select.Root>
+      </FormField>
       <TemplateCodeFields
+        term="templateID"
         signName={state.tencentSignName}
         templateCode={state.tencentTemplateCode}
         templateCodes={state.tencentTemplateCodes}
