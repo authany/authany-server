@@ -1,6 +1,7 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Text } from "@radix-ui/themes";
 import { FormattedMessage } from "../../intl";
+import { Accordion } from "../common/Accordion";
 import { TextField } from "../v2/TextField/TextField";
 import { ErrorParseRule, makeLocalErrorParseRule } from "../../error/parse";
 import { LocalError } from "../../error/error";
@@ -119,6 +120,9 @@ function TemplateCodeOverrideField({
       labelSize="2"
       type="text"
       label={<FormattedMessage id={templateNameMessageIDs[templateName]} />}
+      hint={
+        <FormattedMessage id={`${templateNameMessageIDs[templateName]}.hint`} />
+      }
       optional={true}
       value={value}
       onChange={onChangeValue}
@@ -153,6 +157,15 @@ export function TemplateCodeFields({
   onChangeTemplateCodes,
   onChangeOverseasTemplateCode,
 }: TemplateCodeFieldsProps): React.ReactElement {
+  // Only the value on mount matters, so that expanding or collapsing the
+  // overrides afterwards is not undone by editing the fields inside.
+  const [hasTemplateCodeOverride] = useState(() =>
+    SMS_TEMPLATE_NAMES.some((templateName) => {
+      const value = templateCodes[templateName];
+      return value != null && value !== "";
+    })
+  );
+
   const onSignNameChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       onChangeSignName(e.target.value);
@@ -244,25 +257,27 @@ export function TemplateCodeFields({
           fieldName="overseas_template_code"
         />
       ) : null}
-      <div className="flex flex-col gap-y-4">
-        <div className="flex flex-col gap-y-1">
-          <Text as="p" size="2" weight="medium">
-            <FormattedMessage id="SMSProviderConfigurationScreen.form.templateCodes.overrides.label" />
-          </Text>
+      <Accordion
+        text={
+          <FormattedMessage id="SMSProviderConfigurationScreen.form.templateCodes.overrides.label" />
+        }
+        defaultExpanded={hasTemplateCodeOverride}
+      >
+        <div className="flex flex-col gap-y-4">
           <Text as="p" size="1" color="gray">
             <FormattedMessage id="SMSProviderConfigurationScreen.form.templateCodes.overrides.description" />
           </Text>
+          {SMS_TEMPLATE_NAMES.map((templateName) => (
+            <TemplateCodeOverrideField
+              key={templateName}
+              templateName={templateName}
+              value={templateCodes[templateName] ?? ""}
+              disabled={disabled}
+              onChange={onTemplateCodeOverrideChange}
+            />
+          ))}
         </div>
-        {SMS_TEMPLATE_NAMES.map((templateName) => (
-          <TemplateCodeOverrideField
-            key={templateName}
-            templateName={templateName}
-            value={templateCodes[templateName] ?? ""}
-            disabled={disabled}
-            onChange={onTemplateCodeOverrideChange}
-          />
-        ))}
-      </div>
+      </Accordion>
     </div>
   );
 }
