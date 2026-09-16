@@ -1900,7 +1900,7 @@
   "SMSProviderConfigurationScreen.form.templateCodes.templateCode": "Default {term}",
   "SMSProviderConfigurationScreen.form.templateCodes.templateCode.hint": "Used for every message unless a {term} below overrides it.",
   "SMSProviderConfigurationScreen.form.templateCodes.overseasTemplateCode": "{term} for phone numbers outside mainland China",
-  "SMSProviderConfigurationScreen.form.templateCodes.overseasTemplateCode.hint": "Leave blank to use the same template code for all phone numbers.",
+  "SMSProviderConfigurationScreen.form.templateCodes.overseasTemplateCode.hint": "Leave blank to use the same Template Code for all phone numbers.",
   "SMSProviderConfigurationScreen.form.templateCodes.overrides.label": "Set a different {term} per SMS type",
   "SMSProviderConfigurationScreen.form.templateCodes.overrides.description": "Optionally set a different {term} for each SMS type. Blank fields use the default {term}.",
   "SMSProviderConfigurationScreen.form.templateCodes.overrides.placeholder": "{term} (blank = default)",
