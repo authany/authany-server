@@ -551,8 +551,9 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -937,10 +938,16 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -962,6 +969,7 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -1132,7 +1140,7 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -1447,8 +1455,10 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 		DCRFacade:             dcrFacade,
 	}
 	graphQLHandler := &transport.GraphQLHandler{
-		GraphQLContext: graphqlContext,
-		AppDatabase:    handle,
+		GraphQLContext:        graphqlContext,
+		AppDatabase:           handle,
+		RateLimiter:           limiter,
+		AdminAPIFeatureConfig: adminAPIFeatureConfig,
 	}
 	return graphQLHandler
 }
@@ -1833,8 +1843,9 @@ func newUserImportCreateHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -2343,8 +2354,9 @@ func newUserImportGetHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -2854,8 +2866,9 @@ func newUserExportCreateHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,

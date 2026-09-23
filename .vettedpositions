@@ -2,7 +2,7 @@
 /cmd/authgear/main.go:50:9: contextbackground
 /cmd/once/main.go:19:9: contextbackground
 /cmd/portal/main.go:44:9: contextbackground
-/pkg/admin/transport/handler_graphql.go:47:9: requestcontext
+/pkg/admin/transport/handler_graphql.go:85:9: requestcontext
 /pkg/admin/transport/handler_user_export_create.go:52:9: requestcontext
 /pkg/admin/transport/handler_user_export_get.go:37:9: requestcontext
 /pkg/admin/transport/handler_user_import_create.go:27:9: requestcontext
@@ -28,11 +28,11 @@
 /pkg/auth/handler/oauth/authorize.go:60:46: requestcontext
 /pkg/auth/handler/oauth/authorize.go:61:31: requestcontext
 /pkg/auth/handler/oauth/challenge.go:88:9: requestcontext
-/pkg/auth/handler/oauth/consent.go:115:27: requestcontext
-/pkg/auth/handler/oauth/consent.go:135:28: requestcontext
-/pkg/auth/handler/oauth/consent.go:144:28: requestcontext
-/pkg/auth/handler/oauth/consent.go:160:44: requestcontext
-/pkg/auth/handler/oauth/consent.go:161:31: requestcontext
+/pkg/auth/handler/oauth/consent.go:120:27: requestcontext
+/pkg/auth/handler/oauth/consent.go:140:28: requestcontext
+/pkg/auth/handler/oauth/consent.go:149:28: requestcontext
+/pkg/auth/handler/oauth/consent.go:165:44: requestcontext
+/pkg/auth/handler/oauth/consent.go:166:31: requestcontext
 /pkg/auth/handler/oauth/end_session.go:43:26: requestcontext
 /pkg/auth/handler/oauth/end_session.go:49:47: requestcontext
 /pkg/auth/handler/oauth/end_session.go:50:31: requestcontext
@@ -56,7 +56,7 @@
 /pkg/auth/handler/saml/logout.go:621:46: requestcontext
 /pkg/auth/handler/saml/logout.go:624:31: requestcontext
 /pkg/auth/handler/webapp/account_status.go:48:27: requestcontext
-/pkg/auth/handler/webapp/app_static_assets.go:39:33: requestcontext
+/pkg/auth/handler/webapp/app_static_assets.go:40:33: requestcontext
 /pkg/auth/handler/webapp/auth_entry_point_middleware.go:35:10: requestcontext
 /pkg/auth/handler/webapp/authflow_change_password.go:96:26: requestcontext
 /pkg/auth/handler/webapp/authflow_controller.go:1070:30: requestcontext
@@ -115,6 +115,8 @@
 /pkg/auth/handler/webapp/authflowv2/select_account.go:187:33: requestcontext
 /pkg/auth/handler/webapp/authflowv2/settings.go:89:30: requestcontext
 /pkg/auth/handler/webapp/authflowv2/settings_advanced.go:46:30: requestcontext
+/pkg/auth/handler/webapp/authflowv2/settings_authorized_apps.go:142:30: requestcontext
+/pkg/auth/handler/webapp/authflowv2/settings_authorized_apps.go:144:39: requestcontext
 /pkg/auth/handler/webapp/authflowv2/settings_biometric.go:101:30: requestcontext
 /pkg/auth/handler/webapp/authflowv2/settings_change_password.go:83:30: requestcontext
 /pkg/auth/handler/webapp/authflowv2/settings_delete_account.go:102:30: requestcontext
@@ -151,8 +153,8 @@
 /pkg/auth/handler/webapp/authflowv2/settings_passkey.go:106:30: requestcontext
 /pkg/auth/handler/webapp/authflowv2/settings_profile.go:40:30: requestcontext
 /pkg/auth/handler/webapp/authflowv2/settings_profile_edit.go:171:30: requestcontext
-/pkg/auth/handler/webapp/authflowv2/settings_sessions.go:142:30: requestcontext
-/pkg/auth/handler/webapp/authflowv2/settings_sessions.go:144:39: requestcontext
+/pkg/auth/handler/webapp/authflowv2/settings_sessions.go:86:30: requestcontext
+/pkg/auth/handler/webapp/authflowv2/settings_sessions.go:88:39: requestcontext
 /pkg/auth/handler/webapp/authflowv2/setup_oob_otp.go:162:26: requestcontext
 /pkg/auth/handler/webapp/authflowv2/setup_totp.go:122:26: requestcontext
 /pkg/auth/handler/webapp/authflowv2/terminate_other_sessions.go:74:26: requestcontext
@@ -282,7 +284,7 @@
 /pkg/auth/webapp_request_middleware.go:40:10: requestcontext
 /pkg/images/deps/context.go:23:10: requestcontext
 /pkg/images/deps/middleware_request.go:24:10: requestcontext
-/pkg/images/handler/get.go:95:11: requestcontext
+/pkg/images/handler/get.go:122:11: requestcontext
 /pkg/images/handler/post.go:58:9: requestcontext
 /pkg/lib/accountmanagement/rate_limit_middleware.go:36:10: requestcontext
 /pkg/lib/admin/authz/middleware.go:40:10: requestcontext
@@ -300,7 +302,7 @@
 /pkg/lib/deps/middleware_request.go:24:10: requestcontext
 /pkg/lib/deps/providers.go:145:25: requestcontext
 /pkg/lib/deps/providers.go:152:36: requestcontext
-/pkg/lib/dpop/middleware.go:21:10: requestcontext
+/pkg/lib/dpop/middleware.go:26:10: requestcontext
 /pkg/lib/healthz/healthz.go:25:9: requestcontext
 /pkg/lib/infra/middleware/panic.go:41:12: requestcontext
 /pkg/lib/infra/middleware/sentry.go:21:47: requestcontext
@@ -355,7 +357,7 @@
 /pkg/util/httproute/httproute.go:150:38: requestcontext
 /pkg/util/httputil/csp.go:158:42: requestcontext
 /pkg/util/httputil/csp.go:164:42: requestcontext
-/pkg/util/httputil/file_server.go:116:11: requestcontext
+/pkg/util/httputil/file_server.go:167:11: requestcontext
 /pkg/util/httputil/json.go:96:9: requestcontext
 /pkg/util/httputil/result.go:29:11: requestcontext
 /pkg/util/jwkutil/contextbackground.go:11:52: contextbackground
