@@ -144,8 +144,11 @@ func newHealthzHandler(p *deps.RootProvider, w http.ResponseWriter, r *http.Requ
 
 func newWebAppGeneratedStaticAssetsHandler(p *deps.RootProvider, w http.ResponseWriter, r *http.Request, ctx context.Context) http.Handler {
 	globalEmbeddedResourceManager := p.EmbeddedResources
+	environmentConfig := p.EnvironmentConfig
+	sourceMapConfig := deps.ProvideSourceMapConfig(environmentConfig)
 	generatedStaticAssetsHandler := &webapp.GeneratedStaticAssetsHandler{
 		EmbeddedResources: globalEmbeddedResourceManager,
+		SourceMap:         sourceMapConfig,
 	}
 	return generatedStaticAssetsHandler
 }
@@ -652,8 +655,9 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -987,10 +991,16 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -1012,6 +1022,7 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -1281,12 +1292,15 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
+	accessPolicyService := &resourcescope.AccessPolicyService{
+		Store: resourcescopeStore,
+	}
 	oAuthFeatureConfig := featureConfig.OAuth
-	cimdhttpClients := cimd.ProvideCIMDHTTPClients()
+	cimdhttpClients := cimd.ProvideCIMDHTTPClients(httpFeatureConfig)
 	fetcher := &cimd.Fetcher{
-		HTTPClients:        cimdhttpClients,
-		OAuthFeatureConfig: oAuthFeatureConfig,
-		AppID:              appID,
+		HTTPClients:       cimdhttpClients,
+		HTTPFeatureConfig: httpFeatureConfig,
+		AppID:             appID,
 	}
 	oauthclientCommands := &oauthclient.Commands{
 		Store:    oauthclientStore,
@@ -1339,7 +1353,7 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 		PreAuthenticatedURLTokenService:         preAuthenticatedURLTokenServiceImpl,
 		IDTokenIssuer:                           idTokenIssuer,
 		AuthorizationHandlerAccessTokenEncoding: oauthAccessTokenEncoding,
-		ResourceScopeService:                    resourcescopeStore,
+		ResourceScopeService:                    accessPolicyService,
 		CIMDService:                             cimdService,
 	}
 	authorizeHandler := &oauth3.AuthorizeHandler{
@@ -1726,8 +1740,9 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -2061,10 +2076,16 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -2086,6 +2107,7 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -2355,12 +2377,15 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
+	accessPolicyService := &resourcescope.AccessPolicyService{
+		Store: resourcescopeStore,
+	}
 	oAuthFeatureConfig := featureConfig.OAuth
-	cimdhttpClients := cimd.ProvideCIMDHTTPClients()
+	cimdhttpClients := cimd.ProvideCIMDHTTPClients(httpFeatureConfig)
 	fetcher := &cimd.Fetcher{
-		HTTPClients:        cimdhttpClients,
-		OAuthFeatureConfig: oAuthFeatureConfig,
-		AppID:              appID,
+		HTTPClients:       cimdhttpClients,
+		HTTPFeatureConfig: httpFeatureConfig,
+		AppID:             appID,
 	}
 	oauthclientCommands := &oauthclient.Commands{
 		Store:    oauthclientStore,
@@ -2413,7 +2438,7 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 		PreAuthenticatedURLTokenService:         preAuthenticatedURLTokenServiceImpl,
 		IDTokenIssuer:                           idTokenIssuer,
 		AuthorizationHandlerAccessTokenEncoding: oauthAccessTokenEncoding,
-		ResourceScopeService:                    resourcescopeStore,
+		ResourceScopeService:                    accessPolicyService,
 		CIMDService:                             cimdService,
 	}
 	uiFeatureConfig := featureConfig.UI
@@ -2914,8 +2939,9 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -3248,10 +3274,16 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -3273,6 +3305,7 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -3413,6 +3446,9 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 	clientResourceScopeService := &resourcescope.ClientResourceScopeService{
 		Store: resourcescopeStore,
 	}
+	accessPolicyService := &resourcescope.AccessPolicyService{
+		Store: resourcescopeStore,
+	}
 	facadeIdentityFacade := facade.IdentityFacade{
 		Coordinator: coordinator,
 	}
@@ -3433,7 +3469,7 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -3621,6 +3657,7 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 		OfflineGrantService:             oauthOfflineGrantService,
 		PreAuthenticatedURLTokenService: preAuthenticatedURLTokenServiceImpl,
 		ClientResourceScopeService:      clientResourceScopeService,
+		ResourceAccessPolicyService:     accessPolicyService,
 		Graphs:                          interactionService,
 		IDTokenIssuer:                   idTokenIssuer,
 		Clock:                           clockClock,
@@ -4056,8 +4093,9 @@ func newOAuthRevokeHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -4573,8 +4611,9 @@ func newOAuthRegisterHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -5152,8 +5191,9 @@ func newOAuthJWKSHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -5487,10 +5527,16 @@ func newOAuthJWKSHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -5512,6 +5558,7 @@ func newOAuthJWKSHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -6054,8 +6101,9 @@ func newOAuthUserInfoHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -6389,10 +6437,16 @@ func newOAuthUserInfoHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -6414,6 +6468,7 @@ func newOAuthUserInfoHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -7008,8 +7063,9 @@ func newOAuthEndSessionHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -7366,10 +7422,16 @@ func newOAuthEndSessionHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -7391,6 +7453,7 @@ func newOAuthEndSessionHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -8000,8 +8063,9 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -8334,10 +8398,16 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -8359,6 +8429,7 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -8499,6 +8570,9 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 	clientResourceScopeService := &resourcescope.ClientResourceScopeService{
 		Store: resourcescopeStore,
 	}
+	accessPolicyService := &resourcescope.AccessPolicyService{
+		Store: resourcescopeStore,
+	}
 	facadeIdentityFacade := facade.IdentityFacade{
 		Coordinator: coordinator,
 	}
@@ -8519,7 +8593,7 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -8707,6 +8781,7 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 		OfflineGrantService:             oauthOfflineGrantService,
 		PreAuthenticatedURLTokenService: preAuthenticatedURLTokenServiceImpl,
 		ClientResourceScopeService:      clientResourceScopeService,
+		ResourceAccessPolicyService:     accessPolicyService,
 		Graphs:                          interactionService,
 		IDTokenIssuer:                   idTokenIssuer,
 		Clock:                           clockClock,
@@ -9108,8 +9183,9 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -9460,10 +9536,16 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -9485,6 +9567,7 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -9657,7 +9740,7 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -10221,8 +10304,9 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -10573,10 +10657,16 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -10598,6 +10688,7 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -10770,7 +10861,7 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -11333,8 +11424,9 @@ func newAPIPresignImagesUploadHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -11895,8 +11987,9 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -12261,10 +12354,16 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -12286,6 +12385,7 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -12482,7 +12582,7 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -12522,7 +12622,7 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -13125,8 +13225,9 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -13491,10 +13592,16 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -13516,6 +13623,7 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -13712,7 +13820,7 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -13752,7 +13860,7 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -14362,8 +14470,9 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -14728,10 +14837,16 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -14753,6 +14868,7 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -14949,7 +15065,7 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -14989,7 +15105,7 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -15630,8 +15746,9 @@ func newWechatCallbackHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -15982,10 +16099,16 @@ func newWechatCallbackHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -16007,6 +16130,7 @@ func newWechatCallbackHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -16177,7 +16301,7 @@ func newWechatCallbackHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -16743,8 +16867,9 @@ func newWebAppAuthflowV2VerifyLoginLinkOTPHandler(p *deps.RequestProvider) http.
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -17107,10 +17232,16 @@ func newWebAppAuthflowV2VerifyLoginLinkOTPHandler(p *deps.RequestProvider) http.
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -17132,6 +17263,7 @@ func newWebAppAuthflowV2VerifyLoginLinkOTPHandler(p *deps.RequestProvider) http.
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -17302,7 +17434,7 @@ func newWebAppAuthflowV2VerifyLoginLinkOTPHandler(p *deps.RequestProvider) http.
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -17890,8 +18022,9 @@ func newWebAppAuthflowV2SettingsHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -18242,10 +18375,16 @@ func newWebAppAuthflowV2SettingsHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -18267,6 +18406,7 @@ func newWebAppAuthflowV2SettingsHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -18437,7 +18577,7 @@ func newWebAppAuthflowV2SettingsHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -19041,8 +19181,9 @@ func newWebAppAuthflowV2SettingsProfileEditHandler(p *deps.RequestProvider) http
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -19393,10 +19534,16 @@ func newWebAppAuthflowV2SettingsProfileEditHandler(p *deps.RequestProvider) http
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -19418,6 +19565,7 @@ func newWebAppAuthflowV2SettingsProfileEditHandler(p *deps.RequestProvider) http
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -19588,7 +19736,7 @@ func newWebAppAuthflowV2SettingsProfileEditHandler(p *deps.RequestProvider) http
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -20188,8 +20336,9 @@ func newWebAppAuthflowV2SettingsBiometricHandler(p *deps.RequestProvider) http.H
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -20540,10 +20689,16 @@ func newWebAppAuthflowV2SettingsBiometricHandler(p *deps.RequestProvider) http.H
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -20565,6 +20720,7 @@ func newWebAppAuthflowV2SettingsBiometricHandler(p *deps.RequestProvider) http.H
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -20735,7 +20891,7 @@ func newWebAppAuthflowV2SettingsBiometricHandler(p *deps.RequestProvider) http.H
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -21350,8 +21506,9 @@ func newWebAppAuthflowV2SettingsMFAHandler(p *deps.RequestProvider) http.Handler
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -21702,10 +21859,16 @@ func newWebAppAuthflowV2SettingsMFAHandler(p *deps.RequestProvider) http.Handler
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -21727,6 +21890,7 @@ func newWebAppAuthflowV2SettingsMFAHandler(p *deps.RequestProvider) http.Handler
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -21897,7 +22061,7 @@ func newWebAppAuthflowV2SettingsMFAHandler(p *deps.RequestProvider) http.Handler
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -22484,8 +22648,9 @@ func newWebAppAuthflowV2SettingsMFAViewRecoveryCodeHandler(p *deps.RequestProvid
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -22836,10 +23001,16 @@ func newWebAppAuthflowV2SettingsMFAViewRecoveryCodeHandler(p *deps.RequestProvid
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -22861,6 +23032,7 @@ func newWebAppAuthflowV2SettingsMFAViewRecoveryCodeHandler(p *deps.RequestProvid
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -23031,7 +23203,7 @@ func newWebAppAuthflowV2SettingsMFAViewRecoveryCodeHandler(p *deps.RequestProvid
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -23645,8 +23817,9 @@ func newWebAppAuthflowV2SettingsMFACreatePasswordHandler(p *deps.RequestProvider
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -23997,10 +24170,16 @@ func newWebAppAuthflowV2SettingsMFACreatePasswordHandler(p *deps.RequestProvider
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -24022,6 +24201,7 @@ func newWebAppAuthflowV2SettingsMFACreatePasswordHandler(p *deps.RequestProvider
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -24192,7 +24372,7 @@ func newWebAppAuthflowV2SettingsMFACreatePasswordHandler(p *deps.RequestProvider
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -24805,8 +24985,9 @@ func newWebAppAuthflowV2SettingsMFAPasswordHandler(p *deps.RequestProvider) http
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -25157,10 +25338,16 @@ func newWebAppAuthflowV2SettingsMFAPasswordHandler(p *deps.RequestProvider) http
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -25182,6 +25369,7 @@ func newWebAppAuthflowV2SettingsMFAPasswordHandler(p *deps.RequestProvider) http
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -25352,7 +25540,7 @@ func newWebAppAuthflowV2SettingsMFAPasswordHandler(p *deps.RequestProvider) http
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -25965,8 +26153,9 @@ func newWebAppAuthflowV2SettingsMFAChangePasswordHandler(p *deps.RequestProvider
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -26317,10 +26506,16 @@ func newWebAppAuthflowV2SettingsMFAChangePasswordHandler(p *deps.RequestProvider
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -26342,6 +26537,7 @@ func newWebAppAuthflowV2SettingsMFAChangePasswordHandler(p *deps.RequestProvider
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -26512,7 +26708,7 @@ func newWebAppAuthflowV2SettingsMFAChangePasswordHandler(p *deps.RequestProvider
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -27114,8 +27310,9 @@ func newWebAppAuthflowV2SettingsTOTPHandler(p *deps.RequestProvider) http.Handle
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -27466,10 +27663,16 @@ func newWebAppAuthflowV2SettingsTOTPHandler(p *deps.RequestProvider) http.Handle
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -27491,6 +27694,7 @@ func newWebAppAuthflowV2SettingsTOTPHandler(p *deps.RequestProvider) http.Handle
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -27661,7 +27865,7 @@ func newWebAppAuthflowV2SettingsTOTPHandler(p *deps.RequestProvider) http.Handle
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -28283,8 +28487,9 @@ func newWebAppAuthflowV2SettingsMFACreateTOTPHandler(p *deps.RequestProvider) ht
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -28635,10 +28840,16 @@ func newWebAppAuthflowV2SettingsMFACreateTOTPHandler(p *deps.RequestProvider) ht
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -28660,6 +28871,7 @@ func newWebAppAuthflowV2SettingsMFACreateTOTPHandler(p *deps.RequestProvider) ht
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -28830,7 +29042,7 @@ func newWebAppAuthflowV2SettingsMFACreateTOTPHandler(p *deps.RequestProvider) ht
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -29443,8 +29655,9 @@ func newWebAppAuthflowV2SettingsMFAEnterTOTPHandler(p *deps.RequestProvider) htt
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -29795,10 +30008,16 @@ func newWebAppAuthflowV2SettingsMFAEnterTOTPHandler(p *deps.RequestProvider) htt
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -29820,6 +30039,7 @@ func newWebAppAuthflowV2SettingsMFAEnterTOTPHandler(p *deps.RequestProvider) htt
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -29990,7 +30210,7 @@ func newWebAppAuthflowV2SettingsMFAEnterTOTPHandler(p *deps.RequestProvider) htt
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -30604,8 +30824,9 @@ func newWebAppAuthflowV2SettingsOOBOTPHandler(p *deps.RequestProvider) http.Hand
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -30956,10 +31177,16 @@ func newWebAppAuthflowV2SettingsOOBOTPHandler(p *deps.RequestProvider) http.Hand
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -30981,6 +31208,7 @@ func newWebAppAuthflowV2SettingsOOBOTPHandler(p *deps.RequestProvider) http.Hand
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -31151,7 +31379,7 @@ func newWebAppAuthflowV2SettingsOOBOTPHandler(p *deps.RequestProvider) http.Hand
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -31774,8 +32002,9 @@ func newWebAppAuthflowV2SettingsMFACreateOOBOTPHandler(p *deps.RequestProvider) 
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -32126,10 +32355,16 @@ func newWebAppAuthflowV2SettingsMFACreateOOBOTPHandler(p *deps.RequestProvider) 
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -32151,6 +32386,7 @@ func newWebAppAuthflowV2SettingsMFACreateOOBOTPHandler(p *deps.RequestProvider) 
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -32321,7 +32557,7 @@ func newWebAppAuthflowV2SettingsMFACreateOOBOTPHandler(p *deps.RequestProvider) 
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -32934,8 +33170,9 @@ func newWebAppAuthflowV2SettingsMFAEnterOOBOTPHandler(p *deps.RequestProvider) h
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -33286,10 +33523,16 @@ func newWebAppAuthflowV2SettingsMFAEnterOOBOTPHandler(p *deps.RequestProvider) h
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -33311,6 +33554,7 @@ func newWebAppAuthflowV2SettingsMFAEnterOOBOTPHandler(p *deps.RequestProvider) h
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -33481,7 +33725,7 @@ func newWebAppAuthflowV2SettingsMFAEnterOOBOTPHandler(p *deps.RequestProvider) h
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -34086,8 +34330,9 @@ func newWebAppAuthflowV2SettingsChangePasskeyHandler(p *deps.RequestProvider) ht
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -34438,10 +34683,16 @@ func newWebAppAuthflowV2SettingsChangePasskeyHandler(p *deps.RequestProvider) ht
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -34463,6 +34714,7 @@ func newWebAppAuthflowV2SettingsChangePasskeyHandler(p *deps.RequestProvider) ht
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -34633,7 +34885,7 @@ func newWebAppAuthflowV2SettingsChangePasskeyHandler(p *deps.RequestProvider) ht
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -35268,8 +35520,9 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -35620,10 +35873,16 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -35645,6 +35904,7 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -35815,7 +36075,1152 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
+	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
+		AppID: appID,
+		Redis: appredisHandle,
+	}
+	oAuthProviderFactory := &sso.OAuthProviderFactory{
+		IdentityConfig:               identityConfig,
+		Credentials:                  oAuthSSOProviderCredentials,
+		SSOOAuthDemoCredentials:      ssooAuthDemoCredentials,
+		Clock:                        clockClock,
+		StandardAttributesNormalizer: normalizer,
+		HTTPClient:                   oAuthHTTPClient,
+		SimpleStoreRedisFactory:      simpleStoreRedisFactory,
+	}
+	webappoauthStore := &webappoauth.Store{
+		Redis: globalredisHandle,
+	}
+	mfaFacade := &facade.MFAFacade{
+		Coordinator: coordinator,
+	}
+	sender2 := forgotpassword.Sender{
+		AppConfg:    appConfig,
+		Identities:  serviceService,
+		Sender:      messagingSender,
+		Translation: translationService,
+	}
+	forgotpasswordService := &forgotpassword.Service{
+		Config:         appConfig,
+		FeatureConfig:  featureConfig,
+		Identities:     serviceService,
+		Authenticators: authenticatorFacade,
+		OTPCodes:       otpService,
+		OTPSender:      messageSender,
+		PasswordSender: sender2,
+		Events:         eventService,
+	}
+	responseWriter := p.ResponseWriter
+	nonceService := &nonce.Service{
+		Cookies:        cookieManager,
+		Request:        request,
+		ResponseWriter: responseWriter,
+	}
+	challengeStore := &challenge.Store{
+		Redis: appredisHandle,
+		AppID: appID,
+	}
+	challengeProvider := &challenge.Provider{
+		Store: challengeStore,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	userProvider := &user.Provider{
+		Commands: userCommands,
+		Queries:  userQueries,
+	}
+	authenticationinfoStoreRedis := &authenticationinfo.StoreRedis{
+		Redis: appredisHandle,
+		AppID: appID,
+	}
+	manager2 := &session.Manager{
+		IDPSessions:         idpsessionManager,
+		AccessTokenSessions: sessionManager,
+		Events:              eventService,
+	}
+	oauthsessionStoreRedis := &oauthsession.StoreRedis{
+		Redis: appredisHandle,
+		AppID: appID,
+	}
+	interactionContext := &interaction.Context{
+		Request:                         request,
+		RemoteIP:                        remoteIP,
+		Database:                        sqlExecutor,
+		Clock:                           clockClock,
+		Config:                          appConfig,
+		FeatureConfig:                   featureConfig,
+		RateLimitsEnvConfig:             rateLimitsEnvironmentConfig,
+		OAuthClientResolver:             resolver,
+		OfflineGrants:                   redisStore,
+		Identities:                      identityFacade,
+		Authenticators:                  authenticatorFacade,
+		AnonymousIdentities:             anonymousProvider,
+		AnonymousUserPromotionCodeStore: anonymousStoreRedis,
+		BiometricIdentities:             biometricProvider,
+		OTPCodeService:                  otpService,
+		OTPSender:                       messageSender,
+		OAuthProviderFactory:            oAuthProviderFactory,
+		OAuthRedirectURIBuilder:         endpointsEndpoints,
+		OAuthStateStore:                 webappoauthStore,
+		MFA:                             mfaFacade,
+		ForgotPassword:                  forgotpasswordService,
+		ResetPassword:                   forgotpasswordService,
+		Passkey:                         passkeyService,
+		Verification:                    verificationService,
+		RateLimiter:                     limiter,
+		PasswordGenerator:               generator,
+		Nonces:                          nonceService,
+		Challenges:                      challengeProvider,
+		Users:                           userProvider,
+		StdAttrsService:                 stdattrsService,
+		Events:                          eventService,
+		CookieManager:                   cookieManager,
+		AuthenticationInfoService:       authenticationinfoStoreRedis,
+		Sessions:                        idpsessionProvider,
+		SessionManager:                  manager2,
+		SessionCookie:                   cookieDef2,
+		OAuthSessions:                   oauthsessionStoreRedis,
+		MFADeviceTokenCookie:            cookieDef,
+	}
+	interactionStoreRedis := &interaction.StoreRedis{
+		Redis: appredisHandle,
+		AppID: appID,
+	}
+	interactionService := &interaction.Service{
+		Context: interactionContext,
+		Store:   interactionStoreRedis,
+	}
+	webappService2 := &webapp2.Service2{
+		Request:              request,
+		Sessions:             sessionStoreRedis,
+		SessionCookie:        sessionCookieDef,
+		SignedUpCookie:       signedUpCookieDef,
+		MFADeviceTokenCookie: cookieDef,
+		ErrorService:         errorService,
+		Cookies:              cookieManager,
+		OAuthConfig:          oAuthConfig,
+		UIConfig:             uiConfig,
+		TrustProxy:           trustProxy,
+		UIInfoResolver:       uiService,
+		OAuthClientResolver:  resolver,
+		Graph:                interactionService,
+	}
+	uiFeatureConfig := featureConfig.UI
+	forgotPasswordConfig := appConfig.ForgotPassword
+	googleTagManagerConfig := appConfig.GoogleTagManager
+	botProtectionConfig := appConfig.BotProtection
+	flashMessage := &httputil.FlashMessage{
+		Cookies: cookieManager,
+	}
+	authUISentryDSN := environmentConfig.AuthUISentryDSN
+	authUIWindowMessageAllowedOrigins := environmentConfig.AuthUIWindowMessageAllowedOrigins
+	baseViewModeler := &viewmodels.BaseViewModeler{
+		TrustProxy:                        trustProxy,
+		OAuth:                             oAuthConfig,
+		AuthUI:                            uiConfig,
+		AuthUIFeatureConfig:               uiFeatureConfig,
+		StaticAssets:                      staticAssetResolver,
+		ForgotPassword:                    forgotPasswordConfig,
+		Authentication:                    authenticationConfig,
+		GoogleTagManager:                  googleTagManagerConfig,
+		BotProtection:                     botProtectionConfig,
+		ErrorService:                      errorService,
+		Translations:                      translationService,
+		Clock:                             clockClock,
+		FlashMessage:                      flashMessage,
+		DefaultLanguageTag:                defaultLanguageTag,
+		SupportedLanguageTags:             supportedLanguageTags,
+		AuthUISentryDSN:                   authUISentryDSN,
+		AuthUIWindowMessageAllowedOrigins: authUIWindowMessageAllowedOrigins,
+		OAuthClientResolver:               resolver,
+	}
+	responseRenderer := &webapp.ResponseRenderer{
+		TemplateEngine: engine,
+	}
+	publisher := webapp.NewPublisher(appID, appredisHandle)
+	authflowV2Navigator := &authflowv2.AuthflowV2Navigator{
+		AppID:           appID,
+		Endpoints:       endpointsEndpoints,
+		OAuthStateStore: webappoauthStore,
+	}
+	errorRenderer := &webapp.ErrorRenderer{
+		ErrorService:            errorService,
+		UIImplementationService: uiImplementationService,
+		Renderer:                responseRenderer,
+		BaseViewModel:           baseViewModeler,
+		AuthflowV2Navigator:     authflowV2Navigator,
+	}
+	controllerDeps := webapp.ControllerDeps{
+		Database:                  handle,
+		RedisHandle:               appredisHandle,
+		AppID:                     appID,
+		Page:                      webappService2,
+		BaseViewModel:             baseViewModeler,
+		Renderer:                  responseRenderer,
+		Publisher:                 publisher,
+		Clock:                     clockClock,
+		TesterEndpointsProvider:   endpointsEndpoints,
+		ErrorRenderer:             errorRenderer,
+		UIInfoResolver:            uiService,
+		AuthenticationInfoService: authenticationinfoStoreRedis,
+		Sessions:                  sessionStoreRedis,
+		OAuthSessions:             oauthsessionStoreRedis,
+		TrustProxy:                trustProxy,
+	}
+	controllerFactory := webapp.ControllerFactory{
+		ControllerDeps: controllerDeps,
+	}
+	biometricConfig := identityConfig.Biometric
+	settingsViewModeler := &viewmodels.SettingsViewModeler{
+		Clock:               clockClock,
+		Users:               userQueries,
+		Authenticators:      service3,
+		MFA:                 mfaService,
+		AuthenticatorConfig: authenticatorConfig,
+		Authentication:      authenticationConfig,
+		Biometric:           biometricConfig,
+	}
+	oauthOfflineGrantService := &oauth.OfflineGrantService{
+		RemoteIP:        remoteIP,
+		UserAgentString: userAgentString,
+		OAuthConfig:     oAuthConfig,
+		Clock:           clockClock,
+		IDPSessions:     idpsessionProvider,
+		ClientResolver:  resolver,
+		AccessEvents:    eventProvider,
+		MeterService:    meterService,
+		OfflineGrants:   redisStore,
+	}
+	sessionListingService := &sessionlisting.SessionListingService{
+		OAuthConfig:   oAuthConfig,
+		IDPSessions:   idpsessionProvider,
+		OfflineGrants: oauthOfflineGrantService,
+	}
+	authflowV2SettingsSessionsHandler := &authflowv2.AuthflowV2SettingsSessionsHandler{
+		Database:          handle,
+		ControllerFactory: controllerFactory,
+		BaseViewModel:     baseViewModeler,
+		SettingsViewModel: settingsViewModeler,
+		Renderer:          responseRenderer,
+		Sessions:          manager2,
+		SessionListing:    sessionListingService,
+	}
+	return authflowV2SettingsSessionsHandler
+}
+
+func newWebAppAuthflowV2SettingsAuthorizedAppsHandler(p *deps.RequestProvider) http.Handler {
+	appProvider := p.AppProvider
+	handle := appProvider.AppDatabase
+	appredisHandle := appProvider.Redis
+	appContext := appProvider.AppContext
+	config := appContext.Config
+	appConfig := config.AppConfig
+	appID := appConfig.ID
+	request := p.Request
+	sessionStoreRedis := &webapp2.SessionStoreRedis{
+		AppID: appID,
+		Redis: appredisHandle,
+	}
+	sessionCookieDef := webapp2.NewSessionCookieDef()
+	signedUpCookieDef := webapp2.NewSignedUpCookieDef()
+	authenticationConfig := appConfig.Authentication
+	cookieDef := mfa.NewDeviceTokenCookieDef(authenticationConfig)
+	errorTokenCookieDef := webapp2.NewErrorTokenCookieDef()
+	rootProvider := appProvider.RootProvider
+	environmentConfig := rootProvider.EnvironmentConfig
+	trustProxy := environmentConfig.TrustProxy
+	httpConfig := appConfig.HTTP
+	cookieManager := deps.NewCookieManager(request, trustProxy, httpConfig)
+	errorService := &webapp2.ErrorService{
+		AppID:       appID,
+		Cookie:      errorTokenCookieDef,
+		RedisHandle: appredisHandle,
+		Cookies:     cookieManager,
+	}
+	oAuthConfig := appConfig.OAuth
+	uiConfig := appConfig.UI
+	httpHost := deps.ProvideHTTPHost(request, trustProxy)
+	httpProto := deps.ProvideHTTPProto(request, trustProxy)
+	sharedAuthgearEndpoint := environmentConfig.SharedAuthgearEndpoint
+	oAuthEndpoints := &endpoints.OAuthEndpoints{
+		HTTPHost:               httpHost,
+		HTTPProto:              httpProto,
+		SharedAuthgearEndpoint: sharedAuthgearEndpoint,
+	}
+	globalUIImplementation := environmentConfig.UIImplementation
+	globalUISettingsImplementation := environmentConfig.UISettingsImplementation
+	uiImplementationService := &web.UIImplementationService{
+		UIConfig:                       uiConfig,
+		GlobalUIImplementation:         globalUIImplementation,
+		GlobalUISettingsImplementation: globalUISettingsImplementation,
+	}
+	endpointsEndpoints := &endpoints.Endpoints{
+		OAuthEndpoints:          oAuthEndpoints,
+		UIImplementationService: uiImplementationService,
+	}
+	uiService := &authenticationinfo.UIService{
+		EndpointsProvider: endpointsEndpoints,
+	}
+	secretConfig := config.SecretConfig
+	databaseCredentials := deps.ProvideDatabaseCredentials(secretConfig)
+	sqlBuilderApp := appdb.NewSQLBuilderApp(databaseCredentials, appID)
+	sqlExecutor := appdb.NewSQLExecutor(handle)
+	clockClock := _wireSystemClockValue
+	store := &oauthclient.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+		Clock:       clockClock,
+		AppID:       appID,
+	}
+	clientCache := &oauthclient.ClientCache{
+		Redis: appredisHandle,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	queries := &oauthclient.Queries{
+		Store:       store,
+		OAuthConfig: oAuthConfig,
+		Database:    handle,
+		Cache:       clientCache,
+	}
+	resolver := &oauthclient.Resolver{
+		OAuthConfig:     oAuthConfig,
+		TesterEndpoints: endpointsEndpoints,
+		Queries:         queries,
+	}
+	remoteIP := deps.ProvideRemoteIP(request, trustProxy)
+	featureConfig := config.FeatureConfig
+	rateLimitsEnvironmentConfig := &environmentConfig.RateLimits
+	redisStore := &redis.Store{
+		Redis:       appredisHandle,
+		AppID:       appID,
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+		Clock:       clockClock,
+	}
+	userAgentString := deps.ProvideUserAgentString(request)
+	httpRequestURL := httputil.GetRequestURL(request, httpProto, httpHost)
+	localizationConfig := appConfig.Localization
+	sqlBuilder := appdb.NewSQLBuilder(databaseCredentials)
+	storeImpl := event.NewStoreImpl(sqlBuilder, sqlExecutor)
+	userStore := &user.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+		Clock:       clockClock,
+		AppID:       appID,
+	}
+	rawQueries := &user.RawQueries{
+		Store: userStore,
+	}
+	identityConfig := appConfig.Identity
+	identityFeatureConfig := featureConfig.Identity
+	ssooAuthDemoCredentials := deps.ProvideSSOOAuthDemoCredentials(secretConfig)
+	serviceStore := &service.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	loginidStore := &loginid.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	loginIDConfig := identityConfig.LoginID
+	manager := appContext.Resources
+	typeCheckerFactory := &loginid.TypeCheckerFactory{
+		UIConfig:      uiConfig,
+		LoginIDConfig: loginIDConfig,
+		Resources:     manager,
+	}
+	checker := &loginid.Checker{
+		Config:             loginIDConfig,
+		TypeCheckerFactory: typeCheckerFactory,
+	}
+	normalizerFactory := &loginid.NormalizerFactory{
+		Config: loginIDConfig,
+	}
+	provider := &loginid.Provider{
+		Store:             loginidStore,
+		Config:            loginIDConfig,
+		Checker:           checker,
+		NormalizerFactory: normalizerFactory,
+		Clock:             clockClock,
+	}
+	oauthStore := &oauth2.Store{
+		SQLBuilder:     sqlBuilderApp,
+		SQLExecutor:    sqlExecutor,
+		IdentityConfig: identityConfig,
+	}
+	oauthProvider := &oauth2.Provider{
+		Store: oauthStore,
+		Clock: clockClock,
+	}
+	anonymousStore := &anonymous.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	anonymousProvider := &anonymous.Provider{
+		Store: anonymousStore,
+		Clock: clockClock,
+	}
+	biometricStore := &biometric.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	biometricProvider := &biometric.Provider{
+		Store: biometricStore,
+		Clock: clockClock,
+	}
+	passkeyStore := &passkey.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	store2 := &passkey2.Store{
+		Redis: appredisHandle,
+		AppID: appID,
+	}
+	defaultLanguageTag := deps.ProvideDefaultLanguageTag(config)
+	supportedLanguageTags := deps.ProvideSupportedLanguageTags(config)
+	templateResolver := &template.Resolver{
+		Resources:             manager,
+		DefaultLanguageTag:    defaultLanguageTag,
+		SupportedLanguageTags: supportedLanguageTags,
+	}
+	engine := &template.Engine{
+		Resolver: templateResolver,
+	}
+	httpOrigin := httputil.MakeHTTPOrigin(httpProto, httpHost)
+	webAppCDNHost := environmentConfig.WebAppCDNHost
+	globalEmbeddedResourceManager := rootProvider.EmbeddedResources
+	staticAssetResolver := &web.StaticAssetResolver{
+		Localization:      localizationConfig,
+		HTTPOrigin:        httpOrigin,
+		HTTPProto:         httpProto,
+		WebAppCDNHost:     webAppCDNHost,
+		Resources:         manager,
+		EmbeddedResources: globalEmbeddedResourceManager,
+	}
+	smtpServerCredentialsSecretItem := deps.ProvideSMTPServerCredentialsItem(secretConfig)
+	translationService := &translation.Service{
+		TemplateEngine:                  engine,
+		StaticAssets:                    staticAssetResolver,
+		SMTPServerCredentialsSecretItem: smtpServerCredentialsSecretItem,
+		OAuthClientResolver:             resolver,
+	}
+	configService := &passkey2.ConfigService{
+		Request:            request,
+		TrustProxy:         trustProxy,
+		TranslationService: translationService,
+	}
+	passkeyService := &passkey2.Service{
+		Store:         store2,
+		ConfigService: configService,
+	}
+	passkeyProvider := &passkey.Provider{
+		Store:   passkeyStore,
+		Clock:   clockClock,
+		Passkey: passkeyService,
+	}
+	siweStore := &siwe.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	siweProvider := &siwe.Provider{
+		Store: siweStore,
+		Clock: clockClock,
+	}
+	ldapStore := &ldap.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	normalizer := &stdattrs.Normalizer{
+		LoginIDNormalizerFactory: normalizerFactory,
+	}
+	ldapProvider := &ldap.Provider{
+		Store:                        ldapStore,
+		Clock:                        clockClock,
+		StandardAttributesNormalizer: normalizer,
+	}
+	serviceService := &service.Service{
+		Authentication:          authenticationConfig,
+		Identity:                identityConfig,
+		IdentityFeatureConfig:   identityFeatureConfig,
+		SSOOAuthDemoCredentials: ssooAuthDemoCredentials,
+		Store:                   serviceStore,
+		LoginID:                 provider,
+		OAuth:                   oauthProvider,
+		Anonymous:               anonymousProvider,
+		Biometric:               biometricProvider,
+		Passkey:                 passkeyProvider,
+		SIWE:                    siweProvider,
+		LDAP:                    ldapProvider,
+	}
+	store3 := &service2.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	passwordStore := &password.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	authenticatorConfig := appConfig.Authenticator
+	authenticatorPasswordConfig := authenticatorConfig.Password
+	historyStore := &password.HistoryStore{
+		Clock:       clockClock,
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	authenticatorFeatureConfig := featureConfig.Authenticator
+	passwordChecker := password.ProvideChecker(authenticatorPasswordConfig, authenticatorFeatureConfig, historyStore)
+	expiry := password.ProvideExpiry(authenticatorPasswordConfig, clockClock)
+	housekeeper := &password.Housekeeper{
+		Store:  historyStore,
+		Config: authenticatorPasswordConfig,
+	}
+	passwordProvider := &password.Provider{
+		Store:           passwordStore,
+		Config:          authenticatorPasswordConfig,
+		Clock:           clockClock,
+		PasswordHistory: historyStore,
+		PasswordChecker: passwordChecker,
+		Expiry:          expiry,
+		Housekeeper:     housekeeper,
+	}
+	store4 := &passkey3.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	provider2 := &passkey3.Provider{
+		Store:   store4,
+		Clock:   clockClock,
+		Passkey: passkeyService,
+	}
+	totpStore := &totp.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	authenticatorTOTPConfig := authenticatorConfig.TOTP
+	totpProvider := &totp.Provider{
+		Store:  totpStore,
+		Config: authenticatorTOTPConfig,
+		Clock:  clockClock,
+	}
+	oobStore := &oob.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	oobProvider := &oob.Provider{
+		Store:                    oobStore,
+		LoginIDNormalizerFactory: normalizerFactory,
+		Clock:                    clockClock,
+		UIConfig:                 uiConfig,
+	}
+	readOnlyService := &service2.ReadOnlyService{
+		Store:    store3,
+		Password: passwordProvider,
+		Passkey:  provider2,
+		TOTP:     totpProvider,
+		OOBOTP:   oobProvider,
+	}
+	verificationConfig := appConfig.Verification
+	userProfileConfig := appConfig.UserProfile
+	storePQ := &verification.StorePQ{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	verificationService := &verification.Service{
+		Config:            verificationConfig,
+		UserProfileConfig: userProfileConfig,
+		Clock:             clockClock,
+		ClaimStore:        storePQ,
+	}
+	imagesCDNHost := environmentConfig.ImagesCDNHost
+	pictureTransformer := &stdattrs2.PictureTransformer{
+		HTTPProto:     httpProto,
+		HTTPHost:      httpHost,
+		ImagesCDNHost: imagesCDNHost,
+	}
+	serviceNoEvent := &stdattrs2.ServiceNoEvent{
+		UserProfileConfig: userProfileConfig,
+		Identities:        serviceService,
+		UserQueries:       rawQueries,
+		UserStore:         userStore,
+		ClaimStore:        storePQ,
+		Transformer:       pictureTransformer,
+	}
+	customattrsServiceNoEvent := &customattrs.ServiceNoEvent{
+		Config:      userProfileConfig,
+		UserQueries: rawQueries,
+		UserStore:   userStore,
+	}
+	rolesgroupsStore := &rolesgroups.Store{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+		Clock:       clockClock,
+	}
+	rolesgroupsQueries := &rolesgroups.Queries{
+		Store: rolesgroupsStore,
+	}
+	userQueries := &user.Queries{
+		RawQueries:         rawQueries,
+		Store:              userStore,
+		Identities:         serviceService,
+		Authenticators:     readOnlyService,
+		Verification:       verificationService,
+		StandardAttributes: serviceNoEvent,
+		CustomAttributes:   customattrsServiceNoEvent,
+		RolesAndGroups:     rolesgroupsQueries,
+		Clock:              clockClock,
+	}
+	resolverImpl := &event.ResolverImpl{
+		Users: userQueries,
+	}
+	hookConfig := appConfig.Hook
+	webhookKeyMaterials := deps.ProvideWebhookKeyMaterials(secretConfig)
+	webHookImpl := hook.WebHookImpl{
+		Secret: webhookKeyMaterials,
+	}
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
+	eventWebHookImpl := &hook.EventWebHookImpl{
+		WebHookImpl: webHookImpl,
+		SyncHTTP:    syncHTTPClient,
+		AsyncHTTP:   asyncHTTPClient,
+	}
+	denoHook := hook.DenoHook{
+		ResourceManager: manager,
+	}
+	denoEndpoint := environmentConfig.DenoEndpoint
+	syncDenoClient := hook.NewSyncDenoClient(denoEndpoint, hookConfig)
+	asyncDenoClient := hook.NewAsyncDenoClient(denoEndpoint)
+	eventDenoHookImpl := &hook.EventDenoHookImpl{
+		DenoHook:        denoHook,
+		SyncDenoClient:  syncDenoClient,
+		AsyncDenoClient: asyncDenoClient,
+	}
+	commands := &rolesgroups.Commands{
+		Store: rolesgroupsStore,
+	}
+	sink := &hook.Sink{
+		Config:             hookConfig,
+		Clock:              clockClock,
+		EventWebHook:       eventWebHookImpl,
+		EventDenoHook:      eventDenoHookImpl,
+		StandardAttributes: serviceNoEvent,
+		CustomAttributes:   customattrsServiceNoEvent,
+		RolesAndGroups:     commands,
+	}
+	writeHandle := appProvider.AuditWriteDatabase
+	auditDatabaseCredentials := deps.ProvideAuditDatabaseCredentials(secretConfig)
+	auditdbSQLBuilderApp := auditdb.NewSQLBuilderApp(auditDatabaseCredentials, appID)
+	writeSQLExecutor := auditdb.NewWriteSQLExecutor(writeHandle)
+	writeStore := &audit.WriteStore{
+		SQLBuilder:  auditdbSQLBuilderApp,
+		SQLExecutor: writeSQLExecutor,
+	}
+	auditSink := &audit.Sink{
+		Database: writeHandle,
+		Store:    writeStore,
+	}
+	searchConfig := appConfig.Search
+	userReindexProducer := redisqueue.NewUserReindexProducer(appredisHandle, clockClock)
+	sourceProvider := &reindex.SourceProvider{
+		AppID:           appID,
+		Users:           userQueries,
+		UserStore:       userStore,
+		IdentityService: serviceService,
+		RolesGroups:     rolesgroupsStore,
+	}
+	elasticsearchCredentials := deps.ProvideElasticsearchCredentials(secretConfig)
+	client := elasticsearch.NewClient(elasticsearchCredentials)
+	elasticsearchService := &elasticsearch.Service{
+		Clock:           clockClock,
+		Database:        handle,
+		AppID:           appID,
+		Client:          client,
+		Users:           userQueries,
+		UserStore:       userStore,
+		IdentityService: serviceService,
+		RolesGroups:     rolesgroupsStore,
+	}
+	configAppID := &appConfig.ID
+	searchDatabaseCredentials := deps.ProvideSearchDatabaseCredentials(secretConfig)
+	searchdbSQLBuilder := searchdb.NewSQLBuilder(searchDatabaseCredentials)
+	searchdbHandle := appProvider.SearchDatabase
+	searchdbSQLExecutor := searchdb.NewSQLExecutor(searchdbHandle)
+	pgsearchStore := pgsearch.NewStore(appID, searchdbSQLBuilder, searchdbSQLExecutor)
+	pgsearchService := &pgsearch.Service{
+		AppID:    configAppID,
+		Store:    pgsearchStore,
+		Database: searchdbHandle,
+	}
+	globalSearchImplementation := environmentConfig.SearchImplementation
+	reindexer := &reindex.Reindexer{
+		AppID:                      appID,
+		SearchConfig:               searchConfig,
+		Clock:                      clockClock,
+		Database:                   handle,
+		UserStore:                  userStore,
+		Producer:                   userReindexProducer,
+		SourceProvider:             sourceProvider,
+		ElasticsearchReindexer:     elasticsearchService,
+		PostgresqlReindexer:        pgsearchService,
+		GlobalSearchImplementation: globalSearchImplementation,
+	}
+	reindexSink := &reindex.Sink{
+		Reindexer: reindexer,
+		Database:  handle,
+	}
+	storeRecoveryCodePQ := &mfa.StoreRecoveryCodePQ{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	mfaReadOnlyService := &mfa.ReadOnlyService{
+		RecoveryCodes: storeRecoveryCodePQ,
+	}
+	userInfoService := &userinfo.UserInfoService{
+		Redis:                 appredisHandle,
+		Clock:                 clockClock,
+		AppID:                 appID,
+		AuthenticationConfig:  authenticationConfig,
+		UserQueries:           userQueries,
+		RolesAndGroupsQueries: rolesgroupsQueries,
+		AuthenticatorService:  readOnlyService,
+		MFAService:            mfaReadOnlyService,
+		IdentityService:       serviceService,
+	}
+	userinfoSink := &userinfo.Sink{
+		UserInfoService: userInfoService,
+	}
+	analyticredisHandle := appProvider.AnalyticRedis
+	analyticConfig := deps.ProvideAnalyticConfig(environmentConfig)
+	posthogCredentials := analytic.NewPosthogCredentials(analyticConfig)
+	posthogHTTPClient := analytic.NewPosthogHTTPClient()
+	posthogService := &analytic.PosthogService{
+		PosthogCredentials: posthogCredentials,
+		HTTPClient:         posthogHTTPClient,
+	}
+	firstAuthSink := &analytic.FirstAuthSink{
+		Clock:         clockClock,
+		AnalyticRedis: analyticredisHandle,
+		Posthog:       posthogService,
+	}
+	eventService := event.NewService(appID, remoteIP, userAgentString, httpRequestURL, handle, clockClock, localizationConfig, storeImpl, resolverImpl, sink, auditSink, reindexSink, userinfoSink, firstAuthSink)
+	serviceReadOnlyService := service2.ReadOnlyService{
+		Store:    store3,
+		Password: passwordProvider,
+		Passkey:  provider2,
+		TOTP:     totpProvider,
+		OOBOTP:   oobProvider,
+	}
+	testModeConfig := appConfig.TestMode
+	testModeFeatureConfig := featureConfig.TestMode
+	codeStoreRedis := &otp.CodeStoreRedis{
+		Redis: appredisHandle,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	lookupStoreRedis := &otp.LookupStoreRedis{
+		Redis: appredisHandle,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	attemptTrackerRedis := &otp.AttemptTrackerRedis{
+		Redis: appredisHandle,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	storageRedis := ratelimit.NewAppStorageRedis(appredisHandle)
+	rateLimitsFeatureConfig := featureConfig.RateLimits
+	limiter := &ratelimit.Limiter{
+		Database:     handle,
+		Storage:      storageRedis,
+		AppID:        appID,
+		Config:       rateLimitsFeatureConfig,
+		EventService: eventService,
+	}
+	messagingConfig := appConfig.Messaging
+	whatsappConfig := messagingConfig.Whatsapp
+	globalWhatsappAPIType := environmentConfig.WhatsappAPIType
+	whatsappOnPremisesCredentials := deps.ProvideWhatsappOnPremisesCredentials(secretConfig)
+	tokenStore := &whatsapp.TokenStore{
+		Redis: appredisHandle,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	httpClient := whatsapp.NewHTTPClient()
+	onPremisesClient := whatsapp.NewWhatsappOnPremisesClient(whatsappOnPremisesCredentials, tokenStore, httpClient)
+	whatsappCloudAPICredentials := deps.ProvideWhatsappCloudAPICredentials(secretConfig)
+	appHostSuffixes := environmentConfig.AppHostSuffixes
+	cloudAPIClient := whatsapp.NewWhatsappCloudAPIClient(whatsappCloudAPICredentials, httpClient, appHostSuffixes)
+	pool := rootProvider.RedisPool
+	redisEnvironmentConfig := &environmentConfig.RedisConfig
+	globalRedisCredentialsEnvironmentConfig := &environmentConfig.GlobalRedis
+	globalredisHandle := globalredis.NewHandle(pool, redisEnvironmentConfig, globalRedisCredentialsEnvironmentConfig)
+	messageStore := &whatsapp.MessageStore{
+		Redis:       globalredisHandle,
+		Credentials: whatsappCloudAPICredentials,
+	}
+	whatsappService := &whatsapp.Service{
+		Clock:                 clockClock,
+		WhatsappConfig:        whatsappConfig,
+		LocalizationConfig:    localizationConfig,
+		GlobalWhatsappAPIType: globalWhatsappAPIType,
+		OnPremisesClient:      onPremisesClient,
+		CloudAPIClient:        cloudAPIClient,
+		MessageStore:          messageStore,
+		Credentials:           whatsappCloudAPICredentials,
+	}
+	readHandle := appProvider.AuditReadDatabase
+	readSQLExecutor := auditdb.NewReadSQLExecutor(readHandle)
+	metricsStore := &fraudprotection.MetricsStore{
+		AuditWriteDatabase: writeHandle,
+		AuditReadDatabase:  readHandle,
+		SQLBuilder:         auditdbSQLBuilderApp,
+		WriteSQLExecutor:   writeSQLExecutor,
+		ReadSQLExecutor:    readSQLExecutor,
+		Redis:              appredisHandle,
+		AppID:              appID,
+		Clock:              clockClock,
+	}
+	leakyBucketStore := &fraudprotection.LeakyBucketStore{
+		Redis: appredisHandle,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	fraudProtectionConfig := appConfig.FraudProtection
+	httpReferer := deps.ProvideHTTPReferer(request)
+	fraudprotectionService := &fraudprotection.Service{
+		AppID:           appID,
+		Metrics:         metricsStore,
+		LeakyBucket:     leakyBucketStore,
+		Config:          fraudProtectionConfig,
+		RemoteIP:        remoteIP,
+		UserAgentString: userAgentString,
+		HTTPRequestURL:  httpRequestURL,
+		HTTPReferer:     httpReferer,
+		Clock:           clockClock,
+		Database:        handle,
+		EventService:    eventService,
+		VerifiedClaims:  storePQ,
+	}
+	otpService := &otp.Service{
+		Clock:                 clockClock,
+		AppID:                 appID,
+		TestModeConfig:        testModeConfig,
+		TestModeFeatureConfig: testModeFeatureConfig,
+		RemoteIP:              remoteIP,
+		CodeStore:             codeStoreRedis,
+		LookupStore:           lookupStoreRedis,
+		AttemptTracker:        attemptTrackerRedis,
+		RateLimiter:           limiter,
+		WhatsappService:       whatsappService,
+		FraudProtection:       fraudprotectionService,
+		FeatureConfig:         featureConfig,
+		EnvConfig:             rateLimitsEnvironmentConfig,
+	}
+	rateLimits := service2.RateLimits{
+		IP:            remoteIP,
+		Config:        appConfig,
+		FeatureConfig: featureConfig,
+		EnvConfig:     rateLimitsEnvironmentConfig,
+		RateLimiter:   limiter,
+	}
+	authenticationLockoutConfig := authenticationConfig.Lockout
+	lockoutStorageRedis := &lockout.StorageRedis{
+		AppID: appID,
+		Redis: appredisHandle,
+	}
+	lockoutService := &lockout.Service{
+		Storage: lockoutStorageRedis,
+	}
+	serviceLockout := service2.Lockout{
+		Config:   authenticationLockoutConfig,
+		RemoteIP: remoteIP,
+		Provider: lockoutService,
+	}
+	service3 := &service2.Service{
+		ReadOnlyService: serviceReadOnlyService,
+		Store:           store3,
+		Config:          appConfig,
+		OTPCodeService:  otpService,
+		RateLimits:      rateLimits,
+		Lockout:         serviceLockout,
+	}
+	readOnlyService2 := mfa.ReadOnlyService{
+		RecoveryCodes: storeRecoveryCodePQ,
+	}
+	storeDeviceTokenRedis := &mfa.StoreDeviceTokenRedis{
+		Redis: appredisHandle,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	mfaLockout := mfa.Lockout{
+		Config:   authenticationLockoutConfig,
+		RemoteIP: remoteIP,
+		Provider: lockoutService,
+	}
+	mfaService := &mfa.Service{
+		ReadOnlyService: readOnlyService2,
+		IP:              remoteIP,
+		DeviceTokens:    storeDeviceTokenRedis,
+		RecoveryCodes:   storeRecoveryCodePQ,
+		Clock:           clockClock,
+		Config:          appConfig,
+		FeatureConfig:   featureConfig,
+		EnvConfig:       rateLimitsEnvironmentConfig,
+		RateLimiter:     limiter,
+		Lockout:         mfaLockout,
+	}
+	smtpServerCredentials := deps.ProvideSMTPServerCredentials(secretConfig)
+	dialer := mail.NewGomailDialer(smtpServerCredentials)
+	sender := &mail.Sender{
+		GomailDialer: dialer,
+	}
+	devMode := environmentConfig.DevMode
+	usageAlertEmailServiceImpl := &usage.UsageAlertEmailServiceImpl{
+		AppID:              appID,
+		TranslationService: translationService,
+		MailSender:         sender,
+		DevMode:            devMode,
+	}
+	usageLimiter := &usage.Limiter{
+		Clock:                  clockClock,
+		Database:               handle,
+		AppID:                  appID,
+		Redis:                  appredisHandle,
+		EffectiveConfig:        config,
+		EventService:           eventService,
+		UsageAlertEmailService: usageAlertEmailServiceImpl,
+	}
+	limits := messaging.Limits{
+		RateLimiter:   limiter,
+		UsageLimiter:  usageLimiter,
+		RemoteIP:      remoteIP,
+		Config:        appConfig,
+		FeatureConfig: featureConfig,
+		EnvConfig:     rateLimitsEnvironmentConfig,
+	}
+	smsProvider := messagingConfig.Deprecated_SMSProvider
+	smsGatewayConfig := messagingConfig.SMSGateway
+	nexmoCredentials := deps.ProvideNexmoCredentials(secretConfig)
+	twilioCredentials := deps.ProvideTwilioCredentials(secretConfig)
+	customSMSProviderConfig := deps.ProvideCustomSMSProviderConfig(secretConfig)
+	smsGatewayEnvironmentConfig := &environmentConfig.SMSGatewayConfig
+	smsGatewayEnvironmentDefaultConfig := &smsGatewayEnvironmentConfig.Default
+	smsGatewayEnvironmentDefaultProvider := smsGatewayEnvironmentDefaultConfig.Provider
+	smsGatewayEnvironmentDefaultUseConfigFrom := smsGatewayEnvironmentDefaultConfig.UseConfigFrom
+	smsGatewayEnvironmentNexmoCredentials := smsGatewayEnvironmentConfig.Nexmo
+	smsGatewayEnvironmentTwilioCredentials := smsGatewayEnvironmentConfig.Twilio
+	smsGatewayEnvironmentCustomSMSProviderConfig := smsGatewayEnvironmentConfig.Custom
+	hookDenoHook := &hook.DenoHook{
+		ResourceManager: manager,
+	}
+	smsHookTimeout := custom.NewSMSHookTimeout(customSMSProviderConfig)
+	hookDenoClient := custom.NewHookDenoClient(denoEndpoint, smsHookTimeout)
+	smsDenoHook := custom.SMSDenoHook{
+		DenoHook: hookDenoHook,
+		Client:   hookDenoClient,
+	}
+	hookWebHookImpl := &hook.WebHookImpl{
+		Secret: webhookKeyMaterials,
+	}
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
+	smsWebHook := custom.SMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
+	}
+	clientResolver := &sms.ClientResolver{
+		AuthgearYAMLSMSProvider:                    smsProvider,
+		AuthgearYAMLSMSGateway:                     smsGatewayConfig,
+		AuthgearSecretsYAMLNexmoCredentials:        nexmoCredentials,
+		AuthgearSecretsYAMLTwilioCredentials:       twilioCredentials,
+		AuthgearSecretsYAMLCustomSMSProviderConfig: customSMSProviderConfig,
+		EnvironmentDefaultProvider:                 smsGatewayEnvironmentDefaultProvider,
+		EnvironmentDefaultUseConfigFrom:            smsGatewayEnvironmentDefaultUseConfigFrom,
+		EnvironmentNexmoCredentials:                smsGatewayEnvironmentNexmoCredentials,
+		EnvironmentTwilioCredentials:               smsGatewayEnvironmentTwilioCredentials,
+		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
+		SMSDenoHook:                                smsDenoHook,
+		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
+	}
+	smsSender := &sms.Sender{
+		ClientResolver: clientResolver,
+	}
+	messagingFeatureConfig := featureConfig.Messaging
+	featureTestModeEmailSuppressed := deps.ProvideTestModeEmailSuppressed(testModeFeatureConfig)
+	testModeEmailConfig := testModeConfig.Email
+	featureTestModeSMSSuppressed := deps.ProvideTestModeSMSSuppressed(testModeFeatureConfig)
+	testModeSMSConfig := testModeConfig.SMS
+	featureTestModeWhatsappSuppressed := deps.ProvideTestModeWhatsappSuppressed(testModeFeatureConfig)
+	testModeWhatsappConfig := testModeConfig.Whatsapp
+	messagingSender := &messaging.Sender{
+		Limits:                            limits,
+		Events:                            eventService,
+		FraudProtection:                   fraudprotectionService,
+		MailSender:                        sender,
+		SMSSender:                         smsSender,
+		WhatsappSender:                    whatsappService,
+		Database:                          handle,
+		DevMode:                           devMode,
+		MessagingFeatureConfig:            messagingFeatureConfig,
+		FeatureTestModeEmailSuppressed:    featureTestModeEmailSuppressed,
+		TestModeEmailConfig:               testModeEmailConfig,
+		FeatureTestModeSMSSuppressed:      featureTestModeSMSSuppressed,
+		TestModeSMSConfig:                 testModeSMSConfig,
+		FeatureTestModeWhatsappSuppressed: featureTestModeWhatsappSuppressed,
+		TestModeWhatsappConfig:            testModeWhatsappConfig,
+	}
+	forgotpasswordSender := &forgotpassword.Sender{
+		AppConfg:    appConfig,
+		Identities:  serviceService,
+		Sender:      messagingSender,
+		Translation: translationService,
+	}
+	rawCommands := &user.RawCommands{
+		Store: userStore,
+		Clock: clockClock,
+	}
+	userCommands := &user.Commands{
+		RawCommands:        rawCommands,
+		RawQueries:         rawQueries,
+		Events:             eventService,
+		Verification:       verificationService,
+		UserProfileConfig:  userProfileConfig,
+		StandardAttributes: serviceNoEvent,
+		CustomAttributes:   customattrsServiceNoEvent,
+		RolesAndGroups:     rolesgroupsQueries,
+	}
+	stdattrsService := &stdattrs2.Service{
+		UserProfileConfig: userProfileConfig,
+		ServiceNoEvent:    serviceNoEvent,
+		Identities:        serviceService,
+		UserQueries:       rawQueries,
+		UserStore:         userStore,
+		Events:            eventService,
+	}
+	authorizationStore := &pq.AuthorizationStore{
+		SQLBuilder:  sqlBuilderApp,
+		SQLExecutor: sqlExecutor,
+	}
+	storeRedis := &idpsession.StoreRedis{
+		Redis: appredisHandle,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	sessionConfig := appConfig.Session
+	cookieDef2 := session.NewSessionCookieDef(sessionConfig)
+	idpsessionManager := &idpsession.Manager{
+		Store:     storeRedis,
+		Config:    sessionConfig,
+		Cookies:   cookieManager,
+		CookieDef: cookieDef2,
+	}
+	eventStoreRedis := &access.EventStoreRedis{
+		Redis: appredisHandle,
+		AppID: appID,
+	}
+	eventProvider := &access.EventProvider{
+		Store: eventStoreRedis,
+	}
+	writeStoreRedis := &meter.WriteStoreRedis{
+		Redis: analyticredisHandle,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	meterService := &meter.Service{
+		Counter: writeStoreRedis,
+	}
+	idpsessionRand := _wireRandValue
+	idpsessionProvider := &idpsession.Provider{
+		RemoteIP:        remoteIP,
+		UserAgentString: userAgentString,
+		AppID:           appID,
+		Redis:           appredisHandle,
+		Store:           storeRedis,
+		AccessEvents:    eventProvider,
+		MeterService:    meterService,
+		TrustProxy:      trustProxy,
+		Config:          sessionConfig,
+		Clock:           clockClock,
+		Random:          idpsessionRand,
+	}
+	offlineGrantService := oauth.OfflineGrantService{
+		RemoteIP:        remoteIP,
+		UserAgentString: userAgentString,
+		OAuthConfig:     oAuthConfig,
+		Clock:           clockClock,
+		IDPSessions:     idpsessionProvider,
+		ClientResolver:  resolver,
+		AccessEvents:    eventProvider,
+		MeterService:    meterService,
+		OfflineGrants:   redisStore,
+	}
+	sessionManager := &oauth.SessionManager{
+		Store:   redisStore,
+		Config:  oAuthConfig,
+		Service: offlineGrantService,
+	}
+	accountDeletionConfig := appConfig.AccountDeletion
+	accountAnonymizationConfig := appConfig.AccountAnonymization
+	maxTrials := _wireMaxTrialsValue
+	passwordRand := password.NewRandSource()
+	generator := &password.Generator{
+		MaxTrials:      maxTrials,
+		Checker:        passwordChecker,
+		Rand:           passwordRand,
+		PasswordConfig: authenticatorPasswordConfig,
+	}
+	coordinator := &facade.Coordinator{
+		Events:                     eventService,
+		Identities:                 serviceService,
+		Authenticators:             service3,
+		Verification:               verificationService,
+		MFA:                        mfaService,
+		SendPassword:               forgotpasswordSender,
+		UserCommands:               userCommands,
+		UserQueries:                userQueries,
+		RolesGroupsCommands:        commands,
+		StdAttrsService:            stdattrsService,
+		PasswordHistory:            historyStore,
+		OAuth:                      authorizationStore,
+		IDPSessions:                idpsessionManager,
+		OAuthSessions:              sessionManager,
+		IdentityConfig:             identityConfig,
+		AccountDeletionConfig:      accountDeletionConfig,
+		AccountAnonymizationConfig: accountAnonymizationConfig,
+		AuthenticationConfig:       authenticationConfig,
+		Clock:                      clockClock,
+		PasswordGenerator:          generator,
+	}
+	identityFacade := facade.IdentityFacade{
+		Coordinator: coordinator,
+	}
+	authenticatorFacade := facade.AuthenticatorFacade{
+		Coordinator: coordinator,
+	}
+	anonymousStoreRedis := &anonymous.StoreRedis{
+		Redis: appredisHandle,
+		AppID: appID,
+		Clock: clockClock,
+	}
+	messageSender := &otp.MessageSender{
+		AppID:          appID,
+		Translation:    translationService,
+		Endpoints:      endpointsEndpoints,
+		Sender:         messagingSender,
+		CodeStore:      codeStoreRedis,
+		WhatsappConfig: whatsappConfig,
+	}
+	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -36040,23 +37445,17 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 		OfflineGrantService: oauthOfflineGrantService,
 		OfflineGrantStore:   redisStore,
 	}
-	sessionListingService := &sessionlisting.SessionListingService{
-		OAuthConfig:   oAuthConfig,
-		IDPSessions:   idpsessionProvider,
-		OfflineGrants: oauthOfflineGrantService,
-	}
-	authflowV2SettingsSessionsHandler := &authflowv2.AuthflowV2SettingsSessionsHandler{
+	authflowV2SettingsAuthorizedAppsHandler := &authflowv2.AuthflowV2SettingsAuthorizedAppsHandler{
 		Database:            handle,
 		ControllerFactory:   controllerFactory,
 		BaseViewModel:       baseViewModeler,
 		SettingsViewModel:   settingsViewModeler,
 		Renderer:            responseRenderer,
-		Sessions:            manager2,
 		Authorizations:      authorizationService,
 		OAuthClientResolver: resolver,
-		SessionListing:      sessionListingService,
+		Endpoints:           endpointsEndpoints,
 	}
-	return authflowV2SettingsSessionsHandler
+	return authflowV2SettingsAuthorizedAppsHandler
 }
 
 func newWebAppAuthflowV2SettingsChangePasswordHandler(p *deps.RequestProvider) http.Handler {
@@ -36429,8 +37828,9 @@ func newWebAppAuthflowV2SettingsChangePasswordHandler(p *deps.RequestProvider) h
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -36781,10 +38181,16 @@ func newWebAppAuthflowV2SettingsChangePasswordHandler(p *deps.RequestProvider) h
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -36806,6 +38212,7 @@ func newWebAppAuthflowV2SettingsChangePasswordHandler(p *deps.RequestProvider) h
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -36976,7 +38383,7 @@ func newWebAppAuthflowV2SettingsChangePasswordHandler(p *deps.RequestProvider) h
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -37578,8 +38985,9 @@ func newWebAppAuthflowV2SettingsDeleteAccountHandler(p *deps.RequestProvider) ht
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -37930,10 +39338,16 @@ func newWebAppAuthflowV2SettingsDeleteAccountHandler(p *deps.RequestProvider) ht
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -37955,6 +39369,7 @@ func newWebAppAuthflowV2SettingsDeleteAccountHandler(p *deps.RequestProvider) ht
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -38125,7 +39540,7 @@ func newWebAppAuthflowV2SettingsDeleteAccountHandler(p *deps.RequestProvider) ht
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -38723,8 +40138,9 @@ func newWebAppAuthflowV2SettingsDeleteAccountSuccessHandler(p *deps.RequestProvi
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -39075,10 +40491,16 @@ func newWebAppAuthflowV2SettingsDeleteAccountSuccessHandler(p *deps.RequestProvi
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -39100,6 +40522,7 @@ func newWebAppAuthflowV2SettingsDeleteAccountSuccessHandler(p *deps.RequestProvi
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -39270,7 +40693,7 @@ func newWebAppAuthflowV2SettingsDeleteAccountSuccessHandler(p *deps.RequestProvi
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -39848,8 +41271,9 @@ func newWebAppAuthflowV2SettingsAdvancedSettingsHandler(p *deps.RequestProvider)
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -40200,10 +41624,16 @@ func newWebAppAuthflowV2SettingsAdvancedSettingsHandler(p *deps.RequestProvider)
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -40225,6 +41655,7 @@ func newWebAppAuthflowV2SettingsAdvancedSettingsHandler(p *deps.RequestProvider)
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -40395,7 +41826,7 @@ func newWebAppAuthflowV2SettingsAdvancedSettingsHandler(p *deps.RequestProvider)
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -40969,8 +42400,9 @@ func newWebAppLogoutHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -41321,10 +42753,16 @@ func newWebAppLogoutHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -41346,6 +42784,7 @@ func newWebAppLogoutHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -41516,7 +42955,7 @@ func newWebAppLogoutHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -41791,8 +43230,12 @@ func newWebAppAppStaticAssetsHandler(p *deps.RequestProvider) http.Handler {
 	appProvider := p.AppProvider
 	appContext := appProvider.AppContext
 	manager := appContext.Resources
+	rootProvider := appProvider.RootProvider
+	environmentConfig := rootProvider.EnvironmentConfig
+	sourceMapConfig := deps.ProvideSourceMapConfig(environmentConfig)
 	appStaticAssetsHandler := &webapp.AppStaticAssetsHandler{
 		Resources: manager,
+		SourceMap: sourceMapConfig,
 	}
 	return appStaticAssetsHandler
 }
@@ -42191,8 +43634,9 @@ func newWebAppReturnHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -42543,10 +43987,16 @@ func newWebAppReturnHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -42568,6 +44018,7 @@ func newWebAppReturnHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -42738,7 +44189,7 @@ func newWebAppReturnHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -43298,8 +44749,9 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -43664,10 +45116,16 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -43689,6 +45147,7 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -43885,7 +45344,7 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -43925,7 +45384,7 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -44528,8 +45987,9 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -44894,10 +46354,16 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -44919,6 +46385,7 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -45115,7 +46582,7 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -45155,7 +46622,7 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -45772,8 +47239,9 @@ func newWebAppAuthflowV2NotFoundHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -46124,10 +47592,16 @@ func newWebAppAuthflowV2NotFoundHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -46149,6 +47623,7 @@ func newWebAppAuthflowV2NotFoundHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -46319,7 +47794,7 @@ func newWebAppAuthflowV2NotFoundHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -46909,8 +48384,9 @@ func newWebAppPasskeyCreationOptionsHandler(p *deps.RequestProvider) http.Handle
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -47261,10 +48737,16 @@ func newWebAppPasskeyCreationOptionsHandler(p *deps.RequestProvider) http.Handle
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -47286,6 +48768,7 @@ func newWebAppPasskeyCreationOptionsHandler(p *deps.RequestProvider) http.Handle
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -47456,7 +48939,7 @@ func newWebAppPasskeyCreationOptionsHandler(p *deps.RequestProvider) http.Handle
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -47971,8 +49454,9 @@ func newWebAppPasskeyRequestOptionsHandler(p *deps.RequestProvider) http.Handler
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -48323,10 +49807,16 @@ func newWebAppPasskeyRequestOptionsHandler(p *deps.RequestProvider) http.Handler
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -48348,6 +49838,7 @@ func newWebAppPasskeyRequestOptionsHandler(p *deps.RequestProvider) http.Handler
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -48518,7 +50009,7 @@ func newWebAppPasskeyRequestOptionsHandler(p *deps.RequestProvider) http.Handler
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -48722,12 +50213,14 @@ func newWebAppClientLogoHandler(p *deps.RequestProvider) http.Handler {
 		TesterEndpoints: endpointsEndpoints,
 		Queries:         queries,
 	}
-	cimdhttpClients := cimd.ProvideCIMDHTTPClients()
 	featureConfig := config.FeatureConfig
+	httpFeatureConfig := featureConfig.HTTP
+	cimdhttpClients := cimd.ProvideCIMDHTTPClients(httpFeatureConfig)
 	oAuthFeatureConfig := featureConfig.OAuth
 	logoFetcher := &cimd.LogoFetcher{
 		HTTPClients:        cimdhttpClients,
 		OAuthFeatureConfig: oAuthFeatureConfig,
+		HTTPFeatureConfig:  httpFeatureConfig,
 		AppID:              appID,
 	}
 	fetchSingleFlight := &cimd.FetchSingleFlight{
@@ -49018,8 +50511,8 @@ func newWebAppClientLogoHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -49536,8 +51029,9 @@ func newWebAppFeatureDisabledHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -49888,10 +51382,16 @@ func newWebAppFeatureDisabledHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -49913,6 +51413,7 @@ func newWebAppFeatureDisabledHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -50083,7 +51584,7 @@ func newWebAppFeatureDisabledHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -50657,8 +52158,9 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -51009,10 +52511,16 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -51034,6 +52542,7 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -51204,7 +52713,7 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -51469,6 +52978,9 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 	clientResourceScopeService := &resourcescope.ClientResourceScopeService{
 		Store: resourcescopeStore,
 	}
+	accessPolicyService := &resourcescope.AccessPolicyService{
+		Store: resourcescopeStore,
+	}
 	oauthAccessTokenEncoding := &oauth.AccessTokenEncoding{
 		Secrets:                   oAuthKeyMaterials,
 		Clock:                     clockClock,
@@ -51540,6 +53052,7 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 		OfflineGrantService:             oauthOfflineGrantService,
 		PreAuthenticatedURLTokenService: preAuthenticatedURLTokenServiceImpl,
 		ClientResourceScopeService:      clientResourceScopeService,
+		ResourceAccessPolicyService:     accessPolicyService,
 		Graphs:                          interactionService,
 		IDTokenIssuer:                   idTokenIssuer,
 		Clock:                           clockClock,
@@ -51932,8 +53445,9 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -52298,10 +53812,16 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -52323,6 +53843,7 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -52514,7 +54035,7 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -52526,7 +54047,7 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 	}
 	proofOfPhoneNumberVerificationConfig := accountMigrationConfig.ProofOfPhoneNumberVerification
 	proofOfPhoneNumberVerificationHookConfig := proofOfPhoneNumberVerificationConfig.Hook
-	proofofphonenumberverificationHookHTTPClient := proofofphonenumberverification.NewHookHTTPClient(proofOfPhoneNumberVerificationHookConfig)
+	proofofphonenumberverificationHookHTTPClient := proofofphonenumberverification.NewHookHTTPClient(proofOfPhoneNumberVerificationHookConfig, httpFeatureConfig)
 	proofOfPhoneNumberVerificationWebHook := &proofofphonenumberverification.ProofOfPhoneNumberVerificationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  proofofphonenumberverificationHookHTTPClient,
@@ -53005,8 +54526,9 @@ func newAPIWorkflowGetHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -53371,10 +54893,16 @@ func newAPIWorkflowGetHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -53396,6 +54924,7 @@ func newAPIWorkflowGetHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -53589,7 +55118,7 @@ func newAPIWorkflowGetHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -53601,7 +55130,7 @@ func newAPIWorkflowGetHandler(p *deps.RequestProvider) http.Handler {
 	}
 	proofOfPhoneNumberVerificationConfig := accountMigrationConfig.ProofOfPhoneNumberVerification
 	proofOfPhoneNumberVerificationHookConfig := proofOfPhoneNumberVerificationConfig.Hook
-	proofofphonenumberverificationHookHTTPClient := proofofphonenumberverification.NewHookHTTPClient(proofOfPhoneNumberVerificationHookConfig)
+	proofofphonenumberverificationHookHTTPClient := proofofphonenumberverification.NewHookHTTPClient(proofOfPhoneNumberVerificationHookConfig, httpFeatureConfig)
 	proofOfPhoneNumberVerificationWebHook := &proofofphonenumberverification.ProofOfPhoneNumberVerificationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  proofofphonenumberverificationHookHTTPClient,
@@ -54030,8 +55559,9 @@ func newAPIWorkflowInputHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -54396,10 +55926,16 @@ func newAPIWorkflowInputHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -54421,6 +55957,7 @@ func newAPIWorkflowInputHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -54614,7 +56151,7 @@ func newAPIWorkflowInputHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -54626,7 +56163,7 @@ func newAPIWorkflowInputHandler(p *deps.RequestProvider) http.Handler {
 	}
 	proofOfPhoneNumberVerificationConfig := accountMigrationConfig.ProofOfPhoneNumberVerification
 	proofOfPhoneNumberVerificationHookConfig := proofOfPhoneNumberVerificationConfig.Hook
-	proofofphonenumberverificationHookHTTPClient := proofofphonenumberverification.NewHookHTTPClient(proofOfPhoneNumberVerificationHookConfig)
+	proofofphonenumberverificationHookHTTPClient := proofofphonenumberverification.NewHookHTTPClient(proofOfPhoneNumberVerificationHookConfig, httpFeatureConfig)
 	proofOfPhoneNumberVerificationWebHook := &proofofphonenumberverification.ProofOfPhoneNumberVerificationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  proofofphonenumberverificationHookHTTPClient,
@@ -55089,8 +56626,9 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -55455,10 +56993,16 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -55480,6 +57024,7 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -55671,7 +57216,7 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -55683,7 +57228,7 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 	}
 	proofOfPhoneNumberVerificationConfig := accountMigrationConfig.ProofOfPhoneNumberVerification
 	proofOfPhoneNumberVerificationHookConfig := proofOfPhoneNumberVerificationConfig.Hook
-	proofofphonenumberverificationHookHTTPClient := proofofphonenumberverification.NewHookHTTPClient(proofOfPhoneNumberVerificationHookConfig)
+	proofofphonenumberverificationHookHTTPClient := proofofphonenumberverification.NewHookHTTPClient(proofOfPhoneNumberVerificationHookConfig, httpFeatureConfig)
 	proofOfPhoneNumberVerificationWebHook := &proofofphonenumberverification.ProofOfPhoneNumberVerificationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  proofofphonenumberverificationHookHTTPClient,
@@ -56164,8 +57709,9 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -56530,10 +58076,16 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -56555,6 +58107,7 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -56751,7 +58304,7 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -56791,7 +58344,7 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -57315,8 +58868,9 @@ func newAPIAuthenticationFlowV1InputHandler(p *deps.RequestProvider) http.Handle
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -57681,10 +59235,16 @@ func newAPIAuthenticationFlowV1InputHandler(p *deps.RequestProvider) http.Handle
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -57706,6 +59266,7 @@ func newAPIAuthenticationFlowV1InputHandler(p *deps.RequestProvider) http.Handle
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -57902,7 +59463,7 @@ func newAPIAuthenticationFlowV1InputHandler(p *deps.RequestProvider) http.Handle
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -57942,7 +59503,7 @@ func newAPIAuthenticationFlowV1InputHandler(p *deps.RequestProvider) http.Handle
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -58434,8 +59995,9 @@ func newAPIAuthenticationFlowV1GetHandler(p *deps.RequestProvider) http.Handler 
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -58800,10 +60362,16 @@ func newAPIAuthenticationFlowV1GetHandler(p *deps.RequestProvider) http.Handler 
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -58825,6 +60393,7 @@ func newAPIAuthenticationFlowV1GetHandler(p *deps.RequestProvider) http.Handler 
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -59023,7 +60592,7 @@ func newAPIAuthenticationFlowV1GetHandler(p *deps.RequestProvider) http.Handler 
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -59063,7 +60632,7 @@ func newAPIAuthenticationFlowV1GetHandler(p *deps.RequestProvider) http.Handler 
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -59585,8 +61154,9 @@ func newAPIAccountManagementV1IdentificationHandler(p *deps.RequestProvider) htt
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -59731,7 +61301,7 @@ func newAPIAccountManagementV1IdentificationHandler(p *deps.RequestProvider) htt
 		Clock: clockClock,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -59972,10 +61542,16 @@ func newAPIAccountManagementV1IdentificationHandler(p *deps.RequestProvider) htt
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -59997,6 +61573,7 @@ func newAPIAccountManagementV1IdentificationHandler(p *deps.RequestProvider) htt
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -60537,8 +62114,9 @@ func newAPIAccountManagementV1IdentificationOAuthHandler(p *deps.RequestProvider
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -60683,7 +62261,7 @@ func newAPIAccountManagementV1IdentificationOAuthHandler(p *deps.RequestProvider
 		Clock: clockClock,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -60924,10 +62502,16 @@ func newAPIAccountManagementV1IdentificationOAuthHandler(p *deps.RequestProvider
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -60949,6 +62533,7 @@ func newAPIAccountManagementV1IdentificationOAuthHandler(p *deps.RequestProvider
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -61498,8 +63083,9 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -61864,10 +63450,16 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -61889,6 +63481,7 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -62085,7 +63678,7 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -62125,7 +63718,7 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -62752,8 +64345,9 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -63118,10 +64712,16 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -63143,6 +64743,7 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -63339,7 +64940,7 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -63379,7 +64980,7 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -63999,8 +65600,9 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -64365,10 +65967,16 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -64390,6 +65998,7 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -64586,7 +66195,7 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -64626,7 +66235,7 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -65236,8 +66845,9 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -65602,10 +67212,16 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -65627,6 +67243,7 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -65823,7 +67440,7 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -65863,7 +67480,7 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -66470,8 +68087,9 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -66836,10 +68454,16 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -66861,6 +68485,7 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -67057,7 +68682,7 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -67097,7 +68722,7 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -67708,8 +69333,9 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -68074,10 +69700,16 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -68099,6 +69731,7 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -68295,7 +69928,7 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -68335,7 +69968,7 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -68944,8 +70577,9 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -69310,10 +70944,16 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -69335,6 +70975,7 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -69531,7 +71172,7 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -69571,7 +71212,7 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -70178,8 +71819,9 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -70544,10 +72186,16 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -70569,6 +72217,7 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -70765,7 +72414,7 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -70805,7 +72454,7 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -71408,8 +73057,9 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -71774,10 +73424,16 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -71799,6 +73455,7 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -71995,7 +73652,7 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -72035,7 +73692,7 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -72638,8 +74295,9 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -73004,10 +74662,16 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -73029,6 +74693,7 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -73225,7 +74890,7 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -73265,7 +74930,7 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -73873,8 +75538,9 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -74239,10 +75905,16 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -74264,6 +75936,7 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -74460,7 +76133,7 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -74500,7 +76173,7 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -75109,8 +76782,9 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -75475,10 +77149,16 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -75500,6 +77180,7 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -75696,7 +77377,7 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -75736,7 +77417,7 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -76339,8 +78020,9 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -76705,10 +78387,16 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -76730,6 +78418,7 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -76926,7 +78615,7 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -76966,7 +78655,7 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -77573,8 +79262,9 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -77939,10 +79629,16 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -77964,6 +79660,7 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -78160,7 +79857,7 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -78200,7 +79897,7 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -78803,8 +80500,9 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -79169,10 +80867,16 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -79194,6 +80898,7 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -79390,7 +81095,7 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -79430,7 +81135,7 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -80033,8 +81738,9 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -80399,10 +82105,16 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -80424,6 +82136,7 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -80620,7 +82333,7 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -80660,7 +82373,7 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -81263,8 +82976,9 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -81629,10 +83343,16 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -81654,6 +83374,7 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -81850,7 +83571,7 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -81890,7 +83611,7 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -82493,8 +84214,9 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -82859,10 +84581,16 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -82884,6 +84612,7 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -83080,7 +84809,7 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -83120,7 +84849,7 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -83730,8 +85459,9 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -84096,10 +85826,16 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -84121,6 +85857,7 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -84317,7 +86054,7 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -84357,7 +86094,7 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -84962,8 +86699,9 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -85328,10 +87066,16 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -85353,6 +87097,7 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -85549,7 +87294,7 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -85589,7 +87334,7 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -86193,8 +87938,9 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -86559,10 +88305,16 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -86584,6 +88336,7 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -86780,7 +88533,7 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -86820,7 +88573,7 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -87436,8 +89189,9 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -87788,10 +89542,16 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -87813,6 +89573,7 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -87983,7 +89744,7 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -88194,7 +89955,7 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -88746,8 +90507,9 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -89112,10 +90874,16 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -89137,6 +90905,7 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -89333,7 +91102,7 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -89373,7 +91142,7 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -90396,8 +92165,9 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -90762,10 +92532,16 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -90787,6 +92563,7 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -90983,7 +92760,7 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -91023,7 +92800,7 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -91626,8 +93403,9 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -91992,10 +93770,16 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -92017,6 +93801,7 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -92213,7 +93998,7 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -92253,7 +94038,7 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -92856,8 +94641,9 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -93222,10 +95008,16 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -93247,6 +95039,7 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -93443,7 +95236,7 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -93483,7 +95276,7 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -94226,8 +96019,9 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -94592,10 +96386,16 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -94617,6 +96417,7 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -94813,7 +96614,7 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -94853,7 +96654,7 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -95458,8 +97259,9 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -95824,10 +97626,16 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -95849,6 +97657,7 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -96045,7 +97854,7 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 		DenoHook: denoHook,
 		Client:   accountmigrationHookDenoClient,
 	}
-	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig)
+	accountmigrationHookHTTPClient := accountmigration.NewHookHTTPClient(accountMigrationHookConfig, httpFeatureConfig)
 	accountMigrationWebHook := &accountmigration.AccountMigrationWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  accountmigrationHookHTTPClient,
@@ -96085,7 +97894,7 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 		Events:            eventService,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -96698,8 +98507,9 @@ func newSAMLMetadataHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -97033,10 +98843,16 @@ func newSAMLMetadataHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -97058,6 +98874,7 @@ func newSAMLMetadataHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -97629,8 +99446,9 @@ func newSAMLLoginHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -97964,10 +99782,16 @@ func newSAMLLoginHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -97989,6 +99813,7 @@ func newSAMLLoginHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -98590,8 +100415,9 @@ func newSAMLLoginFinishHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -98925,10 +100751,16 @@ func newSAMLLoginFinishHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -98950,6 +100782,7 @@ func newSAMLLoginFinishHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -99544,8 +101377,9 @@ func newSAMLLogoutHandler(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -99879,10 +101713,16 @@ func newSAMLLogoutHandler(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -99904,6 +101744,7 @@ func newSAMLLogoutHandler(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -100506,8 +102347,9 @@ func newWebAppAuthflowV2SettingsProfile(p *deps.RequestProvider) http.Handler {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -100858,10 +102700,16 @@ func newWebAppAuthflowV2SettingsProfile(p *deps.RequestProvider) http.Handler {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -100883,6 +102731,7 @@ func newWebAppAuthflowV2SettingsProfile(p *deps.RequestProvider) http.Handler {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -101053,7 +102902,7 @@ func newWebAppAuthflowV2SettingsProfile(p *deps.RequestProvider) http.Handler {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -101639,8 +103488,9 @@ func newWebAppAuthflowV2SettingsIdentityAddEmailHandler(p *deps.RequestProvider)
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -101991,10 +103841,16 @@ func newWebAppAuthflowV2SettingsIdentityAddEmailHandler(p *deps.RequestProvider)
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -102016,6 +103872,7 @@ func newWebAppAuthflowV2SettingsIdentityAddEmailHandler(p *deps.RequestProvider)
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -102186,7 +104043,7 @@ func newWebAppAuthflowV2SettingsIdentityAddEmailHandler(p *deps.RequestProvider)
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -102787,8 +104644,9 @@ func newWebAppAuthflowV2SettingsIdentityEditEmailHandler(p *deps.RequestProvider
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -103139,10 +104997,16 @@ func newWebAppAuthflowV2SettingsIdentityEditEmailHandler(p *deps.RequestProvider
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -103164,6 +105028,7 @@ func newWebAppAuthflowV2SettingsIdentityEditEmailHandler(p *deps.RequestProvider
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -103334,7 +105199,7 @@ func newWebAppAuthflowV2SettingsIdentityEditEmailHandler(p *deps.RequestProvider
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -103937,8 +105802,9 @@ func newWebAppAuthflowV2SettingsIdentityListEmailHandler(p *deps.RequestProvider
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -104289,10 +106155,16 @@ func newWebAppAuthflowV2SettingsIdentityListEmailHandler(p *deps.RequestProvider
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -104314,6 +106186,7 @@ func newWebAppAuthflowV2SettingsIdentityListEmailHandler(p *deps.RequestProvider
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -104484,7 +106357,7 @@ func newWebAppAuthflowV2SettingsIdentityListEmailHandler(p *deps.RequestProvider
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -105073,8 +106946,9 @@ func newWebAppAuthflowV2SettingsIdentityVerifyEmailHandler(p *deps.RequestProvid
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -105425,10 +107299,16 @@ func newWebAppAuthflowV2SettingsIdentityVerifyEmailHandler(p *deps.RequestProvid
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -105450,6 +107330,7 @@ func newWebAppAuthflowV2SettingsIdentityVerifyEmailHandler(p *deps.RequestProvid
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -105620,7 +107501,7 @@ func newWebAppAuthflowV2SettingsIdentityVerifyEmailHandler(p *deps.RequestProvid
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -106226,8 +108107,9 @@ func newWebAppAuthflowV2SettingsIdentityViewEmailHandler(p *deps.RequestProvider
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -106578,10 +108460,16 @@ func newWebAppAuthflowV2SettingsIdentityViewEmailHandler(p *deps.RequestProvider
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -106603,6 +108491,7 @@ func newWebAppAuthflowV2SettingsIdentityViewEmailHandler(p *deps.RequestProvider
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -106773,7 +108662,7 @@ func newWebAppAuthflowV2SettingsIdentityViewEmailHandler(p *deps.RequestProvider
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -107385,8 +109274,9 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryEmailHandler(p *deps.Reques
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -107737,10 +109627,16 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryEmailHandler(p *deps.Reques
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -107762,6 +109658,7 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryEmailHandler(p *deps.Reques
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -107932,7 +109829,7 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryEmailHandler(p *deps.Reques
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -108526,8 +110423,9 @@ func newWebAppAuthflowV2SettingsIdentityAddPhoneHandler(p *deps.RequestProvider)
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -108878,10 +110776,16 @@ func newWebAppAuthflowV2SettingsIdentityAddPhoneHandler(p *deps.RequestProvider)
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -108903,6 +110807,7 @@ func newWebAppAuthflowV2SettingsIdentityAddPhoneHandler(p *deps.RequestProvider)
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -109073,7 +110978,7 @@ func newWebAppAuthflowV2SettingsIdentityAddPhoneHandler(p *deps.RequestProvider)
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -109675,8 +111580,9 @@ func newWebAppAuthflowV2SettingsIdentityEditPhoneHandler(p *deps.RequestProvider
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -110027,10 +111933,16 @@ func newWebAppAuthflowV2SettingsIdentityEditPhoneHandler(p *deps.RequestProvider
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -110052,6 +111964,7 @@ func newWebAppAuthflowV2SettingsIdentityEditPhoneHandler(p *deps.RequestProvider
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -110222,7 +112135,7 @@ func newWebAppAuthflowV2SettingsIdentityEditPhoneHandler(p *deps.RequestProvider
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -110826,8 +112739,9 @@ func newWebAppAuthflowV2SettingsIdentityListPhoneHandler(p *deps.RequestProvider
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -111178,10 +113092,16 @@ func newWebAppAuthflowV2SettingsIdentityListPhoneHandler(p *deps.RequestProvider
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -111203,6 +113123,7 @@ func newWebAppAuthflowV2SettingsIdentityListPhoneHandler(p *deps.RequestProvider
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -111373,7 +113294,7 @@ func newWebAppAuthflowV2SettingsIdentityListPhoneHandler(p *deps.RequestProvider
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -111962,8 +113883,9 @@ func newWebAppAuthflowV2SettingsIdentityViewPhoneHandler(p *deps.RequestProvider
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -112314,10 +114236,16 @@ func newWebAppAuthflowV2SettingsIdentityViewPhoneHandler(p *deps.RequestProvider
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -112339,6 +114267,7 @@ func newWebAppAuthflowV2SettingsIdentityViewPhoneHandler(p *deps.RequestProvider
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -112509,7 +114438,7 @@ func newWebAppAuthflowV2SettingsIdentityViewPhoneHandler(p *deps.RequestProvider
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -113116,8 +115045,9 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryPhoneHandler(p *deps.Reques
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -113468,10 +115398,16 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryPhoneHandler(p *deps.Reques
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -113493,6 +115429,7 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryPhoneHandler(p *deps.Reques
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -113663,7 +115600,7 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryPhoneHandler(p *deps.Reques
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -114257,8 +116194,9 @@ func newWebAppAuthflowV2SettingsIdentityVerifyPhoneHandler(p *deps.RequestProvid
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -114609,10 +116547,16 @@ func newWebAppAuthflowV2SettingsIdentityVerifyPhoneHandler(p *deps.RequestProvid
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -114634,6 +116578,7 @@ func newWebAppAuthflowV2SettingsIdentityVerifyPhoneHandler(p *deps.RequestProvid
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -114804,7 +116749,7 @@ func newWebAppAuthflowV2SettingsIdentityVerifyPhoneHandler(p *deps.RequestProvid
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -115410,8 +117355,9 @@ func newWebAppAuthflowV2SettingsIdentityListUsernameHandler(p *deps.RequestProvi
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -115762,10 +117708,16 @@ func newWebAppAuthflowV2SettingsIdentityListUsernameHandler(p *deps.RequestProvi
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -115787,6 +117739,7 @@ func newWebAppAuthflowV2SettingsIdentityListUsernameHandler(p *deps.RequestProvi
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -115957,7 +117910,7 @@ func newWebAppAuthflowV2SettingsIdentityListUsernameHandler(p *deps.RequestProvi
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -116511,8 +118464,9 @@ func newWebAppAuthflowV2SettingsIdentityNewUsernameHandler(p *deps.RequestProvid
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -116657,7 +118611,7 @@ func newWebAppAuthflowV2SettingsIdentityNewUsernameHandler(p *deps.RequestProvid
 		Clock: clockClock,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -116898,10 +118852,16 @@ func newWebAppAuthflowV2SettingsIdentityNewUsernameHandler(p *deps.RequestProvid
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -116923,6 +118883,7 @@ func newWebAppAuthflowV2SettingsIdentityNewUsernameHandler(p *deps.RequestProvid
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -117660,8 +119621,9 @@ func newWebAppAuthflowV2SettingsIdentityViewUsernameHandler(p *deps.RequestProvi
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -117806,7 +119768,7 @@ func newWebAppAuthflowV2SettingsIdentityViewUsernameHandler(p *deps.RequestProvi
 		Clock: clockClock,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -118047,10 +120009,16 @@ func newWebAppAuthflowV2SettingsIdentityViewUsernameHandler(p *deps.RequestProvi
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -118072,6 +120040,7 @@ func newWebAppAuthflowV2SettingsIdentityViewUsernameHandler(p *deps.RequestProvi
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -118812,8 +120781,9 @@ func newWebAppAuthflowV2SettingsIdentityEditUsernameHandler(p *deps.RequestProvi
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -118958,7 +120928,7 @@ func newWebAppAuthflowV2SettingsIdentityEditUsernameHandler(p *deps.RequestProvi
 		Clock: clockClock,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -119199,10 +121169,16 @@ func newWebAppAuthflowV2SettingsIdentityEditUsernameHandler(p *deps.RequestProvi
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -119224,6 +121200,7 @@ func newWebAppAuthflowV2SettingsIdentityEditUsernameHandler(p *deps.RequestProvi
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -119985,8 +121962,9 @@ func newWebAppAuthflowV2SettingsIdentityListOAuthHandler(p *deps.RequestProvider
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -120337,10 +122315,16 @@ func newWebAppAuthflowV2SettingsIdentityListOAuthHandler(p *deps.RequestProvider
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -120362,6 +122346,7 @@ func newWebAppAuthflowV2SettingsIdentityListOAuthHandler(p *deps.RequestProvider
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -120532,7 +122517,7 @@ func newWebAppAuthflowV2SettingsIdentityListOAuthHandler(p *deps.RequestProvider
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: appredisHandle,
@@ -121823,8 +123808,9 @@ func newSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -122157,10 +124143,16 @@ func newSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -122182,6 +124174,7 @@ func newSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -122723,8 +124716,9 @@ func newWebAppSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -123075,10 +125069,16 @@ func newWebAppSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -123100,6 +125100,7 @@ func newWebAppSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -123270,7 +125271,7 @@ func newWebAppSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		WhatsappConfig: whatsappConfig,
 	}
 	oAuthSSOProviderCredentials := deps.ProvideOAuthSSOProviderCredentials(secretConfig)
-	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig)
+	oAuthHTTPClient := sso.ProvideOAuthHTTPClient(environmentConfig, httpFeatureConfig)
 	simpleStoreRedisFactory := &sso.SimpleStoreRedisFactory{
 		AppID: appID,
 		Redis: handle,
@@ -123847,8 +125848,9 @@ func newWebAppUIParamMiddleware(p *deps.RequestProvider) httproute.Middleware {
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -124182,10 +126184,16 @@ func newWebAppUIParamMiddleware(p *deps.RequestProvider) httproute.Middleware {
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -124207,6 +126215,7 @@ func newWebAppUIParamMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -124826,8 +126835,9 @@ func newSettingsSubRoutesMiddleware(p *deps.RequestProvider) httproute.Middlewar
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -125179,10 +127189,16 @@ func newSettingsSubRoutesMiddleware(p *deps.RequestProvider) httproute.Middlewar
 	hookWebHookImpl := &hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout)
+	hookHTTPClient := custom.NewHookHTTPClient(smsHookTimeout, httpFeatureConfig)
 	smsWebHook := custom.SMSWebHook{
 		WebHook: hookWebHookImpl,
 		Client:  hookHTTPClient,
+	}
+	envSMSHookTimeout := custom.NewEnvSMSHookTimeout(smsGatewayEnvironmentCustomSMSProviderConfig)
+	envHookHTTPClient := custom.NewEnvHookHTTPClient(envSMSHookTimeout)
+	envSMSWebHook := custom.EnvSMSWebHook{
+		WebHook: hookWebHookImpl,
+		Client:  envHookHTTPClient,
 	}
 	clientResolver := &sms.ClientResolver{
 		AuthgearYAMLSMSProvider:                    smsProvider,
@@ -125204,6 +127220,7 @@ func newSettingsSubRoutesMiddleware(p *deps.RequestProvider) httproute.Middlewar
 		EnvironmentCustomSMSProviderConfig:         smsGatewayEnvironmentCustomSMSProviderConfig,
 		SMSDenoHook:                                smsDenoHook,
 		SMSWebHook:                                 smsWebHook,
+		EnvSMSWebHook:                              envSMSWebHook,
 	}
 	smsSender := &sms.Sender{
 		ClientResolver: clientResolver,
@@ -125802,8 +127819,9 @@ func newAuthenticationFlowRateLimitMiddleware(p *deps.RequestProvider) httproute
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -126288,8 +128306,9 @@ func newAccountManagementRateLimitMiddleware(p *deps.RequestProvider) httproute.
 	webHookImpl := hook.WebHookImpl{
 		Secret: webhookKeyMaterials,
 	}
-	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig)
-	asyncHTTPClient := hook.NewAsyncHTTPClient()
+	httpFeatureConfig := featureConfig.HTTP
+	syncHTTPClient := hook.NewSyncHTTPClient(hookConfig, httpFeatureConfig)
+	asyncHTTPClient := hook.NewAsyncHTTPClient(httpFeatureConfig)
 	eventWebHookImpl := &hook.EventWebHookImpl{
 		WebHookImpl: webHookImpl,
 		SyncHTTP:    syncHTTPClient,
@@ -126484,8 +128503,18 @@ func newDPoPMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		Clock:      clockClock,
 		HTTPOrigin: httpOrigin,
 	}
+	handle := appProvider.Redis
+	appContext := appProvider.AppContext
+	config := appContext.Config
+	appConfig := config.AppConfig
+	appID := appConfig.ID
+	storeRedis := &dpop.StoreRedis{
+		Redis: handle,
+		AppID: appID,
+	}
 	dpopMiddleware := &dpop.Middleware{
-		DPoPProvider: provider,
+		DPoPProvider:     provider,
+		ProofReplayStore: storeRedis,
 	}
 	return dpopMiddleware
 }
