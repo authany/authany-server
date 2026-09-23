@@ -219,6 +219,7 @@ See [SSRF Protection](#ssrf-protection) for why the size/timeout/redirect limits
 - The response MUST be `2xx` and MUST parse as a JSON object within the size limit described above.
 - Each field is checked against the rules in [Accepted Metadata Fields](#accepted-metadata-fields).
 - Unrecognized properties are ignored (the spec explicitly allows additional properties).
+- Unrecognized `grant_types` **values** are likewise ignored rather than fatal — see [`grant_types`](#grant_types-optional) for why, and for the one case that is still an error.
 
 A document that fails any MUST-level check is treated as if the fetch had failed (see [Error Handling](#error-handling)); it is never reused for a later request.
 
@@ -250,11 +251,17 @@ Human-readable name shown on the consent screen and in the portal. Default when 
 
 ### `grant_types` (optional)
 
-Must be a subset of `["authorization_code", "refresh_token"]`. Default when absent: `["authorization_code", "refresh_token"]`.
+Entries Authgear does not implement are **ignored**. A document that declared grant types and had every one of them ignored is rejected with `grant_type_unsupported`; otherwise what survives is subject only to the consistency rule below. Default when absent: `["authorization_code", "refresh_token"]`. Only the surviving entries are persisted and reported through `OAuthClient.grantTypes`, in the order the document listed them — so a document declaring a grant Authgear has no support for is valid, and that grant simply never becomes available to the client.
+
+**Ignoring rather than rejecting** is deliberate, and differs from [DCR's rule](./dcr.md#grant_types-optional). A CIMD document is a single self-published description of a client, used against every authorization server that client talks to, so it advertises every grant the client can perform *anywhere* rather than the subset any one server implements — the client cannot tailor it per server the way a DCR request is tailored to the server it is POSTed to. [Claude's document](https://claude.ai/oauth/mcp-oauth-client-metadata) declares `urn:ietf:params:oauth:grant-type:jwt-bearer`, for [MCP Enterprise Managed Authorization](https://modelcontextprotocol.io/extensions/auth/enterprise-managed-authorization)'s identity-assertion exchange ([RFC 7523](https://datatracker.ietf.org/doc/html/rfc7523)), alongside the `authorization_code` and `refresh_token` it uses everywhere else. Rejecting the whole document over that one entry left every Claude MCP connector unresolvable, and it protected nothing: a grant type absent from Authgear's `grant_types_supported` discovery metadata is never requested, and the token endpoint answers `unsupported_grant_type` to one that is requested anyway — the persisted `grant_types` are not what gates the token endpoint.
+
+This is a **pure relaxation**: every document that resolved before this rule existed still resolves, and no new rejection reason is introduced. An explicitly empty `grant_types` is not a Rule 5 failure — it declared nothing to lose, and the consistency rule decides it as it always has — which is why the "everything ignored" rejection is scoped to a list that had entries in the first place. There is deliberately no requirement that `authorization_code` survive: a client's persisted `grant_types` gate nothing at `/oauth2/authorize` or `/oauth2/token` (`authorization_code` is allowed for every client regardless), so such a requirement would reject documents that work today while protecting nothing.
 
 ### `response_types` (optional)
 
 Must be a subset of `["code"]`, and consistent with `grant_types` (same consistency rule as [DCR](./dcr.md#response_types-optional)). Default when absent: `["code"]`.
+
+Consistency is evaluated against the **surviving** grant types — the list after the rule above has ignored what Authgear does not implement, not the list as published.
 
 ### `application_type` (optional)
 
@@ -264,7 +271,9 @@ Unlike DCR, it **controls nothing**. It is validated, persisted and reported thr
 
 ### `token_endpoint_auth_method` (optional)
 
-Must be `none` if present. Any other value — including `private_key_jwt` and any `client_secret_*` variant — is out of scope for this v1 proposal; see [Client Authentication](#client-authentication). Default when absent: `none`.
+**Ignored**, exactly as in [DCR](./dcr.md#token_endpoint_auth_method-optional). Every CIMD client is public — no `client_secret` is ever issued or accepted, and PKCE is required — so the declared value cannot change how the client authenticates, whatever it says. `private_key_jwt` and the `client_secret_*` variants are out of scope for this v1 proposal (see [Client Authentication](#client-authentication)) and declaring one is not an error; it simply has no effect.
+
+There is no need to reject in order to tell the client: `token_endpoint_auth_methods_supported` in this project's [discovery metadata](#oidc-discovery-metadata) already publishes which methods exist, and a client that reads it — as an MCP client selecting CIMD must, since it has to confirm `none` is offered before it can authenticate as a public client — learns Authgear's position without a per-document answer. Refusing the document taught its author nothing the metadata did not, while costing them every authorization.
 
 ### `logo_uri`, `client_uri`, `tos_uri`, `policy_uri` (all optional)
 
@@ -291,8 +300,7 @@ Every other step reads that persisted record — a plain lookup, never a live fe
 
 - **`/oauth2/token`** (both `authorization_code` and `refresh_token` grants) reads it to validate the client and load its config.
 - **The Admin API's `dynamicClients` query and `user.authorizations` field** read it. There is nothing to fail: neither has a network dependency at all.
-
-  There is no end-user "Authorized Apps" page in the Auth UI today — `/settings/sessions` lists signed-in devices, not authorized third-party apps. When such a surface is built it reads this same record for `client_name`/`logo_uri`; until then, the end-user surface is a known gap rather than a delivered feature.
+- **The Auth UI's `/settings/authorized-apps` page** (see [Third-Party Client spec — Sessions and Authorization Management](./third-party-client.md#sessions-and-authorization-management)) also reads it, for the same `client_name`/`logo_uri` display purpose.
 
 Because the record is shared rather than frozen per grant, both endpoints always see the *current* known state of the client, not what was true when any particular user originally authorized it. This is also what lets Authgear implement spec §8.4/§8.4.1's "notice metadata changed compared to the last time it fetched", which a per-grant snapshot could never support: a refetch compares the fetched document against the stored record and, when they differ, emits [`oauth.client.resolved`](./event.md#oauthclientresolved) with both the new and the previous client state (`client` and `old_client`), rather than a computed list of changed fields.
 
@@ -316,7 +324,7 @@ CIMD fields map onto `OAuthClient` (see [client.md](./client.md)) as follows:
 | `client_name` (default: `Client <clientID>` when omitted) | `name`, `clientName`                                                         |
 | `client_uri`, `logo_uri`, `tos_uri`, `policy_uri`         | `clientURI`, `logoURI`, `tosURI`, `policyURI`                                |
 | `redirect_uris`                                           | `redirectURIs`                                                               |
-| `grant_types`, `response_types`                           | `grantTypes`, `responseTypes`                                                |
+| `grant_types` (unimplemented entries dropped), `response_types` | `grantTypes`, `responseTypes`                                          |
 | —                                                         | `postLogoutRedirectURIs`: always `[]`                                        |
 | —                                                         | token lifetimes from `client_config`                                         |
 | —                                                         | `registeredAt`: always `null` — there is no registration event, only a fetch |
@@ -334,7 +342,7 @@ For the `authorization_code` grant specifically, the `redirect_uri` presented at
 
 ## Client Authentication
 
-CIMD clients in v1 are always **public**: `token_endpoint_auth_method` must be absent or `none`, PKCE is required exactly as it is for any other public client today, and no `client_secret` is ever issued or accepted. This keeps v1 scoped to the change that has no new cryptographic surface. Confidential CIMD clients via `private_key_jwt` + `jwks_uri` are out of scope for this proposal — the spec explicitly forbids shared-secret auth methods for CIMD clients regardless ([§4.1](https://www.ietf.org/archive/id/draft-ietf-oauth-client-id-metadata-document-02.html#section-4.1)), so any future addition would be key-based only, never `client_secret_post`/`client_secret_basic`.
+CIMD clients in v1 are always **public**: whatever `token_endpoint_auth_method` a document declares is [ignored](#token_endpoint_auth_method-optional), PKCE is required exactly as it is for any other public client today, and no `client_secret` is ever issued or accepted. This keeps v1 scoped to the change that has no new cryptographic surface. Confidential CIMD clients via `private_key_jwt` + `jwks_uri` are out of scope for this proposal — the spec explicitly forbids shared-secret auth methods for CIMD clients regardless ([§4.1](https://www.ietf.org/archive/id/draft-ietf-oauth-client-id-metadata-document-02.html#section-4.1)), so any future addition would be key-based only, never `client_secret_post`/`client_secret_basic`.
 
 ## Security Considerations
 
@@ -347,22 +355,26 @@ CIMD clients in v1 are always **public**: `token_endpoint_auth_method` must be a
 - **Follow 0 redirects** — a redirect target hasn't been through [Client ID Format](#client-id-format) validation, and would otherwise let the previous two rules be bypassed. The spec doesn't address redirects; this is an Authgear decision.
 - **Enforce the 5120-byte limit ([§8.7](https://www.ietf.org/archive/id/draft-ietf-oauth-client-id-metadata-document-02.html#section-8.7)) progressively while reading the response**, not via `Content-Length` alone, since a server can omit or misstate it.
 
-Spec §8.6 permits a dev/test-only exception: an AS running on loopback may fetch loopback addresses. Authgear implements this — slightly widened, and gated differently — as two **feature config** flags:
+The address rules above are not CIMD's own. They are the deployment-wide policy in [SSRF Protection](./ssrf-protection.md), shared with webhooks, the custom SMS provider and OIDC discovery. CIMD reads both settings from it — `http.insecure_fetch_address_allowed` and `http.insecure_fetch_address_allowed_hosts` — and carries no address flag of its own.
+
+An allowlisted host is a statement about the destination, so it applies to a `client_id` too. That is deliberate: without it, an operator needing one private host reachable would have to set `insecure_fetch_address_allowed`, which opens every private address rather than the one they named. `allowed_domains` remains the control over *which* domains may be `client_id`s at all.
+
+Spec §8.6 permits a dev/test-only exception: an AS on loopback may fetch loopback addresses. Authgear widens this slightly, as `insecure_fetch_address_allowed` — every non-publicly-routable range, including `169.254.169.254`, because a containerised document host is usually on an RFC 1918 address rather than loopback.
+
+CIMD keeps one flag of its own:
 
 ```yaml
 # authgear.features.yaml
 oauth:
   client_id_metadata_document:
     insecure_http_allowed: false
-    insecure_fetch_address_allowed: false
 ```
 
-- `insecure_http_allowed`: permits `http://` wherever CIMD requires `https` — the `client_id`, the document's `logo_uri`/`client_uri`/`tos_uri`/`policy_uri`, and the logo fetch. It relaxes the scheme and nothing else.
-- `insecure_fetch_address_allowed`: permits connecting to a non-publicly-routable address. Note this is **every** such range, including `169.254.169.254`, not loopback only: a test or containerised local-development document host is typically reached at an RFC 1918 address rather than on loopback, so a loopback-only exception would not work for either.
+`insecure_http_allowed` permits `http://` wherever CIMD requires `https` — the `client_id`, the document's `logo_uri`/`client_uri`/`tos_uri`/`policy_uri`, and the logo fetch. Scheme only. It stays CIMD-specific because no other fetch path requires `https`.
 
-Both default `false`, and both live in `authgear.features.yaml` rather than `authgear.yaml` — so they are settable only through the Site Admin surface, never by a project admin, and should be set as an app-specific override rather than at the cluster or plan layer. Every fetch that uses either is logged with the project id and target host, so a flag left set on a deployed project is not invisible. **With both `false` — always the case for a project serving real traffic — the rules above apply unconditionally.**
+Both default `false` and both live in `authgear.features.yaml`, so a project admin cannot set either. Every fetch that uses either is logged with the project id and target host. **With both `false`, the rules above apply unconditionally.**
 
-The choice of per-project feature config over a process-wide `DEV_MODE` switch is deliberate, and not only about who can set it: a global switch cannot express a permissive project and a strict project at the same time, which makes the *enforcement* path impossible to test end to end. Being able to assert that `http://` and private addresses really are refused matters more than the simpler gate.
+Feature config rather than a process-wide `DEV_MODE` switch: a global switch cannot express a permissive project and a strict project at once, which would make the enforcement path untestable end to end.
 
 The same rules apply to fetching `logo_uri` ([§8.8](https://www.ietf.org/archive/id/draft-ietf-oauth-client-id-metadata-document-02.html#section-8.8)) — through the same resolve-once transport and address filter — with three additional constraints specific to images: a 256 KiB response cap, an allowlist of `image/png`, `image/jpeg`, `image/gif` and `image/webp` where the declared and sniffed types must agree, and a separate rate-limit bucket so logo traffic cannot starve document resolution. `image/svg+xml` is deliberately **not** accepted: an SVG is a scriptable document, and it would be served from Authgear's own origin. Should confidential CIMD clients be added later, `jwks_uri` is subject to the same rules again.
 
@@ -446,4 +458,4 @@ Like any third-party client, a CIMD client that requests no `resource` parameter
 
 CIMD clients are returned by [DCR's `dynamicClients` query](./dcr.md#new-query) alongside DCR-registered clients — no separate query is needed, since both are now backed by a real, deduplicated, per-`client_id` record (see [Where resolution happens](#where-resolution-happens)). A CIMD client is distinguished from a DCR client via `source: CIMD` on the unified `OAuthClient` model (see [client.md](./client.md#graphql-type)); `registeredAt` stays `null` (there is no registration event, only a resolution) and `lastFetchedAt` carries the freshness signal DCR clients don't have.
 
-There is no end-user "Authorized Apps" page in the Auth UI today, so there is currently no end-user surface reading this record — `/settings/sessions` lists signed-in devices rather than authorized third-party apps. This is a known gap rather than a delivered feature; when such a surface is built it reads the same persisted record for display (`client_name`, `logo_uri`) and needs no separate mechanism.
+The Auth UI's `/settings/authorized-apps` page (see [Third-Party Client spec — Sessions and Authorization Management](./third-party-client.md#sessions-and-authorization-management)) is the end-user surface reading this record — distinct from `/settings/sessions`, which lists signed-in devices rather than authorized third-party apps. It reads the same persisted record for display (`client_name`, `logo_uri`) and needs no separate mechanism.

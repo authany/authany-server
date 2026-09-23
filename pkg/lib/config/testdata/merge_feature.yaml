@@ -15,9 +15,12 @@ configs:
   - oauth:
       client:
         custom_ui_enabled: true
-  - oauth:
-      client_id_metadata_document:
-        insecure_fetch_address_allowed: true
+  - http:
+      insecure_fetch_address_allowed: true
+  - http:
+      insecure_fetch_address_allowed_hosts:
+        - hooks.internal.example.com
+        - "*.svc.cluster.local"
   - oauth:
       client_id_metadata_document:
         insecure_http_allowed: true
@@ -166,6 +169,18 @@ configs:
   - test_mode:
       sms:
         suppressed: true
+  # admin_api.rate_limits: a layer setting only the mutation bucket must not
+  # reset create_session_enabled or the usage limits set by the earlier
+  # admin_api layers above -- that is the AdminAPIFeatureConfig -> RateLimits
+  # -> Mutation -> All cascade working.
+  - admin_api:
+      rate_limits:
+        mutation:
+          all:
+            per_project:
+              enabled: true
+              period: 30s
+              burst: 7
 result:
   test_mode:
     fixed_oob_otp:
@@ -199,6 +214,11 @@ result:
       maximum: 5
     non_blocking_handler:
       maximum: 7
+  http:
+    insecure_fetch_address_allowed: true
+    insecure_fetch_address_allowed_hosts:
+      - hooks.internal.example.com
+      - "*.svc.cluster.local"
   admin_api:
     create_session_enabled: true
     user_import_usage:
@@ -209,6 +229,13 @@ result:
       enabled: false
       period: month
       quota: 1
+    rate_limits:
+      mutation:
+        all:
+          per_project:
+            enabled: true
+            period: 30s
+            burst: 7
   ui:
     white_labeling:
       disabled: true
@@ -223,7 +250,6 @@ result:
       custom_ui_enabled: true
       app2app_enabled: false
     client_id_metadata_document:
-      insecure_fetch_address_allowed: true
       insecure_http_allowed: true
       rate_limits:
         fetch:
