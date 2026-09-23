@@ -47,28 +47,21 @@ import {
   serializeActivityTypesToQuery,
 } from "../../components/audit-log/ActivityTypeFilterDropdown";
 import {
+  PROJECT_ACTIVITY_TYPES,
+  AuditLogKind,
+  isAuditLogKind,
+  USER_ACTIVITY_TYPES,
+} from "./auditLogActivityTypes";
+import {
   AuditLogDateRangePresetKey,
   detectDateRangePreset,
   getInitialAuditLogDateRange,
   getPresetDateRange,
+  serializeDateRangeSearchParam,
+  toExclusiveRangeTo,
 } from "../../components/audit-log/dateRangePresets";
 
 const pageSize = 100;
-
-const ALL_ACTIVITY_TYPES = Object.values(AuditLogActivityType);
-const ADMIN_ACTIVITY_TYPES = ALL_ACTIVITY_TYPES.filter(
-  (activityType) =>
-    activityType.startsWith("ADMIN_API") || activityType.startsWith("PROJECT")
-);
-// Activity types to hide from the audit log (shown elsewhere in the portal)
-const HIDDEN_ACTIVITY_TYPES = [
-  AuditLogActivityType.FraudProtectionDecisionRecorded,
-];
-const USER_ACTIVITY_TYPES = ALL_ACTIVITY_TYPES.filter(
-  (activityType) =>
-    !ADMIN_ACTIVITY_TYPES.includes(activityType) &&
-    !HIDDEN_ACTIVITY_TYPES.includes(activityType)
-);
 
 function areActivityTypesEqual(
   left: AuditLogActivityType[],
@@ -78,14 +71,6 @@ function areActivityTypesEqual(
     return false;
   }
   return left.every((activityType) => right.includes(activityType));
-}
-
-enum AuditLogKind {
-  User = "user",
-  Admin = "admin",
-}
-function isAuditLogKind(s: string): s is AuditLogKind {
-  return Object.values(AuditLogKind).includes(s as AuditLogKind);
 }
 
 const AuditLogScreen: React.VFC = function AuditLogScreen() {
@@ -150,7 +135,7 @@ const AuditLogScreen: React.VFC = function AuditLogScreen() {
 
   const availableActivityTypes = useMemo(() => {
     return auditLogKind === "admin"
-      ? ADMIN_ACTIVITY_TYPES
+      ? PROJECT_ACTIVITY_TYPES
       : USER_ACTIVITY_TYPES;
   }, [auditLogKind]);
 
@@ -208,6 +193,12 @@ const AuditLogScreen: React.VFC = function AuditLogScreen() {
     return minDate;
   }, [lastUpdatedAt, logRetrievalDays]);
 
+  // Any time on the current day is pickable, matching the preset end of day.
+  const datePickerMaxDate = useMemo(
+    () => DateTime.fromJSDate(lastUpdatedAt).endOf("day").toJSDate(),
+    [lastUpdatedAt]
+  );
+
   const queryRangeFrom = useMemo(() => {
     if (rangeFrom != null) {
       return rangeFrom.toISOString();
@@ -220,10 +211,7 @@ const AuditLogScreen: React.VFC = function AuditLogScreen() {
 
   const queryRangeTo = useMemo(() => {
     if (rangeTo != null) {
-      return DateTime.fromJSDate(rangeTo)
-        .plus({ days: 1 })
-        .toJSDate()
-        .toISOString();
+      return toExclusiveRangeTo(rangeTo).toISOString();
     }
     return lastUpdatedAt.toISOString();
   }, [rangeTo, lastUpdatedAt]);
@@ -272,6 +260,7 @@ const AuditLogScreen: React.VFC = function AuditLogScreen() {
       onChange: onChangeDateRangePreset,
       rangeFrom,
       rangeTo,
+      showTime: true,
       onOpenCustomDateRangeDialog,
     };
   }, [
@@ -330,10 +319,8 @@ const AuditLogScreen: React.VFC = function AuditLogScreen() {
 
     const params: URLSearchParamsInit = {};
 
-    const newQueryFrom =
-      rangeFrom != null ? DateTime.fromJSDate(rangeFrom).toISODate() : "";
-    const newQueryTo =
-      rangeTo != null ? DateTime.fromJSDate(rangeTo).toISODate() : "";
+    const newQueryFrom = serializeDateRangeSearchParam(rangeFrom);
+    const newQueryTo = serializeDateRangeSearchParam(rangeTo);
     const newQueryOrderBy = sortDirection;
     const newQueryPage = page.toString();
     const newQueryActivityType = serializeActivityTypesToQuery(
@@ -678,10 +665,10 @@ const AuditLogScreen: React.VFC = function AuditLogScreen() {
           >
             <Tabs.List>
               <Tabs.Trigger value={AuditLogKind.User}>
-                {renderToString("AuditLogScreen.acitity-kind.user")}
+                {renderToString("AuditLogScreen.activity-kind.user")}
               </Tabs.Trigger>
               <Tabs.Trigger value={AuditLogKind.Admin}>
-                {renderToString("AuditLogScreen.acitity-kind.admin")}
+                {renderToString("AuditLogScreen.activity-kind.project")}
               </Tabs.Trigger>
             </Tabs.List>
           </Tabs.Root>
@@ -721,15 +708,18 @@ const AuditLogScreen: React.VFC = function AuditLogScreen() {
         hidden={dateRangeDialogHidden}
         title={renderToString("AuditLogScreen.date-range.custom")}
         fromDatePickerLabel={renderToString(
-          "AuditLogScreen.date-range.start-date"
+          "AuditLogScreen.date-range.start-datetime"
         )}
-        toDatePickerLabel={renderToString("AuditLogScreen.date-range.end-date")}
+        toDatePickerLabel={renderToString(
+          "AuditLogScreen.date-range.end-datetime"
+        )}
         rangeFrom={uncommittedRangeFrom ?? undefined}
         rangeTo={uncommittedRangeTo ?? undefined}
         fromDatePickerMinDate={datePickerMinDate}
-        fromDatePickerMaxDate={lastUpdatedAt}
+        fromDatePickerMaxDate={datePickerMaxDate}
         toDatePickerMinDate={datePickerMinDate}
-        toDatePickerMaxDate={lastUpdatedAt}
+        toDatePickerMaxDate={datePickerMaxDate}
+        showTimePicker={true}
         onSelectRangeFrom={onSelectRangeFrom}
         onSelectRangeTo={onSelectRangeTo}
         onCommitDateRange={commitDateRange}
