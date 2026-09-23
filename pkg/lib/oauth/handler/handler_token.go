@@ -102,12 +102,12 @@ var TokenHandlerLogger = slogutil.NewLogger("oauth-token")
 
 type TokenHandlerCodeGrantStore interface {
 	GetCodeGrant(ctx context.Context, codeHash string) (*oauth.CodeGrant, error)
-	DeleteCodeGrant(ctx context.Context, g *oauth.CodeGrant) error
+	ConsumeCodeGrant(ctx context.Context, g *oauth.CodeGrant) error
 }
 
 type TokenHandlerSettingsActionGrantStore interface {
 	GetSettingsActionGrant(ctx context.Context, codeHash string) (*oauth.SettingsActionGrant, error)
-	DeleteSettingsActionGrant(ctx context.Context, g *oauth.SettingsActionGrant) error
+	ConsumeSettingsActionGrant(ctx context.Context, g *oauth.SettingsActionGrant) error
 }
 
 type TokenHandlerOfflineGrantStore interface {
@@ -233,6 +233,7 @@ type TokenHandler struct {
 	OfflineGrantService             TokenHandlerOfflineGrantService
 	PreAuthenticatedURLTokenService PreAuthenticatedURLTokenService
 	ClientResourceScopeService      TokenHandlerClientResourceScopeService
+	ResourceAccessPolicyService     ResourceAccessPolicyService
 	Graphs                          GraphService
 	IDTokenIssuer                   IDTokenIssuer
 	Clock                           clock.Clock
@@ -641,6 +642,15 @@ func (h *TokenHandler) IssueTokensForAuthorizationCode(
 		return nil, errInvalidAuthzCode
 	}
 
+	// The code must be redeemed by the client it was issued to.
+	// See RFC 6749 section 4.1.3 and OIDC Core section 3.1.3.2.
+	// Note that the redirect URI check below is not a substitute: it compares
+	// the request against the URI stored on the grant, not against the redirect
+	// URIs registered for the redeeming client.
+	if client.ClientID != codeGrant.AuthorizationRequest.ClientID() {
+		return nil, errInvalidAuthzCode
+	}
+
 	if codeGrant.RedirectURI != r.RedirectURI() {
 		return nil, protocol.NewError("invalid_request", "invalid redirect URI")
 	}
@@ -676,16 +686,31 @@ func (h *TokenHandler) IssueTokensForAuthorizationCode(
 		return nil, err
 	}
 
-	resp, err := h.doIssueTokensForAuthorizationCode(ctx, client, codeGrant, authz, deviceInfo, r.App2AppDeviceKeyJWT(), r.Resource())
-	if err != nil {
-		return nil, err
-	}
-
-	err = h.CodeGrants.DeleteCodeGrant(ctx, codeGrant)
-	if err != nil {
+	// Spend the code, and only then issue. The delete is atomic and reports
+	// whether this request is the one that removed the key, so of several
+	// concurrent requests presenting the same code exactly one gets past here.
+	// Deleting after issuance instead would let both issue first, leaving the
+	// loser's offline grant orphaned in Redis, which the database transaction
+	// does not roll back.
+	//
+	// Everything that decides whether this caller is entitled to the code has
+	// already run, so a request that was never going to succeed cannot spend
+	// it. What remains can only fail on a server error.
+	err = h.CodeGrants.ConsumeCodeGrant(ctx, codeGrant)
+	if errors.Is(err, oauth.ErrGrantNotFound) {
+		// Another request presenting the same code got here first. Not a
+		// failure to invalidate, so it is not logged as one.
+		return nil, errInvalidAuthzCode
+	} else if err != nil {
 		// NOTE(DEV-2982): This is for debugging the session lost problem
 		logger.WithSkipStackTrace().WithError(err).Warn(ctx, "failed to invalidate code grant",
 			slog.Bool("refresh_token_log", true))
+		return nil, err
+	}
+
+	resp, err := h.doIssueTokensForAuthorizationCode(ctx, client, codeGrant, authz, deviceInfo, r.App2AppDeviceKeyJWT(), r.Resource())
+	if err != nil {
+		return nil, err
 	}
 
 	otelutil.IntCounterAddOne(
@@ -1742,6 +1767,14 @@ func (h *TokenHandler) doIssueTokensForAuthorizationCode(
 		return nil, protocol.NewError("invalid_target", "resource must be a subset of the resource authorized by the code")
 	}
 
+	// Re-read the access policy before issuing anything: only the token
+	// issued here is narrowed, the grant itself keeps every authorized
+	// scope. See docs/specs/api-resource.md § Revocation.
+	issuedScopes, err := h.resourceScopesForIssuance(ctx, client, resourceURI, code.AuthorizationRequest.Scope())
+	if err != nil {
+		return nil, err
+	}
+
 	issueRefreshToken := false
 	issueIDToken := false
 	issueDeviceToken := h.shouldIssueDeviceSecret(code.AuthorizationRequest.Scope())
@@ -1979,7 +2012,7 @@ func (h *TokenHandler) doIssueTokensForAuthorizationCode(
 
 	prepareUserAccessGrantOptions := oauth.PrepareUserAccessGrantOptions{
 		ClientConfig:       client,
-		Scopes:             code.AuthorizationRequest.Scope(),
+		Scopes:             issuedScopes,
 		AuthorizationID:    authz.ID,
 		AuthenticationInfo: info,
 		SessionLike: SimpleSessionLike{
@@ -2044,6 +2077,14 @@ func (h *TokenHandler) issueTokensForRefreshToken(
 		return nil, protocol.NewError("invalid_target", "resource must be a subset of the resource originally authorized")
 	}
 
+	// Re-read the access policy before issuing anything: only the token
+	// issued here is narrowed, the grant itself keeps every authorized
+	// scope. See docs/specs/api-resource.md § Revocation.
+	issuedScopes, err := h.resourceScopesForIssuance(ctx, client, resourceURI, offlineGrantSession.Scopes)
+	if err != nil {
+		return nil, err
+	}
+
 	resp := protocol.TokenResponse{}
 
 	offlineGrant, _, err := h.rotateDeviceSecretIfSufficientScope(
@@ -2078,7 +2119,7 @@ func (h *TokenHandler) issueTokensForRefreshToken(
 
 	prepareUserAccessGrantOptions := oauth.PrepareUserAccessGrantOptions{
 		ClientConfig:             client,
-		Scopes:                   offlineGrantSession.Scopes,
+		Scopes:                   issuedScopes,
 		AuthorizationID:          authz.ID,
 		AuthenticationInfo:       offlineGrantSession.GetAuthenticationInfo(),
 		SessionLike:              offlineGrantSession,
@@ -2198,6 +2239,12 @@ func (h *TokenHandler) IssueTokensForSettingsActionCode(
 		return nil, errInvalidAuthzCode
 	}
 
+	// The code must be redeemed by the client it was issued to.
+	// See the equivalent check in IssueTokensForAuthorizationCode.
+	if client.ClientID != settingsActionGrant.AuthorizationRequest.ClientID() {
+		return nil, errInvalidAuthzCode
+	}
+
 	if settingsActionGrant.RedirectURI != r.RedirectURI() {
 		return nil, protocol.NewError("invalid_request", "invalid redirect URI")
 	}
@@ -2238,9 +2285,14 @@ func (h *TokenHandler) IssueTokensForSettingsActionCode(
 		}
 	}
 
-	err = h.SettingsActionGrantStore.DeleteSettingsActionGrant(ctx, settingsActionGrant)
-	if err != nil {
+	// Spend the code. See IssueTokensForAuthorizationCode.
+	err = h.SettingsActionGrantStore.ConsumeSettingsActionGrant(ctx, settingsActionGrant)
+	if errors.Is(err, oauth.ErrGrantNotFound) {
+		// Another request presenting the same code got here first.
+		return nil, errInvalidAuthzCode
+	} else if err != nil {
 		logger.WithError(err).Error(ctx, "failed to invalidate settings action grant")
+		return nil, err
 	}
 
 	return &HandleResult{
