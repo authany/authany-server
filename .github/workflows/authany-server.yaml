@@ -12,6 +12,11 @@ name: Authany - Server
 # runner and a few packages fail for environmental reasons in this tree. What
 # is left is enough to catch a broken build, a broken SMS/config/portal test
 # and unformatted code before an image is published.
+#
+# resources/portal/** is in the path filters because go build embeds
+# resources/portal/translations.json without parsing it; the portal test
+# (pkg/portal/service/authany_translations_test.go) is what catches a broken
+# file, so a translation-only commit has to run it too.
 
 on:
   push:
@@ -22,6 +27,7 @@ on:
       - "cmd/**"
       - "go.mod"
       - "go.sum"
+      - "resources/portal/**"
       - ".github/workflows/authany-server.yaml"
   pull_request:
     paths:
@@ -29,6 +35,7 @@ on:
       - "cmd/**"
       - "go.mod"
       - "go.sum"
+      - "resources/portal/**"
       - ".github/workflows/authany-server.yaml"
   workflow_dispatch: {}
 
