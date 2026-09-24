@@ -25,8 +25,9 @@ export interface SystemConfig {
   uiSettingsImplemenation: string;
 }
 
-// Authany i18n: en is always present; other locales (zh-CN, ...) come from
-// PORTAL_CUSTOM_RESOURCE_DIRECTORY/translations.json and are merged over en at runtime.
+// Authany i18n: en is always present; other locales (zh-CN, ...) come from the
+// built-in resources/portal/translations.json (a copy in
+// PORTAL_CUSTOM_RESOURCE_DIRECTORY replaces it whole), merged over en at runtime.
 export interface SystemConfigTranslations {
   en: Record<string, string>;
   [locale: string]: Record<string, string> | undefined;
