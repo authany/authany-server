@@ -39,7 +39,9 @@ export function AppLocaleProvider({
 }): React.ReactElement {
   const translations = systemConfig?.translations;
 
-  // Authany i18n: locales available = "en" + whatever translations.json provides.
+  // Authany i18n: locales available = "en" + the locales in translations.json
+  // (the built-in resources/portal/translations.json, or a copy in
+  // PORTAL_CUSTOM_RESOURCE_DIRECTORY, which replaces it whole).
   const availableLocales = useMemo(() => {
     const keys =
       translations != null
