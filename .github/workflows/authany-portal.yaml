@@ -59,3 +59,11 @@ jobs:
       - run: npm run build
         working-directory: ./portal
         if: ${{ !cancelled() }}
+      # Production serves the console straight from the portal image built from this tree (the
+      # deployment's own frontend overlay was retired on 2026-09-25), so this is the last place to
+      # catch a docs link to the upstream vendor before it ships.
+      - name: No upstream vendor links in the built console
+        working-directory: ./portal
+        run: |
+          hits=$(grep -rlF go.authgear.com dist/shared-assets || true)
+          if [ -n "$hits" ]; then echo "$hits"; exit 1; fi
