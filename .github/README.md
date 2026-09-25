@@ -35,23 +35,28 @@ Local development, tests and conventions are documented in [`CONTRIBUTING.md`](.
 ## Branches and releases
 
 - `main` is what production runs: the current base release plus Authany commits on top. Authany commits follow [Conventional Commits](https://www.conventionalcommits.org/), `type(scope): subject (Authany)`: the scope is `server`, `portal`, `authui` or `ci`, the common types are `feat`, `fix`, `docs`, `test`, `refactor`, `chore` and `ci`, the subject starts lower case, is imperative and carries no full stop, and every commit has a body saying what changed and why. This convention overrides the commit style of the upstream [`AGENTS.md`](../AGENTS.md).
-- Base release tags (`YYYY-MM-DD.N`) are mirrored in this repository. Currently based on `2026-09-09.0`, which is also the first half of the release tags below.
+- Base release tags (`YYYY-MM-DD.N`) are mirrored in this repository. Currently based on `2026-09-23.0`, which is also the first half of the release tags below.
 - Authany changes so far (`git log --oneline <base tag>..main` is the authoritative list; the highlights; the four subjects below were pushed before the convention above and are kept as written):
-  - `[Portal] Add locale selection and language switcher (Authany)` — the admin console picks its locale from `localStorage` / browser language and offers a Language submenu; translations are loaded at runtime from the deployment's resource directory.
+  - `[Portal] Add locale selection and language switcher (Authany)` — the admin console picks its locale from `localStorage` / browser language and offers a Language submenu; the translations (en de-brand overrides and zh-CN) are built into the portal image as `resources/portal/translations.json`.
   - `[Portal] Strip residual upstream vendor links (Authany)` — external links to the base project's website, docs, community and mailboxes render as plain text; header contact/docs links, the Get Started contact and resource columns, the Billing nav entry and the Starter Kit section are removed.
   - `[CI] Replace the upstream CI with an Authany portal check (Authany)` — the workflow below.
   - `[Server] De-brand the collaborator invitation subject (Authany)` — the collaborator invitation email subject says "in Authany". The email body is overridden at deployment level (`PORTAL_CUSTOM_RESOURCE_DIRECTORY/templates/en/messages/`); the subject is hard-coded, so this change only reaches production once the portal image is built from this repository.
   - `feat(server): add seven native SMS providers (Authany)` — aliyun, aliyun_mas, tencent, yunpian, smsbao, gatewayapi and smsaero each get secret configuration, a sending client, resolver wiring, admin console backend support and a provider form.
 
-Taking a new base release:
+`main` tracks upstream `main` daily. The merge runs on the operator's machine from the private deployment repository (its `upstream/upstream-sync.sh`, run by a desktop routine every morning against a checkout of this repository); this repository holds product code only. Each run does one thing: a new base release tag not yet in `main` is merged first (worktree `.upgrade/<tag>`, branch `upgrade/<tag>`, PR "Take base release <tag>"); otherwise upstream `main` is merged (worktree `.upgrade/main-<date>`, branch `sync/<date>`, PR "Sync upstream main <date>"). Conflicts confined to generated files (`wire_gen.go`, GraphQL schema and codegen output) are regenerated; the merged tree is verified the way CI does it (go build, gofmt, the CI test subset, portal typecheck); the PR body is an impact report. Any other conflict is left in place in the worktree for a person; the PR then carries the resolution notes and is marked as hand-resolved. One PR is open at a time.
+
+`upstream/upstream-finish.sh` (same routine, same morning) merges the PR **with a merge commit** once *Authany - Server* and *Authany - Portal* are green — a hand-resolved PR only after a person approved it (label `approved`, or `APPROVED=1`) — and then cuts a release for every upstream base tag reachable from `main` that has none yet: it pushes `<tag>-authany.1` (which publishes the images) and creates a GitHub Release with upstream's notes, the impact report and the list of upstream commits after the tag that `main` already contains. Because `main` follows upstream `main` daily and upstream tags a commit about a day after it lands, a release is the tag plus up to a day of later upstream commits; the Release lists them. *Squash and merge* or *Rebase and merge* would flatten the upstream history, after which the next merge conflicts on everything; do not use them from the GitHub UI either.
+
+By hand, from the deployment repository, the same thing is:
 
 ```bash
-git fetch upstream --tags
-git merge <tag>                # conflicts, if any, are confined to the portal files touched above
-git push origin main --tags
+upstream/upstream-sync.sh                         # new base release → upgrade/<tag> + PR; else upstream main → sync/<date> + PR
+upstream/wt.sh <name> git status                  # if it stopped on conflicts: resolve, `wt.sh <name> git add`, then
+upstream/upstream-sync.sh --resume <name> --notes notes.md
+upstream/upstream-finish.sh                       # checks green: merge commit; upstream tag in main: <tag>-authany.<M> + Release
 ```
 
-**The `--tags` on that last push is not optional.** The release tag names the base release it is built on, and the image build cross-checks that name against `git describe`, which only sees base release tags that reached `origin`. Forget `--tags` and the next release fails its cross-check instead of publishing images labelled with the wrong base release — that failure is the point.
+**The base release tag must reach `origin`** (`upstream-sync.sh` pushes it; by hand, `git push origin refs/tags/<tag>`). The release tag names the base release it is built on, and the image build cross-checks that name against `git describe`, which only sees base release tags that reached `origin`. Forget it and the next release fails its cross-check instead of publishing images labelled with the wrong base release — that failure is the point.
 
 Releases are versioned `<upstream base release>-authany.<M>`, for example `2026-09-09.0-authany.1`. The first half is literally the upstream base release tag the images are built from, not the Authany release date; `M` counts Authany releases on that base. Which half moves:
 
@@ -62,13 +67,14 @@ Releases are versioned `<upstream base release>-authany.<M>`, for example `2026-
 
 The tag carries no compatibility semantics: a deployment-incompatible change (an environment variable renamed, the compose structure changed, a manual migration needed) is called out in the release notes, not in the version.
 
-Releasing, once `main` holds what production should run:
+Releasing, once `main` holds what production should run (`upstream-finish.sh` does this for an upgrade PR; for an Authany-only change on the same base it is done by hand):
 
 ```bash
 git push origin main                            # never --tags, see below
 git tag -a 2026-09-09.0-authany.1               # <upstream base release>-authany.<M>
 git push origin 2026-09-09.0-authany.1          # this is what triggers the image build
-# wait for "Authany - Images" to finish, then, in the deployment repository:
+# wait for "Authany - Images" to finish, then, in the deployment repository, rehearse on a restored backup
+# (deploy/scripts/rehearse-upgrade.sh) and only then:
 deploy/scripts/upgrade.sh 2026-09-09.0-authany.1
 ```
 
@@ -79,7 +85,7 @@ Pushing the tag makes [`authany-images.yaml`](workflows/authany-images.yaml) bui
 - Push the release tag explicitly. Releasing does not use `git push origin main --tags`: that pushes the ~1200 mirrored upstream tags (`YYYY-MM-DD.N`, `staging-*`) along with it, which is wanted exactly once, when taking a base release above, and not on every release.
 - Only the `-authany.<M>` suffixed pattern triggers the workflow, which is what keeps those mirrored upstream tags from building the upstream tree under an Authany image name, and the workflow re-checks the tag name, so a near miss such as `2026-09-09-authany.1` or `2026-09-09.0-authany` fails the run instead of publishing under an odd Docker tag.
 - If the `ubuntu-24.04-arm` runner is unavailable for this repository, run the workflow from `workflow_dispatch` with `amd64_only` (and `push_image` off for a build-only smoke test); that still publishes a manifest, from the amd64 build alone.
-- The packages are private, so the production host needs `docker login ghcr.io` with a PAT carrying `read:packages` before it can pull.
+- Both packages are public, so the production host pulls them without logging in to `ghcr.io`.
 
 ## CI
 
