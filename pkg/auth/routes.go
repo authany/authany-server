@@ -335,6 +335,7 @@ func NewRouter(ctx context.Context, p *deps.RootProvider, configSource *configso
 	router.Add(webapphandlerauthflowv2.ConfigureAuthflowV2ErrorRoute(webappPageRoute), p.Handler(newWebAppAuthflowV2ErrorHandler))
 	router.Add(webapphandlerauthflowv2.ConfigureAuthflowV2CreatePasswordRoute(webappPageRoute), p.Handler(newWebAppAuthflowV2CreatePasswordHandler))
 	router.Add(webapphandlerauthflowv2.ConfigureAuthflowV2AccountStatusRoute(webappPageRoute), p.Handler(newWebAppAuthflowV2AccountStatusHandler))
+	router.Add(webapphandlerauthflowv2.ConfigureAuthflowV2ClockSkewRoute(webappPageRoute), p.Handler(newWebAppAuthflowV2ClockSkewHandler))
 	router.Add(webapphandlerauthflowv2.ConfigureAuthflowV2EnterRecoveryCodeRoute(webappPageRoute), p.Handler(newWebAppAuthflowV2EnterRecoveryCodeHandler))
 	router.Add(webapphandlerauthflowv2.ConfigureAuthflowv2ChangePasswordRoute(webappPageRoute), p.Handler(newWebAppAuthflowV2ChangePasswordHandler))
 	router.Add(webapphandlerauthflowv2.ConfigureAuthflowV2ChangePasswordSuccessRoute(webappPageRoute), p.Handler(newWebAppAuthflowV2ChangePasswordSuccessHandler))
@@ -435,6 +436,9 @@ func NewRouter(ctx context.Context, p *deps.RootProvider, configSource *configso
 	})
 	router.Add(webapphandlerauthflowv2.ConfigureAuthflowV2SettingsAuthorizedAppsRoute(webappSettingsSubRoutesRoute), &webapphandler.SettingsImplementationSwitcherHandler{
 		SettingV2: p.Handler(newWebAppAuthflowV2SettingsAuthorizedAppsHandler),
+	})
+	router.Add(webapphandlerauthflowv2.ConfigureAuthflowV2SettingsAuthorizedAppRoute(webappSettingsSubRoutesRoute), &webapphandler.SettingsImplementationSwitcherHandler{
+		SettingV2: p.Handler(newWebAppAuthflowV2SettingsAuthorizedAppHandler),
 	})
 	router.Add(webapphandlerauthflowv2.ConfigureAuthflowV2SettingsChangePasswordRoute(webappSettingsSubRoutesRoute), &webapphandler.SettingsImplementationSwitcherHandler{
 		SettingV2: p.Handler(newWebAppAuthflowV2SettingsChangePasswordHandler),
