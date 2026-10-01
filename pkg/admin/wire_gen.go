@@ -350,6 +350,7 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 		Request:            request,
 		TrustProxy:         trustProxy,
 		TranslationService: translationService,
+		OAuthConfig:        oAuthConfig,
 	}
 	passkeyService := &passkey2.Service{
 		Store:         store2,
@@ -822,6 +823,7 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 	resourceLoader := loader.NewResourceLoader(resourcescopeQueries)
 	resourceClientLoader := loader.NewResourceClientLoader(resourcescopeQueries)
 	scopeLoader := loader.NewScopeLoader(resourcescopeQueries)
+	resourceScopeLoader := loader.NewResourceScopeLoader(resourcescopeQueries)
 	dcrStore := &dcr.Store{
 		SQLBuilder:  sqlBuilderApp,
 		SQLExecutor: sqlExecutor,
@@ -1327,6 +1329,7 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 		OAuthSessionManager: sessionManager,
 		OfflineGrantService: oauthOfflineGrantService,
 		OfflineGrantStore:   redisStore,
+		Resources:           resourcescopeStore,
 	}
 	authorizationFacade := &facade2.AuthorizationFacade{
 		Authorizations: authorizationService,
@@ -1439,6 +1442,7 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 		Resources:             resourceLoader,
 		ResourceClients:       resourceClientLoader,
 		Scopes:                scopeLoader,
+		ResourceScopes:        resourceScopeLoader,
 		InitialAccessTokens:   initialAccessTokenLoader,
 		DynamicClients:        dynamicClientLoader,
 		UserFacade:            facadeUserFacade,
@@ -1679,6 +1683,7 @@ func newUserImportCreateHandler(p *deps.RequestProvider) http.Handler {
 		Request:            request,
 		TrustProxy:         trustProxy,
 		TranslationService: translationService,
+		OAuthConfig:        oAuthConfig,
 	}
 	passkeyService := &passkey2.Service{
 		Store:         store2,
@@ -2198,6 +2203,7 @@ func newUserImportGetHandler(p *deps.RequestProvider) http.Handler {
 		Request:            request,
 		TrustProxy:         trustProxy,
 		TranslationService: translationService,
+		OAuthConfig:        oAuthConfig,
 	}
 	passkeyService := &passkey2.Service{
 		Store:         store2,
@@ -2718,6 +2724,7 @@ func newUserExportCreateHandler(p *deps.RequestProvider) http.Handler {
 		Request:            request,
 		TrustProxy:         trustProxy,
 		TranslationService: translationService,
+		OAuthConfig:        oAuthConfig,
 	}
 	passkeyService := &passkey2.Service{
 		Store:         store2,

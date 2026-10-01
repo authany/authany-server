@@ -155,6 +155,7 @@ var secretDeps = wire.NewSet(
 	ProvideSAMLSpSigningMaterials,
 	ProvideSSOOAuthDemoCredentials,
 	ProvideTelemetryAuditLogStreamTLSMaterials,
+	ProvideTelemetryAuditLogStreamDatadogCredentials,
 )
 
 func ProvideDatabaseCredentials(c *config.SecretConfig) *config.DatabaseCredentials {
@@ -328,5 +329,10 @@ func ProvideSAMLSpSigningMaterials(c *config.SecretConfig) *config.SAMLSpSigning
 
 func ProvideTelemetryAuditLogStreamTLSMaterials(c *config.SecretConfig) *config.TelemetryAuditLogStreamTLSMaterials {
 	s, _ := c.LookupData(config.TelemetryAuditLogStreamTLSMaterialsKey).(*config.TelemetryAuditLogStreamTLSMaterials)
+	return s
+}
+
+func ProvideTelemetryAuditLogStreamDatadogCredentials(c *config.SecretConfig) *config.TelemetryAuditLogStreamDatadogCredentials {
+	s, _ := c.LookupData(config.TelemetryAuditLogStreamDatadogCredentialsKey).(*config.TelemetryAuditLogStreamDatadogCredentials)
 	return s
 }
