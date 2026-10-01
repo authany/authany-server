@@ -411,15 +411,20 @@ func (tc *TestCase) executeStep(
 		if !ok {
 			return nil, state, false
 		}
-		rows, err := cmd.QueryHookServer(path)
+		rows, err := cmd.QueryHookServer(path, step.HookServerMinCount)
 		if err != nil {
 			t.Errorf("failed to query hook server: %v", err)
 			return nil, state, false
 		}
 		if step.HookServerOutput != nil {
+			renderedRows, ok := renderTemplateString(t, cmd, prevSteps, step.HookServerOutput.Rows)
+			if !ok {
+				return nil, state, false
+			}
 			renderedStep := step
-			renderedStep.QueryOutput = step.HookServerOutput
-			ok := validateQueryResult(t, renderedStep, rows)
+			hookServerQueryOutput := QueryOutput{Rows: renderedRows}
+			renderedStep.QueryOutput = &hookServerQueryOutput
+			ok = validateQueryResult(t, renderedStep, rows)
 			if !ok {
 				return nil, state, false
 			}
@@ -1047,6 +1052,20 @@ func makeTemplateFuncMap(cmd *End2EndCmd) texttemplate.FuncMap {
 		}
 		return jwtStr
 	}
+	templateFuncMap["generatePasskeyAttestation"] = func(options any, origin string) string {
+		response, err := GeneratePasskeyAttestation(options, origin)
+		if err != nil {
+			panic(err)
+		}
+		return response
+	}
+	templateFuncMap["generatePasskeyAssertion"] = func(options any, origin string) string {
+		response, err := GeneratePasskeyAssertion(options, origin)
+		if err != nil {
+			panic(err)
+		}
+		return response
+	}
 	templateFuncMap["nodeID"] = func(nodeType string, uuid string) string {
 		return relay.ToGlobalID(nodeType, uuid)
 	}
@@ -1420,7 +1439,7 @@ func validateHTTPOutput(t *testing.T, cmd *End2EndCmd, prevSteps []StepResult, s
 			ok = false
 		}
 	}
-	if len(httpOutput.HTMLXPathExists) > 0 || len(httpOutput.HTMLTextContains) > 0 {
+	if len(httpOutput.HTMLXPathExists) > 0 || len(httpOutput.HTMLTextContains) > 0 || len(httpOutput.HTMLTextNotContains) > 0 {
 		if !validateHTTPHTML(t, cmd, prevSteps, step, httpOutput, response) {
 			ok = false
 		}
