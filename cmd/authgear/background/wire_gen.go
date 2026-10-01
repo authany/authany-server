@@ -345,6 +345,7 @@ func newUserService(p *deps.BackgroundProvider, appID string, appContext *config
 		Request:            request,
 		TrustProxy:         trustProxy,
 		TranslationService: translationService,
+		OAuthConfig:        oAuthConfig,
 	}
 	passkeyService := &passkey2.Service{
 		Store:         store2,
@@ -1098,9 +1099,12 @@ func newSenderImpl(p *deps.BackgroundProvider, appID string, appContext *config.
 	configConfig := appContext.Config
 	appConfig := configConfig.AppConfig
 	httpConfig := appConfig.HTTP
+	featureConfig := configConfig.FeatureConfig
+	httpFeatureConfig := featureConfig.HTTP
 	telemetryConfig := appConfig.Telemetry
 	secretConfig := configConfig.SecretConfig
 	telemetryAuditLogStreamTLSMaterials := deps.ProvideTelemetryAuditLogStreamTLSMaterials(secretConfig)
-	senderImpl := auditlogstreaming.NewSenderImpl(appID, httpConfig, telemetryConfig, telemetryAuditLogStreamTLSMaterials)
+	telemetryAuditLogStreamDatadogCredentials := deps.ProvideTelemetryAuditLogStreamDatadogCredentials(secretConfig)
+	senderImpl := auditlogstreaming.NewSenderImpl(appID, httpConfig, httpFeatureConfig, telemetryConfig, telemetryAuditLogStreamTLSMaterials, telemetryAuditLogStreamDatadogCredentials)
 	return senderImpl
 }

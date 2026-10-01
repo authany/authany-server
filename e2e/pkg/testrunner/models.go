@@ -310,6 +310,7 @@ var _ = TestCaseSchema.Add("Step", `
 		"http_request_session_cookie": { "$ref": "#/$defs/SessionCookie" },
 		"http_output": { "$ref": "#/$defs/HTTPOutput" },
 		"hook_server_path": { "type": "string" },
+		"hook_server_min_count": { "type": "integer" },
 		"hook_server_output": { "$ref": "#/$defs/QueryOutput" },
 		"smtp_log_subject": { "type": "string" },
 		"smtp_log_recipient": { "type": "string" },
@@ -656,8 +657,9 @@ type Step struct {
 	HTTPOutput                    *HTTPOutput       `json:"http_output"`
 
 	// `action` == "hook_server_query"
-	HookServerPath   string       `json:"hook_server_path"`
-	HookServerOutput *QueryOutput `json:"hook_server_output"`
+	HookServerPath     string       `json:"hook_server_path"`
+	HookServerMinCount int          `json:"hook_server_min_count"`
+	HookServerOutput   *QueryOutput `json:"hook_server_output"`
 
 	// `action` == "smtp_log_query"
 	SMTPLogSubject   string       `json:"smtp_log_subject"`
@@ -801,6 +803,7 @@ var _ = TestCaseSchema.Add("HTTPOutput", `
 		"json_body": { "type": "string" },
 		"html_xpath_exists": { "type": "array", "items": { "type": "string" } },
 		"html_text_contains": { "type": "array", "items": { "type": "string" } },
+		"html_text_not_contains": { "type": "array", "items": { "type": "string" } },
 		"location_not_contains": { "type": "array", "items": { "type": "string" } },
 		"location_contains": { "type": "array", "items": { "type": "string" } },
 		"headers": {
@@ -820,6 +823,7 @@ type HTTPOutput struct {
 	LocationContains    []string          `json:"location_contains"`
 	HTMLXPathExists     []string          `json:"html_xpath_exists"`
 	HTMLTextContains    []string          `json:"html_text_contains"`
+	HTMLTextNotContains []string          `json:"html_text_not_contains"`
 	// Headers asserts exact values of specific response headers (e.g. the
 	// resolver endpoint's X-Authgear-Session-Valid, which -- unlike every
 	// other action in this file -- signals its result purely through a
