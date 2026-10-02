@@ -37865,6 +37865,7 @@ func newWebAppAuthflowV2SettingsAuthorizedAppHandler(p *deps.RequestProvider) ht
 		Request:            request,
 		TrustProxy:         trustProxy,
 		TranslationService: translationService,
+		OAuthConfig:        oAuthConfig,
 	}
 	passkeyService := &passkey2.Service{
 		Store:         store2,
