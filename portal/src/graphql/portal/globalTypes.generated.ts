@@ -145,6 +145,7 @@ export enum AppSecretKey {
   SamlSpSigningSecrets = 'SAML_SP_SIGNING_SECRETS',
   SmsProviderSecrets = 'SMS_PROVIDER_SECRETS',
   SmtpSecret = 'SMTP_SECRET',
+  TelemetryAuditLogStreamSecrets = 'TELEMETRY_AUDIT_LOG_STREAM_SECRETS',
   WebhookSecret = 'WEBHOOK_SECRET'
 }
 
@@ -1052,6 +1053,7 @@ export type SecretConfig = {
   samlSpSigningSecrets?: Maybe<Array<SamlSpSigningSecrets>>;
   smsProviderSecrets?: Maybe<SmsProviderSecrets>;
   smtpSecret?: Maybe<SmtpSecret>;
+  telemetryAuditLogStreamSecrets?: Maybe<TelemetryAuditLogStreamSecrets>;
   webhookSecret?: Maybe<WebhookSecret>;
 };
 
@@ -1064,6 +1066,7 @@ export type SecretConfigUpdateInstructionsInput = {
   samlSpSigningSecrets?: InputMaybe<SamlSpSigningSecretsUpdateInstructionsInput>;
   smsProviderSecrets?: InputMaybe<SmsProviderSecretsUpdateInstructionsInput>;
   smtpSecret?: InputMaybe<SmtpSecretUpdateInstructionsInput>;
+  telemetryAuditLogStreamSecrets?: InputMaybe<TelemetryAuditLogStreamSecretsUpdateInstructionsInput>;
 };
 
 export type SendTestSmsInput = {
@@ -1174,6 +1177,36 @@ export type SubscriptionUsageItem = {
   unitAmount?: Maybe<Scalars['Int']['output']>;
   usageType: UsageType;
   whatsappRegion: UsageWhatsappRegion;
+};
+
+export type TelemetryAuditLogStreamDatadogSecret = {
+  __typename?: 'TelemetryAuditLogStreamDatadogSecret';
+  apiKey?: Maybe<Scalars['String']['output']>;
+  streamName: Scalars['String']['output'];
+};
+
+export type TelemetryAuditLogStreamDatadogSecretInput = {
+  apiKey: Scalars['String']['input'];
+  streamName: Scalars['String']['input'];
+};
+
+export type TelemetryAuditLogStreamSecrets = {
+  __typename?: 'TelemetryAuditLogStreamSecrets';
+  datadog?: Maybe<Array<TelemetryAuditLogStreamDatadogSecret>>;
+};
+
+export type TelemetryAuditLogStreamSecretsCleanupDataInput = {
+  keepStreamNames: Array<Scalars['String']['input']>;
+};
+
+export type TelemetryAuditLogStreamSecretsSetDataInput = {
+  datadog: Array<TelemetryAuditLogStreamDatadogSecretInput>;
+};
+
+export type TelemetryAuditLogStreamSecretsUpdateInstructionsInput = {
+  action: Scalars['String']['input'];
+  cleanupData?: InputMaybe<TelemetryAuditLogStreamSecretsCleanupDataInput>;
+  setData?: InputMaybe<TelemetryAuditLogStreamSecretsSetDataInput>;
 };
 
 export enum TransformQuantityRound {
