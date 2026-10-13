@@ -19,6 +19,8 @@ FROM node:24.16.0-bookworm AS authgear-portal-stage-1
 # If the working directory is /src, Parcel will have some problem with it.
 WORKDIR /usr/src/app
 COPY ./portal/package.json ./portal/package-lock.json ./
+# file: dependency. npm ci fails if this tree is missing.
+COPY ./portal/vendor/storybook-addon-comments ./vendor/storybook-addon-comments
 # Copy the scripts
 COPY ./portal/scripts/. ./scripts/.
 RUN npm ci
@@ -26,7 +28,7 @@ COPY ./portal .
 RUN npm run build
 
 # Stage 2: Build the Go binary
-FROM quay.io/theauthgear/golang:1.26.6-noble AS authgear-portal-stage-2
+FROM quay.io/theauthgear/golang:1.26.9-noble AS authgear-portal-stage-2
 
 # Install build time C dependencies
 RUN set -eux; \
