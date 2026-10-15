@@ -397,10 +397,11 @@ export function AuthenticatorPhoneOTPMode_includesWhatsapp(
   }
 }
 
+// WhatsApp first so the portal shows it before SMS.
 export const AuthenticatorPhoneOTPMode_list: AuthenticatorPhoneOTPMode[] = [
-  "sms",
-  "whatsapp_sms",
   "whatsapp",
+  "whatsapp_sms",
+  "sms",
 ];
 
 export interface AuthenticationRateLimitsConfig {
@@ -1145,6 +1146,7 @@ export interface PortalAPIFeatureConfig {
   google_tag_manager?: GoogleTagManagerFeatureConfig;
   messaging?: MessagingFeatureConfig;
   fraud_protection?: FraudProtectionFeatureConfig;
+  portal?: PortalFeatureConfig;
   collaborator?: CollaboratorFeatureConfig;
   usage?: UsageFeatureConfig;
 }
@@ -1255,6 +1257,11 @@ export interface CustomDomainFeatureConfig {
 export interface UIFeatureConfig {
   white_labeling?: WhiteLabelingFeatureConfig;
   phone_input?: PhoneInputFeatureConfig;
+}
+
+// Flags that only show or hide portal screens.
+export interface PortalFeatureConfig {
+  auth_flow_builder_enabled?: boolean;
 }
 
 export interface PhoneInputFeatureConfig {
