@@ -89,11 +89,21 @@ func (m *SessionInfoMiddleware) jwtToSessionInfo(jwkSet jwk.Set, header http.Hea
 		return
 	}
 
+	// Only accept access tokens issued for the project itself. A token bound to a
+	// resource (RFC 8707) carries aud = [<resource_uri>] instead, and may have been
+	// issued to a third-party client; accepting it here would let that client act as
+	// the user in the portal.
+	audience, err := m.expectedAudience()
+	if err != nil {
+		return
+	}
+
 	token, err := jwt.ParseString(rawToken,
 		jwt.WithVerify(true),
 		jwt.WithKeySet(jwkSet),
 		jwt.WithClock(jwtClock{m.Clock}),
 		jwt.WithAcceptableSkew(duration.ClockSkew),
+		jwt.WithAudience(audience),
 	)
 	if err != nil {
 		return
@@ -152,6 +162,19 @@ func (m *SessionInfoMiddleware) jwtToSessionInfo(jwkSet jwk.Set, header http.Hea
 
 	sessionInfo.IsValid = true
 	return
+}
+
+// expectedAudience is the aud of a JWT access token the project issues without a
+// resource indicator: the origin of the project endpoint.
+func (m *SessionInfoMiddleware) expectedAudience() (string, error) {
+	u, err := url.Parse(m.AuthgearConfig.Endpoint)
+	if err != nil {
+		return "", err
+	}
+	if u.Scheme == "" || u.Host == "" {
+		return "", fmt.Errorf("invalid authgear endpoint: %q", m.AuthgearConfig.Endpoint)
+	}
+	return u.Scheme + "://" + u.Host, nil
 }
 
 func (m *SessionInfoMiddleware) getJWKs(ctx context.Context) (jwk.Set, error) {
