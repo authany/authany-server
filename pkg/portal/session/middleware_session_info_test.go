@@ -12,6 +12,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/authgear/authgear-server/pkg/api/model"
+	portalconfig "github.com/authgear/authgear-server/pkg/portal/config"
 	"github.com/authgear/authgear-server/pkg/util/clock"
 	"github.com/authgear/authgear-server/pkg/util/jwtutil"
 )
@@ -65,11 +66,23 @@ func buildTestJWKSet(t *testing.T) (privateJWKSet jwk.Set, publicJWKSet jwk.Set)
 	return set, pubSet
 }
 
-// signToken builds and signs a JWT with the given typ header and claims.
+const testEndpoint = "https://accounts.example.com"
+
+// signToken builds and signs a JWT with the given typ header and claims,
+// issued for the project itself (aud = the project endpoint).
 func signToken(t *testing.T, privJWKSet jwk.Set, typ string, sub string, issuedAt time.Time, expiry time.Time) string {
+	t.Helper()
+	return signTokenWithAudience(t, privJWKSet, typ, sub, issuedAt, expiry, []string{testEndpoint})
+}
+
+// signTokenWithAudience is signToken with an explicit aud; nil leaves aud out.
+func signTokenWithAudience(t *testing.T, privJWKSet jwk.Set, typ string, sub string, issuedAt time.Time, expiry time.Time, aud []string) string {
 	t.Helper()
 
 	claims := jwt.New()
+	if aud != nil {
+		_ = claims.Set(jwt.AudienceKey, aud)
+	}
 	_ = claims.Set(jwt.SubjectKey, sub)
 	_ = claims.Set(jwt.IssuedAtKey, issuedAt.Unix())
 	_ = claims.Set(jwt.ExpirationKey, expiry.Unix())
@@ -102,7 +115,8 @@ func TestJWTToSessionInfo(t *testing.T) {
 
 		now := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
 		m := &SessionInfoMiddleware{
-			Clock: clock.NewMockClockAtTime(now),
+			AuthgearConfig: &portalconfig.AuthgearConfig{Endpoint: testEndpoint},
+			Clock:          clock.NewMockClockAtTime(now),
 		}
 
 		Convey("valid at+jwt access token returns valid session", func() {
@@ -136,6 +150,31 @@ func TestJWTToSessionInfo(t *testing.T) {
 			token := signToken(t, privJWKSet, "at+jwt", "user123", now.Add(-2*time.Hour), now.Add(-1*time.Hour))
 			info := m.jwtToSessionInfo(pubJWKSet, makeHeader(token))
 			So(info.IsValid, ShouldBeFalse)
+		})
+
+		Convey("resource-bound token (aud = resource URI) is rejected", func() {
+			token := signTokenWithAudience(t, privJWKSet, "at+jwt", "user123", now.Add(-1*time.Minute), now.Add(1*time.Hour), []string{"https://mcp.example.com/mcp"})
+			info := m.jwtToSessionInfo(pubJWKSet, makeHeader(token))
+			So(info.IsValid, ShouldBeFalse)
+		})
+
+		Convey("token issued by another project is rejected", func() {
+			token := signTokenWithAudience(t, privJWKSet, "at+jwt", "user123", now.Add(-1*time.Minute), now.Add(1*time.Hour), []string{"https://other.example.com"})
+			info := m.jwtToSessionInfo(pubJWKSet, makeHeader(token))
+			So(info.IsValid, ShouldBeFalse)
+		})
+
+		Convey("token without aud is rejected", func() {
+			token := signTokenWithAudience(t, privJWKSet, "at+jwt", "user123", now.Add(-1*time.Minute), now.Add(1*time.Hour), nil)
+			info := m.jwtToSessionInfo(pubJWKSet, makeHeader(token))
+			So(info.IsValid, ShouldBeFalse)
+		})
+
+		Convey("aud is the endpoint origin, ignoring any path on the endpoint", func() {
+			m.AuthgearConfig = &portalconfig.AuthgearConfig{Endpoint: testEndpoint + "/"}
+			token := signToken(t, privJWKSet, "at+jwt", "user123", now.Add(-1*time.Minute), now.Add(1*time.Hour))
+			info := m.jwtToSessionInfo(pubJWKSet, makeHeader(token))
+			So(info.IsValid, ShouldBeTrue)
 		})
 
 		Convey("token signed with a different key returns invalid session", func() {
