@@ -186,3 +186,102 @@ func TestJWTToSessionInfo(t *testing.T) {
 		})
 	})
 }
+
+func signTokenWithClaims(t *testing.T, privJWKSet jwk.Set, typ string, claimValues map[string]any) string {
+	t.Helper()
+	claims := jwt.New()
+	for k, v := range claimValues {
+		_ = claims.Set(k, v)
+	}
+	privKey, _ := privJWKSet.Key(0)
+	hdr := jws.NewHeaders()
+	_ = hdr.Set("typ", typ)
+	signed, err := jwtutil.SignWithHeader(claims, hdr, jwa.RS256, privKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(signed)
+}
+
+func TestVerifyResourceAccessToken(t *testing.T) {
+	Convey("VerifyResourceAccessToken", t, func() {
+		privJWKSet, pubJWKSet := buildTestJWKSet(t)
+		simpleCache.Set(cacheKeyJWKs, pubJWKSet, 0)
+		defer simpleCache.Delete(cacheKeyJWKs)
+
+		const resource = "https://mcp.example.com/mcp"
+		now := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+		m := &SessionInfoMiddleware{
+			AuthgearConfig: &portalconfig.AuthgearConfig{Endpoint: testEndpoint},
+			Clock:          clock.NewMockClockAtTime(now),
+		}
+		claims := func(overrides map[string]any) map[string]any {
+			c := map[string]any{
+				jwt.IssuerKey:                            testEndpoint,
+				jwt.AudienceKey:                          []string{resource},
+				jwt.SubjectKey:                           "user123",
+				jwt.IssuedAtKey:                          now.Add(-1 * time.Minute).Unix(),
+				jwt.ExpirationKey:                        now.Add(5 * time.Minute).Unix(),
+				"client_id":                              "https://agent.example.com/client.json",
+				"scope":                                  "projects:read users:read",
+				string(model.ClaimUserIsAnonymous):       false,
+				string(model.ClaimUserIsVerified):        true,
+				string(model.ClaimUserCanReauthenticate): true,
+				string(model.ClaimAuthgearRoles):         []any{},
+			}
+			for k, v := range overrides {
+				if v == nil {
+					delete(c, k)
+				} else {
+					c[k] = v
+				}
+			}
+			return c
+		}
+		verify := func(token string) (*model.SessionInfo, jwt.Token, error) {
+			return m.VerifyResourceAccessToken(t.Context(), token, resource)
+		}
+
+		Convey("accepts a token issued for the resource", func() {
+			info, token, err := verify(signTokenWithClaims(t, privJWKSet, "at+jwt", claims(nil)))
+			So(err, ShouldBeNil)
+			So(info.IsValid, ShouldBeTrue)
+			So(info.UserID, ShouldEqual, "user123")
+			scope, _ := token.Get("scope")
+			So(scope, ShouldEqual, "projects:read users:read")
+		})
+
+		Convey("rejects a token issued for the project itself", func() {
+			_, _, err := verify(signTokenWithClaims(t, privJWKSet, "at+jwt", claims(map[string]any{jwt.AudienceKey: testEndpoint})))
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("rejects a token issued for another resource", func() {
+			_, _, err := verify(signTokenWithClaims(t, privJWKSet, "at+jwt", claims(map[string]any{jwt.AudienceKey: []string{"https://api.example.com"}})))
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("rejects a token from another issuer", func() {
+			_, _, err := verify(signTokenWithClaims(t, privJWKSet, "at+jwt", claims(map[string]any{jwt.IssuerKey: "https://other.example.com"})))
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("rejects an expired token", func() {
+			_, _, err := verify(signTokenWithClaims(t, privJWKSet, "at+jwt", claims(map[string]any{jwt.ExpirationKey: now.Add(-10 * time.Minute).Unix()})))
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("rejects an id_token", func() {
+			_, _, err := verify(signTokenWithClaims(t, privJWKSet, "JWT", claims(nil)))
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("rejects a token without user claims instead of panicking", func() {
+			_, _, err := verify(signTokenWithClaims(t, privJWKSet, "at+jwt", claims(map[string]any{
+				string(model.ClaimUserIsAnonymous): nil,
+				string(model.ClaimAuthgearRoles):   nil,
+			})))
+			So(err, ShouldNotBeNil)
+		})
+	})
+}
