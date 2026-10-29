@@ -889,6 +889,16 @@ var nodeApp = node(
 					return gqlCtx.CollaboratorInvitations.LoadMany(ctx, ids).Value, nil
 				},
 			},
+			"projectName": &graphql.Field{
+				Description: "The name collaborators know the project by; null when unset (Authany)",
+				Type:        graphql.String,
+				Resolve: func(p graphql.ResolveParams) (any, error) {
+					ctx := p.Context
+					gqlCtx := GQLContext(ctx)
+					app := p.Source.(*model.App)
+					return gqlCtx.AppProfileService.GetProjectName(ctx, app.ID)
+				},
+			},
 			"tutorialStatus": &graphql.Field{
 				Type: graphql.NewNonNull(tutorialStatus),
 				Resolve: func(p graphql.ResolveParams) (any, error) {

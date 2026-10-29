@@ -6,6 +6,7 @@ var tableNames []string = []string{
 	"_portal_config_source",
 	"_portal_app_collaborator",
 	"_portal_app_collaborator_invitation",
+	"_portal_app_profile",
 	"_portal_domain",
 	"_portal_tutorial_progress",
 	"_portal_usage_record",

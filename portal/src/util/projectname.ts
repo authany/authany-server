@@ -105,3 +105,31 @@ export function processCompanyName(companyName: string): string {
     .join("-")
     .toLowerCase();
 }
+
+// Matches ProjectNameMaxLength in pkg/portal/service/app_profile.go.
+export const PROJECT_NAME_MAX_LENGTH = 100;
+
+export function isProjectNameTooLong(name: string): boolean {
+  return Array.from(name.trim()).length > PROJECT_NAME_MAX_LENGTH;
+}
+
+interface NamedProject {
+  appID: string;
+  projectName?: string | null;
+}
+
+// The name a project is shown by in the portal: its project name, else its ID.
+// (Authany)
+export function projectDisplayName(project: NamedProject): string {
+  return project.projectName ?? project.appID;
+}
+
+export function compareProjectsByDisplayName(
+  a: NamedProject,
+  b: NamedProject
+): number {
+  return (
+    projectDisplayName(a).localeCompare(projectDisplayName(b)) ||
+    a.appID.localeCompare(b.appID)
+  );
+}

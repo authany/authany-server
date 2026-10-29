@@ -1,0 +1,8 @@
+mutation updateProjectNameMutation($appID: ID!, $projectName: String!) {
+  updateProjectName(input: { appID: $appID, projectName: $projectName }) {
+    app {
+      id
+      projectName
+    }
+  }
+}

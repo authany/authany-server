@@ -67,8 +67,9 @@ func NewPortalFeatureConfig(c *config.FeatureConfig) *PortalFeatureConfig {
 }
 
 type AppListItem struct {
-	AppID        string `json:"appID,omitempty"`
-	PublicOrigin string `json:"publicOrigin,omitempty"`
+	AppID        string  `json:"appID,omitempty"`
+	PublicOrigin string  `json:"publicOrigin,omitempty"`
+	ProjectName  *string `json:"projectName,omitempty"`
 }
 
 type App struct {

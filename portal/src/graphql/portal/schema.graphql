@@ -72,6 +72,9 @@ type App implements Node {
   """"""
   planName: String!
 
+  """The name collaborators know the project by; null when unset (Authany)"""
+  projectName: String
+
   """"""
   rawAppConfig: AppConfig!
 
@@ -113,6 +116,9 @@ scalar AppConfig
 type AppListItem {
   """"""
   appID: String!
+
+  """"""
+  projectName: String
 
   """"""
   publicOrigin: String!
@@ -585,6 +591,9 @@ type Mutation {
 
   """Update app"""
   updateApp(input: UpdateAppInput!): UpdateAppPayload!
+
+  """Update the name collaborators know the project by (Authany)"""
+  updateProjectName(input: UpdateProjectNameInput!): UpdateProjectNamePayload!
 
   """Update subscription"""
   updateSubscription(input: UpdateSubscriptionInput!): UpdateSubscriptionPayload!
@@ -1787,6 +1796,21 @@ input UpdateAppInput {
 
 """"""
 type UpdateAppPayload {
+  """"""
+  app: App!
+}
+
+""""""
+input UpdateProjectNameInput {
+  """App ID to update."""
+  appID: ID!
+
+  """The new project name. An empty string removes it."""
+  projectName: String!
+}
+
+""""""
+type UpdateProjectNamePayload {
   """"""
   app: App!
 }

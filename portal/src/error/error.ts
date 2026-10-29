@@ -21,6 +21,7 @@ import {
 import {
   APIDuplicatedAppIDError,
   APIInvalidAppIDError,
+  APIInvalidProjectNameError,
   APIReservedAppIDError,
 } from "./apps";
 import {
@@ -162,6 +163,7 @@ export type APIError = { message?: string } & (
   | APICollaboratorDuplicateError
   | APIDuplicatedAppIDError
   | APIInvalidAppIDError
+  | APIInvalidProjectNameError
   | APIReservedAppIDError
   | APIResourceNotFoundError
   | APIResourceTooLargeError

@@ -7,6 +7,9 @@ import ShowError from "../../../ShowError";
 import ScreenLayoutScrollView from "../../../ScreenLayoutScrollView";
 import { useCapture } from "../../../gtm_v2";
 import { useAppAndSecretConfigQuery } from "../query/appAndSecretConfigQuery";
+import { useProjectNameQueryQuery } from "../query/projectNameQuery.generated";
+import { usePortalClient } from "../apollo";
+import Link from "../../../Link";
 
 import HeroLoginCard from "./HeroLoginCard";
 import HeroIntegrateCard from "./HeroIntegrateCard";
@@ -26,6 +29,7 @@ import styles from "./GetStartedScreen.module.css";
 const DOCS_CUSTOM_UI = "https://docs.authgear.com/customization/custom-ui";
 
 interface GetStartedScreenContentProps {
+  projectDisplayName: string;
   publicOrigin: string;
   numberOfClients: number;
 }
@@ -33,7 +37,7 @@ interface GetStartedScreenContentProps {
 function GetStartedScreenContent(
   props: GetStartedScreenContentProps
 ): React.ReactElement {
-  const { publicOrigin, numberOfClients } = props;
+  const { projectDisplayName, publicOrigin, numberOfClients } = props;
   const { appID } = useParams() as { appID: string };
   const capture = useCapture();
   const hasApp = numberOfClients > 0;
@@ -106,6 +110,14 @@ function GetStartedScreenContent(
   return (
     <ScreenLayoutScrollView>
       <div className={styles.root}>
+        <div className={styles.pageHeader}>
+          <Heading as="h1" className={styles.pageTitle}>
+            {projectDisplayName}
+          </Heading>
+          <Link to={`/project/${appID}/project-settings`}>
+            <FormattedMessage id="GetStartedScreen.project-settings-link" />
+          </Link>
+        </div>
         <div className={styles.heroRow}>
           <HeroLoginCard
             appID={appID}
@@ -135,6 +147,19 @@ export default function GetStartedScreen(): React.ReactElement {
 
   const { effectiveAppConfig, isLoading, loadError, refetch } =
     useAppAndSecretConfigQuery(appID);
+  const client = usePortalClient();
+  // The title falls back to the project ID while this loads or if it fails.
+  const projectNameQuery = useProjectNameQueryQuery({
+    client,
+    variables: { id: appID },
+  });
+  const node = projectNameQuery.data?.node;
+  const projectName = node?.__typename === "App" ? node.projectName : null;
+  useEffect(() => {
+    if (projectNameQuery.error != null) {
+      console.error(projectNameQuery.error);
+    }
+  }, [projectNameQuery.error]);
 
   if (isLoading || !effectiveAppConfig) {
     return <ShowLoading />;
@@ -147,6 +172,7 @@ export default function GetStartedScreen(): React.ReactElement {
 
   return (
     <GetStartedScreenContent
+      projectDisplayName={projectName ?? effectiveAppConfig.id}
       publicOrigin={effectiveAppConfig.http?.public_origin ?? ""}
       numberOfClients={effectiveAppConfig.oauth?.clients?.length ?? 0}
     />

@@ -51,6 +51,7 @@ var DependencySet = wire.NewSet(
 	wire.Struct(new(AuditService), "*"),
 	wire.Struct(new(OnboardService), "*"),
 	wire.Struct(new(TokenService), "*"),
+	wire.Struct(new(AppProfileService), "*"),
 
 	wire.Bind(new(AppAuthzService), new(*AuthzService)),
 	wire.Bind(new(AppConfigService), new(*ConfigService)),
@@ -64,6 +65,7 @@ var DependencySet = wire.NewSet(
 	wire.Bind(new(AdminAPIDefaultDomainService), new(*DefaultDomainService)),
 	wire.Bind(new(DefaultDomainDomainService), new(*DomainService)),
 	wire.Bind(new(AuditServiceAppService), new(*AppService)),
+	wire.Bind(new(AppProjectNameService), new(*AppProfileService)),
 )
 
 type NoopAttributesService struct{}

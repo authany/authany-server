@@ -29,9 +29,11 @@ import { useCapture } from "../../gtm_v2";
 import { toTypedID } from "../../util/graphql";
 import { useSystemConfig } from "../../context/SystemConfigContext";
 import { shouldShowSurvey } from "../../util/survey";
+import { compareProjectsByDisplayName } from "../../util/projectname";
 
 interface AppRowData {
   appID: string;
+  projectName: string | null;
   publicOrigin: string;
   url: string;
 }
@@ -65,6 +67,7 @@ interface AppRowProps extends AppRowData {
 const AppRow: React.VFC<AppRowProps> = function AppRow(props: AppRowProps) {
   const {
     appID,
+    projectName,
     publicOrigin,
     url,
     optionID,
@@ -105,9 +108,16 @@ const AppRow: React.VFC<AppRowProps> = function AppRow(props: AppRowProps) {
       onClick={onClick}
       onMouseMove={onMouseMove}
     >
-      <Text as="p" size="2" weight="medium" className={styles.rowAppID}>
-        {appID}
-      </Text>
+      <div className={styles.rowName}>
+        <Text as="p" size="2" weight="medium" className={styles.rowAppID}>
+          {projectName ?? appID}
+        </Text>
+        {projectName != null ? (
+          <Text as="p" size="1" className={styles.rowSecondaryAppID}>
+            {appID}
+          </Text>
+        ) : null}
+      </div>
       <Text as="p" size="2" truncate={true} className={styles.rowOrigin}>
         {publicOrigin}
       </Text>
@@ -171,13 +181,14 @@ const AppListPanel: React.VFC<AppListPanelProps> = function AppListPanel(
   const [searchKeyword, setSearchKeyword] = useState("");
 
   const appRowsData: AppRowData[] = useMemo(() => {
-    // The API returns the list sorted A-Z by app ID.
-    return apps.map((app) => {
+    // Sorted by the name shown in each row; the API sorts by app ID.
+    return [...apps].sort(compareProjectsByDisplayName).map((app) => {
       const appID = app.appID;
       const typedID = toTypedID("App", appID);
       const relPath = "/project/" + encodeURIComponent(typedID);
       return {
         appID,
+        projectName: app.projectName ?? null,
         publicOrigin: app.publicOrigin,
         url: relPath,
       };
@@ -192,6 +203,7 @@ const AppListPanel: React.VFC<AppListPanelProps> = function AppListPanel(
     return appRowsData.filter(
       (a) =>
         a.appID.toLowerCase().includes(keyword) ||
+        (a.projectName?.toLowerCase().includes(keyword) ?? false) ||
         a.publicOrigin.toLowerCase().includes(keyword)
     );
   }, [appRowsData, searchKeyword]);

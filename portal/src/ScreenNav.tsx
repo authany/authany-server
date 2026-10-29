@@ -8,6 +8,7 @@ import {
   CalendarIcon,
   ChevronRightIcon,
   CodeIcon,
+  CubeIcon,
   DashboardIcon,
   ExclamationTriangleIcon,
   FileTextIcon,
@@ -190,6 +191,13 @@ const ScreenNav: React.VFC<ScreenNavProps> = function ScreenNav(props) {
         textKey: "ScreenNav.getting-started",
         url: `/project/${appID}/getting-started`,
         icon: RocketIcon,
+      },
+      // Authany: project name, ID and login domain.
+      {
+        type: "link" as const,
+        textKey: "ScreenNav.project-settings",
+        url: `/project/${appID}/project-settings`,
+        icon: CubeIcon,
       },
       {
         type: "link" as const,

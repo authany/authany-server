@@ -12,3 +12,8 @@ export interface APIInvalidAppIDError {
   errorName: "Invalid";
   reason: "InvalidAppID";
 }
+
+export interface APIInvalidProjectNameError {
+  errorName: "Invalid";
+  reason: "InvalidProjectName";
+}

@@ -130,6 +130,16 @@
   word-break: break-word;
 }
 
+.rowName {
+  min-width: 0;
+}
+
+.rowSecondaryAppID {
+  color: var(--gray-a10);
+  /* stylelint-disable-next-line declaration-property-value-keyword-no-deprecated */
+  word-break: break-word;
+}
+
 .rowOrigin {
   color: var(--gray-a11);
   text-align: right;
