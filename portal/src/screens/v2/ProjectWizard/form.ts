@@ -5,6 +5,7 @@ import { produce } from "immer";
 import { parse as parseCSS } from "postcss";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  isProjectNameTooLong,
   processCompanyName,
   projectIDFromCompanyName,
   randomProjectID,
@@ -13,6 +14,7 @@ import { useCreateAppMutation } from "../../../graphql/portal/mutations/createAp
 import { useOptionalAppContext } from "../../../context/AppContext";
 import { useSaveProjectWizardDataMutation } from "../../../graphql/portal/mutations/saveProjectWizardDataMutation";
 import { useUpdateProjectNameMutationMutation } from "../../../graphql/portal/mutations/updateProjectNameMutation.generated";
+import { AppListQueryDocument } from "../../../graphql/portal/query/appListQuery.generated";
 import {
   LoginIDKeyConfig,
   OAuthSSOProviderConfig,
@@ -397,7 +399,7 @@ export function useProjectWizardForm(
   // Authany: the wizard's project name is also the name the portal shows.
   const [updateProjectNameMutation] = useUpdateProjectNameMutationMutation({
     client: portalClient,
-    refetchQueries: ["appListQuery"],
+    refetchQueries: [{ query: AppListQueryDocument }],
   });
 
   const skip = existingAppNodeID == null;
@@ -473,11 +475,15 @@ export function useProjectWizardForm(
               sanitizedFormState.projectID,
               updatedState
             );
+            // The project exists now: a failed name save must not keep the
+            // wizard on this step, where Next would create it again.
             await updateProjectNameMutation({
               variables: {
                 appID: appID!,
                 projectName: sanitizedFormState.projectName,
               },
+            }).catch((e: unknown) => {
+              console.error(e);
             });
             return {
               result: `/project/${encodeURIComponent(appID!)}/wizard`,
@@ -843,7 +849,8 @@ function computeCanSave(formStateSanitized: FormState): boolean {
     case ProjectWizardStep.step1:
       return (
         formStateSanitized.projectID.trim() !== "" &&
-        formStateSanitized.projectName.trim() !== ""
+        formStateSanitized.projectName.trim() !== "" &&
+        !isProjectNameTooLong(formStateSanitized.projectName)
       );
     case ProjectWizardStep.step2: {
       if (formStateSanitized.loginMethods.length === 0) {

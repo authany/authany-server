@@ -31,6 +31,16 @@ func TestNormalizeProjectName(t *testing.T) {
 		Convey("rejects control characters", func() {
 			_, err := NormalizeProjectName("a\nb")
 			So(err, ShouldBeError, "project name contains control characters")
+			_, err = NormalizeProjectName("abc\u202edef")
+			So(err, ShouldBeError, "project name contains control characters")
+			_, err = NormalizeProjectName("\u200b")
+			So(err, ShouldBeError, "project name contains control characters")
+		})
+
+		Convey("keeps emoji joined by U+200D", func() {
+			name, err := NormalizeProjectName("Dev \U0001F468\u200d\U0001F4BB")
+			So(err, ShouldBeNil)
+			So(name, ShouldEqual, "Dev \U0001F468\u200d\U0001F4BB")
 		})
 	})
 }

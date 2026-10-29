@@ -10,6 +10,10 @@ import { TextField } from "../../../components/v2/TextField/TextField";
 import { produce } from "immer";
 import { useSystemConfig } from "../../../context/SystemConfigContext";
 import { ErrorParseRule, makeReasonErrorParseRule } from "../../../error/parse";
+import {
+  PROJECT_NAME_MAX_LENGTH,
+  isProjectNameTooLong,
+} from "../../../util/projectname";
 
 const errorRules: ErrorParseRule[] = [
   makeReasonErrorParseRule(
@@ -59,6 +63,14 @@ export function Step1(): React.ReactElement {
             "ProjectWizardScreen.step1.fields.projectName.placeholder"
           )}
           value={form.state.projectName}
+          error={
+            isProjectNameTooLong(form.state.projectName) ? (
+              <FormattedMessage
+                id="ProjectSettingsScreen.project-name.error.too-long"
+                values={{ max: PROJECT_NAME_MAX_LENGTH }}
+              />
+            ) : undefined
+          }
           onChange={useCallback(
             (e: React.ChangeEvent<HTMLInputElement>) => {
               const value = e.currentTarget.value;

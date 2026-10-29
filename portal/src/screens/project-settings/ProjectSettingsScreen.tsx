@@ -18,10 +18,12 @@ import { useAppAndSecretConfigQuery } from "../../graphql/portal/query/appAndSec
 import { useProjectNameQueryQuery } from "../../graphql/portal/query/projectNameQuery.generated";
 import { useUpdateProjectNameMutationMutation } from "../../graphql/portal/mutations/updateProjectNameMutation.generated";
 import { usePortalClient } from "../../graphql/portal/apollo";
+import { AppListQueryDocument } from "../../graphql/portal/query/appListQuery.generated";
+import {
+  PROJECT_NAME_MAX_LENGTH,
+  isProjectNameTooLong,
+} from "../../util/projectname";
 import styles from "./ProjectSettingsScreen.module.css";
-
-// Matches ProjectNameMaxLength in pkg/portal/service/app_profile.go.
-const PROJECT_NAME_MAX_LENGTH = 100;
 
 const PROJECT_NAME_ERROR_RULES = [
   makeReasonErrorParseRule(
@@ -51,7 +53,7 @@ function ProjectSettingsContent(
     client,
     // The project list is not normalized by id, so refresh it for the
     // project selector and the projects page.
-    refetchQueries: ["appListQuery"],
+    refetchQueries: [{ query: AppListQueryDocument }],
   });
 
   const [initialState] = useState<FormState>({ projectName });
@@ -68,8 +70,7 @@ function ProjectSettingsContent(
   });
 
   const isDirty = useMemo(() => form.getIsDirty(), [form]);
-  const tooLong =
-    Array.from(form.state.projectName.trim()).length > PROJECT_NAME_MAX_LENGTH;
+  const tooLong = isProjectNameTooLong(form.state.projectName);
 
   const onChangeProjectName = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,6 +121,7 @@ function ProjectSettingsContent(
             placeholder={rawAppID}
             value={form.state.projectName}
             onChange={onChangeProjectName}
+            fieldName="projectName"
             errorRules={PROJECT_NAME_ERROR_RULES}
             error={
               tooLong ? (

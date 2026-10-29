@@ -106,6 +106,13 @@ export function processCompanyName(companyName: string): string {
     .toLowerCase();
 }
 
+// Matches ProjectNameMaxLength in pkg/portal/service/app_profile.go.
+export const PROJECT_NAME_MAX_LENGTH = 100;
+
+export function isProjectNameTooLong(name: string): boolean {
+  return Array.from(name.trim()).length > PROJECT_NAME_MAX_LENGTH;
+}
+
 interface NamedProject {
   appID: string;
   projectName?: string | null;

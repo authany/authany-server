@@ -112,14 +112,15 @@ func (s *AppProfileService) SetProjectName(ctx context.Context, appID string, na
 }
 
 // NormalizeProjectName trims the name and rejects one that is too long or
-// contains control characters.
+// contains control or format characters (e.g. U+202E, which reverses the text
+// after it). The zero-width joiner stays allowed: emoji sequences use it.
 func NormalizeProjectName(name string) (string, error) {
 	name = strings.TrimSpace(name)
 	if utf8.RuneCountInString(name) > ProjectNameMaxLength {
 		return "", ErrProjectNameInvalid.New("project name is too long")
 	}
 	for _, r := range name {
-		if unicode.IsControl(r) {
+		if unicode.IsControl(r) || (unicode.Is(unicode.Cf, r) && r != '\u200d') {
 			return "", ErrProjectNameInvalid.New("project name contains control characters")
 		}
 	}
