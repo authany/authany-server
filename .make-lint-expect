@@ -32,6 +32,10 @@ pkg/portal/graphql/user.go cannot import github.com/authgear/authgear-server/pkg
 pkg/portal/graphql/viewer.go cannot import github.com/authgear/authgear-server/pkg/graphqlgo/relay
 pkg/portal/libstripe/service.go cannot import github.com/authgear/authgear-server/pkg/graphqlgo/relay
 pkg/portal/loader/user.go cannot import github.com/authgear/authgear-server/pkg/graphqlgo/relay
+pkg/portal/mcp/api.go cannot import github.com/authgear/authgear-server/pkg/graphqlgo/relay
+pkg/portal/mcp/mcp_test.go cannot import github.com/authgear/authgear-server/pkg/graphqlgo/relay
+pkg/portal/mcp/server.go cannot import github.com/authgear/authgear-server/pkg/version
+pkg/portal/mcp/tools.go cannot import github.com/authgear/authgear-server/pkg/graphqlgo/relay
 pkg/portal/service/collaborator.go cannot import github.com/authgear/authgear-server/pkg/graphqlgo/relay
 pkg/portal/service/onboard.go cannot import github.com/authgear/authgear-server/pkg/graphqlgo/relay
 pkg/portal/service/system_config.go cannot import github.com/authgear/authgear-server/pkg/version

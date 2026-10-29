@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -82,13 +83,6 @@ func (m *SessionInfoMiddleware) jwtToSessionInfo(jwkSet jwk.Set, header http.Hea
 	}
 	rawToken := authorization[len(bearerPrefix):]
 
-	// Only accept JWT access tokens (typ: "at+jwt"). Reject id_tokens (typ: "JWT")
-	// and any other token type to prevent token confusion.
-	hdr, _, err := jwtutil.SplitWithoutVerify([]byte(rawToken))
-	if err != nil || hdr.Type() != "at+jwt" {
-		return
-	}
-
 	// Only accept access tokens issued for the project itself. A token bound to a
 	// resource (RFC 8707) carries aud = [<resource_uri>] instead, and may have been
 	// issued to a third-party client; accepting it here would let that client act as
@@ -98,34 +92,86 @@ func (m *SessionInfoMiddleware) jwtToSessionInfo(jwkSet jwk.Set, header http.Hea
 		return
 	}
 
-	token, err := jwt.ParseString(rawToken,
-		jwt.WithVerify(true),
-		jwt.WithKeySet(jwkSet),
-		jwt.WithClock(jwtClock{m.Clock}),
-		jwt.WithAcceptableSkew(duration.ClockSkew),
-		jwt.WithAudience(audience),
-	)
+	token, err := m.parseAccessToken(jwkSet, rawToken, jwt.WithAudience(audience))
 	if err != nil {
 		return
 	}
 
+	info, err := sessionInfoFromToken(token)
+	if err != nil {
+		panic(err)
+	}
+	return info
+}
+
+// VerifyResourceAccessToken verifies a JWT access token that the project issued
+// for the resource identified by resourceURI (RFC 8707), and returns the session
+// of the user it was issued to along with the verified token.
+func (m *SessionInfoMiddleware) VerifyResourceAccessToken(ctx context.Context, rawToken string, resourceURI string) (*model.SessionInfo, jwt.Token, error) {
+	jwkSet, err := m.getJWKs(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	issuer, err := m.expectedAudience()
+	if err != nil {
+		return nil, nil, err
+	}
+	token, err := m.parseAccessToken(jwkSet, rawToken,
+		jwt.WithAudience(resourceURI),
+		jwt.WithIssuer(issuer),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	// A client_credentials token carries no user; it cannot act as one.
+	info, err := sessionInfoFromToken(token)
+	if err != nil {
+		return nil, nil, err
+	}
+	return info, token, nil
+}
+
+var errNotAccessToken = errors.New("not a JWT access token")
+
+func (m *SessionInfoMiddleware) parseAccessToken(jwkSet jwk.Set, rawToken string, opts ...jwt.ParseOption) (jwt.Token, error) {
+	// Only accept JWT access tokens (typ: "at+jwt"). Reject id_tokens (typ: "JWT")
+	// and any other token type to prevent token confusion.
+	hdr, _, err := jwtutil.SplitWithoutVerify([]byte(rawToken))
+	if err != nil {
+		return nil, err
+	}
+	if hdr.Type() != "at+jwt" {
+		return nil, errNotAccessToken
+	}
+
+	opts = append([]jwt.ParseOption{
+		jwt.WithVerify(true),
+		jwt.WithKeySet(jwkSet),
+		jwt.WithClock(jwtClock{m.Clock}),
+		jwt.WithAcceptableSkew(duration.ClockSkew),
+	}, opts...)
+	return jwt.ParseString(rawToken, opts...)
+}
+
+func sessionInfoFromToken(token jwt.Token) (*model.SessionInfo, error) {
+	sessionInfo := &model.SessionInfo{}
 	sessionInfo.UserID = token.Subject()
 
 	anonymousIface, ok := token.Get(string(model.ClaimUserIsAnonymous))
 	if !ok {
-		panic(fmt.Errorf("expected claim to be present: %v", model.ClaimUserIsAnonymous))
+		return nil, fmt.Errorf("expected claim to be present: %v", model.ClaimUserIsAnonymous)
 	}
 	sessionInfo.UserAnonymous = anonymousIface.(bool)
 
 	isVerifiedIface, ok := token.Get(string(model.ClaimUserIsVerified))
 	if !ok {
-		panic(fmt.Errorf("expected claim to be present: %v", model.ClaimUserIsVerified))
+		return nil, fmt.Errorf("expected claim to be present: %v", model.ClaimUserIsVerified)
 	}
 	sessionInfo.UserVerified = isVerifiedIface.(bool)
 
 	canReauthenticate, ok := token.Get(string(model.ClaimUserCanReauthenticate))
 	if !ok {
-		panic(fmt.Errorf("expected claim to be present: %v", model.ClaimUserCanReauthenticate))
+		return nil, fmt.Errorf("expected claim to be present: %v", model.ClaimUserCanReauthenticate)
 	}
 	sessionInfo.UserCanReauthenticate = canReauthenticate.(bool)
 
@@ -137,7 +183,7 @@ func (m *SessionInfoMiddleware) jwtToSessionInfo(jwkSet jwk.Set, header http.Hea
 		case int64:
 			sessionInfo.AuthenticatedAt = time.Unix(v, 0).UTC()
 		default:
-			panic(fmt.Errorf("unexpected type: %v %T", model.ClaimAuthTime, authTimeIface))
+			return nil, fmt.Errorf("unexpected type: %v %T", model.ClaimAuthTime, authTimeIface)
 		}
 	}
 
@@ -152,7 +198,7 @@ func (m *SessionInfoMiddleware) jwtToSessionInfo(jwkSet jwk.Set, header http.Hea
 
 	rolesIface, ok := token.Get(string(model.ClaimAuthgearRoles))
 	if !ok {
-		panic(fmt.Errorf("expected claim to be present: %v", model.ClaimAuthgearRoles))
+		return nil, fmt.Errorf("expected claim to be present: %v", model.ClaimAuthgearRoles)
 	}
 	rolesSlice := rolesIface.([]any)
 	for _, roleIface := range rolesSlice {
@@ -161,7 +207,7 @@ func (m *SessionInfoMiddleware) jwtToSessionInfo(jwkSet jwk.Set, header http.Hea
 	}
 
 	sessionInfo.IsValid = true
-	return
+	return sessionInfo, nil
 }
 
 // expectedAudience is the aud of a JWT access token the project issues without a

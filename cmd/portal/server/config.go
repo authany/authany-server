@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
@@ -19,6 +20,12 @@ type Config struct {
 	// SiteadminListenAddr sets the listen address of the Site Admin API server.
 	SiteadminListenAddr         string `envconfig:"SITEADMIN_LISTEN_ADDR" default:"0.0.0.0:3005"`
 	SiteadminInternalListenAddr string `envconfig:"SITEADMIN_INTERNAL_LISTEN_ADDR" default:"0.0.0.0:13005"`
+	// MCPListenAddr sets the listen address of the MCP server.
+	MCPListenAddr         string `envconfig:"MCP_LISTEN_ADDR" default:"0.0.0.0:3006"`
+	MCPInternalListenAddr string `envconfig:"MCP_INTERNAL_LISTEN_ADDR" default:"0.0.0.0:13006"`
+	// MCPResource is the canonical URI of the MCP endpoint, e.g. https://mcp.example.com/mcp.
+	// Access tokens must be issued for it (RFC 8707) by the project the portal signs in with.
+	MCPResource string `envconfig:"MCP_RESOURCE"`
 	// ConfigSource configures the source of app configurations
 	ConfigSource *configsource.Config `envconfig:"CONFIG_SOURCE"`
 	// Authgear configures Authgear acting as authentication server for the portal.
@@ -73,6 +80,7 @@ type Config struct {
 type LoadConfigOptions struct {
 	ServePortal    bool
 	ServeSiteadmin bool
+	ServeMCP       bool
 }
 
 func LoadConfigFromEnv(opts LoadConfigOptions) (*Config, error) {
@@ -131,7 +139,38 @@ func (c *Config) Validate(opts LoadConfigOptions) error {
 		}
 	}
 
+	if opts.ServeMCP {
+		if c.Authgear.Endpoint == "" {
+			ctx.Child("AUTHGEAR_ENDPOINT").EmitErrorMessage("missing authgear endpoint")
+		}
+		if err := validateMCPResource(c.MCPResource); err != nil {
+			ctx.Child("MCP_RESOURCE").EmitErrorMessage(err.Error())
+		}
+	}
+
 	// Stripe config is optional
 
 	return ctx.Error("invalid server configuration")
+}
+
+// validateMCPResource checks the canonical server URI rules of the MCP
+// authorization spec: absolute https (or http for local development), no fragment.
+func validateMCPResource(resource string) error {
+	if resource == "" {
+		return fmt.Errorf("missing MCP resource URI")
+	}
+	u, err := url.Parse(resource)
+	if err != nil {
+		return fmt.Errorf("invalid MCP resource URI: %w", err)
+	}
+	if (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+		return fmt.Errorf("MCP resource URI must be an absolute http(s) URI")
+	}
+	if u.Fragment != "" || u.RawQuery != "" {
+		return fmt.Errorf("MCP resource URI must not have a query or fragment")
+	}
+	if strings.HasSuffix(u.Path, "/") {
+		return fmt.Errorf("MCP resource URI must not end with a slash")
+	}
+	return nil
 }

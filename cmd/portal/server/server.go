@@ -20,6 +20,7 @@ var logger = slogutil.NewLogger("authgear-portal")
 type Controller struct {
 	ServePortal    bool
 	ServeSiteadmin bool
+	ServeMCP       bool
 }
 
 func (c *Controller) Start(ctx context.Context) {
@@ -28,6 +29,7 @@ func (c *Controller) Start(ctx context.Context) {
 	cfg, err := LoadConfigFromEnv(LoadConfigOptions{
 		ServePortal:    c.ServePortal,
 		ServeSiteadmin: c.ServeSiteadmin,
+		ServeMCP:       c.ServeMCP,
 	})
 	if err != nil {
 		err = fmt.Errorf("failed to load server config: %w", err)
@@ -115,6 +117,23 @@ func (c *Controller) Start(ctx context.Context) {
 		specs = append(specs, server.NewSpec(ctx, &server.Spec{
 			Name:          "authgear-portal-siteadmin-internal",
 			ListenAddress: cfg.SiteadminInternalListenAddr,
+			Handler:       pprofutil.NewServeMux(),
+		}))
+	}
+
+	if c.ServeMCP {
+		mcpHandler, err := portal.NewMCPRouter(p, cfg.MCPResource)
+		if err != nil {
+			panic(fmt.Errorf("failed to setup MCP server: %w", err))
+		}
+		specs = append(specs, server.NewSpec(ctx, &server.Spec{
+			Name:          "authgear-portal-mcp",
+			ListenAddress: cfg.MCPListenAddr,
+			Handler:       mcpHandler,
+		}))
+		specs = append(specs, server.NewSpec(ctx, &server.Spec{
+			Name:          "authgear-portal-mcp-internal",
+			ListenAddress: cfg.MCPInternalListenAddr,
 			Handler:       pprofutil.NewServeMux(),
 		}))
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 var cmdStart = &cobra.Command{
-	Use:   "start [portal|siteadmin]...",
+	Use:   "start [portal|siteadmin|mcp]...",
 	Short: "Start specified servers",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctrl := &server.Controller{}
@@ -28,6 +28,8 @@ var cmdStart = &cobra.Command{
 				ctrl.ServePortal = true
 			case "siteadmin":
 				ctrl.ServeSiteadmin = true
+			case "mcp":
+				ctrl.ServeMCP = true
 			default:
 				log.Fatalf("unknown server type: %s", typ)
 			}
