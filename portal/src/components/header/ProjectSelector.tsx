@@ -10,6 +10,10 @@ import { useSystemConfig } from "../../context/SystemConfigContext";
 import { useCapture } from "../../gtm_v2";
 import { toTypedID } from "../../util/graphql";
 import { isProjectQuotaReached } from "../../util/projectQuota";
+import {
+  compareProjectsByDisplayName,
+  projectDisplayName,
+} from "../../util/projectname";
 import { CopyIconButton } from "../v2/CopyIconButton/CopyIconButton";
 import styles from "./ProjectSelector.module.css";
 
@@ -47,7 +51,16 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
     }, [apps, isAuthgearOnce, authgearAppID]);
 
     const otherApps = useMemo(() => {
-      return filteredApps.filter((app) => app.appID !== displayAppID);
+      return filteredApps
+        .filter((app) => app.appID !== displayAppID)
+        .sort(compareProjectsByDisplayName);
+    }, [filteredApps, displayAppID]);
+
+    const currentProjectName = useMemo(() => {
+      return (
+        filteredApps.find((app) => app.appID === displayAppID)?.projectName ??
+        null
+      );
     }, [filteredApps, displayAppID]);
 
     const createButtonDisabled =
@@ -106,7 +119,9 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
             className={styles.trigger}
             aria-label={openMenuLabel}
           >
-            <Text className={styles.triggerLabel}>{displayAppID}</Text>
+            <Text className={styles.triggerLabel}>
+              {currentProjectName ?? displayAppID}
+            </Text>
             <CaretSortIcon className={styles.triggerChevron} />
           </button>
         </Popover.Trigger>
@@ -135,8 +150,21 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
             <div className={styles.sectionHeader}>
               <FormattedMessage id="ScreenHeader.projectSelector.current-project" />
             </div>
+            {currentProjectName != null ? (
+              <div className={styles.currentProjectName}>
+                {currentProjectName}
+              </div>
+            ) : null}
             <div className={styles.currentProjectRow}>
-              <span className={styles.currentProjectID}>{displayAppID}</span>
+              <span
+                className={
+                  currentProjectName != null
+                    ? styles.currentProjectSecondaryID
+                    : styles.currentProjectID
+                }
+              >
+                {displayAppID}
+              </span>
               <CopyIconButton textToCopy={displayAppID} />
             </div>
           </section>
@@ -156,8 +184,13 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
                       onClick={() => onSelectProject(app.appID)}
                     >
                       <span className={styles.projectListItemLabel}>
-                        {app.appID}
+                        {projectDisplayName(app)}
                       </span>
+                      {app.projectName != null ? (
+                        <span className={styles.projectListItemID}>
+                          {app.appID}
+                        </span>
+                      ) : null}
                     </button>
                   ))}
                 </div>

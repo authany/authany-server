@@ -1,9 +1,11 @@
 import { describe, it, expect } from "@jest/globals";
 import {
+  compareProjectsByDisplayName,
   deterministicProjectID,
   extractBits,
   projectIDFromCompanyName,
   processCompanyName,
+  projectDisplayName,
 } from "./projectname";
 
 describe("extractBits", () => {
@@ -79,5 +81,31 @@ describe("processCompanyName", () => {
 
     const r3 = processCompanyName(" Oursky! Authgear! ");
     expect(r3).toMatch("oursky-authgear");
+  });
+});
+
+describe("projectDisplayName", () => {
+  it("prefers the project name and falls back to the ID", () => {
+    expect(
+      projectDisplayName({ appID: "pride-4yxj8q", projectName: "Modeltaps" })
+    ).toEqual("Modeltaps");
+    expect(projectDisplayName({ appID: "smoke", projectName: null })).toEqual(
+      "smoke"
+    );
+  });
+});
+
+describe("compareProjectsByDisplayName", () => {
+  it("sorts by the shown name, then by ID", () => {
+    const apps = [
+      { appID: "pride-4yxj8q", projectName: "Modeltaps" },
+      { appID: "smoke", projectName: null },
+      { appID: "brain-4mkg21", projectName: "Ondue" },
+      { appID: "accounts", projectName: "Authany" },
+      { appID: "b", projectName: "Ondue" },
+    ];
+    expect(
+      [...apps].sort(compareProjectsByDisplayName).map((a) => a.appID)
+    ).toEqual(["accounts", "pride-4yxj8q", "b", "brain-4mkg21", "smoke"]);
   });
 });

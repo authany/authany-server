@@ -106,6 +106,10 @@ type AppTesterTokenStore interface {
 	) (*tester.TesterToken, error)
 }
 
+type AppProjectNameService interface {
+	GetProjectNames(ctx context.Context, appIDs []string) (map[string]string, error)
+}
+
 type AppConfigSourceStore interface {
 	ListAll(ctx context.Context) ([]*configsource.DatabaseSource, error)
 }
@@ -128,6 +132,7 @@ type AppService struct {
 	AppTesterTokenStore      AppTesterTokenStore
 	SAMLEnvironmentConfig    config.SAMLEnvironmentConfig
 	ConfigSourceStore        AppConfigSourceStore
+	ProjectNames             AppProjectNameService
 }
 
 // Get calls other services that acquires connection themselves.
@@ -172,12 +177,21 @@ func (s *AppService) GetAppList(ctx context.Context, userID string) ([]*model.Ap
 		return nil, err
 	}
 
+	projectNames, err := s.ProjectNames.GetProjectNames(ctx, appIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	appList := []*model.AppListItem{}
 	for _, app := range apps {
-		appList = append(appList, &model.AppListItem{
+		item := &model.AppListItem{
 			AppID:        app.ID,
 			PublicOrigin: app.Context.Config.AppConfig.HTTP.PublicOrigin,
-		})
+		}
+		if name, ok := projectNames[app.ID]; ok {
+			item.ProjectName = &name
+		}
+		appList = append(appList, item)
 	}
 	sortAppListItems(appList)
 	return appList, nil

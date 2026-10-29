@@ -212,6 +212,9 @@ const ClientApplicationsScreen = lazy(
 const AIAgentsScreen = lazy(
   async () => import("./screens/dynamic-clients/AIAgentsScreen")
 );
+const ProjectSettingsScreen = lazy(
+  async () => import("./screens/project-settings/ProjectSettingsScreen")
+);
 
 const AppRoot: React.VFC = function AppRoot() {
   const { appID } = useParams() as { appID: string };
@@ -305,6 +308,18 @@ const AppRoot: React.VFC = function AppRoot() {
               element={
                 <Suspense fallback={<ShowLoading />}>
                   <GetStartedScreen />
+                </Suspense>
+              }
+            />
+          </AppRoute>
+
+          <AppRoute feature={null} path="project-settings">
+            <AppRoute
+              feature={null}
+              index={true}
+              element={
+                <Suspense fallback={<ShowLoading />}>
+                  <ProjectSettingsScreen />
                 </Suspense>
               }
             />

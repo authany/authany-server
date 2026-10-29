@@ -12,6 +12,7 @@ import {
 import { useCreateAppMutation } from "../../../graphql/portal/mutations/createAppMutation";
 import { useOptionalAppContext } from "../../../context/AppContext";
 import { useSaveProjectWizardDataMutation } from "../../../graphql/portal/mutations/saveProjectWizardDataMutation";
+import { useUpdateProjectNameMutationMutation } from "../../../graphql/portal/mutations/updateProjectNameMutation.generated";
 import {
   LoginIDKeyConfig,
   OAuthSSOProviderConfig,
@@ -393,6 +394,11 @@ export function useProjectWizardForm(
   const { createApp } = useCreateAppMutation();
   const { mutate: saveProjectWizardDataMutation } =
     useSaveProjectWizardDataMutation();
+  // Authany: the wizard's project name is also the name the portal shows.
+  const [updateProjectNameMutation] = useUpdateProjectNameMutationMutation({
+    client: portalClient,
+    refetchQueries: ["appListQuery"],
+  });
 
   const skip = existingAppNodeID == null;
   const {
@@ -467,6 +473,12 @@ export function useProjectWizardForm(
               sanitizedFormState.projectID,
               updatedState
             );
+            await updateProjectNameMutation({
+              variables: {
+                appID: appID!,
+                projectName: sanitizedFormState.projectName,
+              },
+            });
             return {
               result: `/project/${encodeURIComponent(appID!)}/wizard`,
               nextInitialState: updatedState,
@@ -477,6 +489,12 @@ export function useProjectWizardForm(
               existingAppNodeID,
               updatedState
             );
+            await updateProjectNameMutation({
+              variables: {
+                appID: existingAppNodeID,
+                projectName: sanitizedFormState.projectName,
+              },
+            });
             return { result: null, nextInitialState: updatedState };
           }
         }
@@ -523,6 +541,7 @@ export function useProjectWizardForm(
       resourceForm,
       saveProjectWizardDataMutation,
       updateAppConfig,
+      updateProjectNameMutation,
     ]
   );
 

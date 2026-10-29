@@ -46,6 +46,7 @@ var query = graphql.NewObject(graphql.ObjectConfig{
 				Fields: graphql.Fields{
 					"appID":        &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 					"publicOrigin": &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+					"projectName":  &graphql.Field{Type: graphql.String},
 				},
 			}))),
 			Resolve: func(p graphql.ResolveParams) (any, error) {

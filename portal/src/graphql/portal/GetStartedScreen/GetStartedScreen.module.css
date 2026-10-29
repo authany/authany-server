@@ -6,6 +6,24 @@
   min-width: 0;
 }
 
+/* Page header (Authany) ------------------------------------------------- */
+
+.pageHeader {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  color: var(--gray-12);
+  overflow-wrap: anywhere;
+}
+
 /* Hero row -------------------------------------------------------------- */
 
 .heroRow {

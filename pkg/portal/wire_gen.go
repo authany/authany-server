@@ -264,6 +264,12 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 		SQLBuilder:  sqlBuilder,
 		SQLExecutor: sqlExecutor,
 	}
+	appProfileService := &service.AppProfileService{
+		GlobalDatabase: handle,
+		SQLBuilder:     sqlBuilder,
+		SQLExecutor:    sqlExecutor,
+		Clock:          clockClock,
+	}
 	appService := &service.AppService{
 		SQLBuilder:               sqlBuilder,
 		SQLExecutor:              sqlExecutor,
@@ -280,6 +286,7 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 		AppTesterTokenStore:      testerStore,
 		SAMLEnvironmentConfig:    samlEnvironmentConfig,
 		ConfigSourceStore:        configsourceStore,
+		ProjectNames:             appProfileService,
 	}
 	loaderHTTPClient := loader.NewHTTPClient()
 	userLoader := loader.NewUserLoader(adminAPIService, appService, collaboratorService, loaderHTTPClient)
@@ -398,6 +405,7 @@ func newGraphQLHandler(p *deps.RequestProvider) http.Handler {
 		AuditService:            auditService,
 		OnboardService:          onboardService,
 		TokenService:            tokenService,
+		AppProfileService:       appProfileService,
 	}
 	graphQLHandler := &transport.GraphQLHandler{
 		GraphQLContext: context,

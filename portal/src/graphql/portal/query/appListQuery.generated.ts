@@ -6,7 +6,7 @@ const defaultOptions = {} as const;
 export type AppListQueryQueryVariables = Types.Exact<{ [key: string]: never; }>;
 
 
-export type AppListQueryQuery = { __typename?: 'Query', appList?: Array<{ __typename?: 'AppListItem', appID: string, publicOrigin: string }> | null };
+export type AppListQueryQuery = { __typename?: 'Query', appList?: Array<{ __typename?: 'AppListItem', appID: string, publicOrigin: string, projectName?: string | null }> | null };
 
 
 export const AppListQueryDocument = gql`
@@ -14,6 +14,7 @@ export const AppListQueryDocument = gql`
   appList {
     appID
     publicOrigin
+    projectName
   }
 }
     `;

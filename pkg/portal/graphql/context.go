@@ -121,6 +121,11 @@ type TutorialService interface {
 	SaveProjectWizardData(ctx context.Context, appID string, data any) error
 }
 
+type AppProfileService interface {
+	GetProjectName(ctx context.Context, appID string) (*string, error)
+	SetProjectName(ctx context.Context, appID string, name string) error
+}
+
 type OnboardService interface {
 	SubmitOnboardEntry(ctx context.Context, entry model.OnboardEntry, actorID string) error
 	CheckOnboardingSurveyCompletion(ctx context.Context, actorID string) (bool, error)
@@ -211,6 +216,7 @@ type Context struct {
 	AuditService         AuditService
 	OnboardService       OnboardService
 	TokenService         TokenService
+	AppProfileService    AppProfileService
 }
 
 func WithContext(ctx context.Context, gqlContext *Context) context.Context {

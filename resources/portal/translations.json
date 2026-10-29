@@ -3299,6 +3299,21 @@
     "ClientCountCard.count.unknown": "—",
     "SelfRegistrationContent.registration-endpoint.description": "客户端向此端点 POST 自己的元数据来注册（RFC 7591）。",
     "DynamicClientConfig.title": "客户端配置",
-    "SelfRegistrationContent.client-config.description": "适用于所有通过 DCR 注册的客户端的令牌设置。"
+    "SelfRegistrationContent.client-config.description": "适用于所有通过 DCR 注册的客户端的令牌设置。",
+    "ScreenNav.project-settings": "项目设置",
+    "GetStartedScreen.project-settings-link": "项目设置",
+    "ProjectSettingsScreen.title": "项目设置",
+    "ProjectSettingsScreen.description": "给项目起一个您和团队内部使用的名称，并查看项目 ID 和登录域名。",
+    "ProjectSettingsScreen.project-name.title": "项目名称",
+    "ProjectSettingsScreen.project-name.description": "只在管理控制台里显示给协作者。用户在登录页上看到的名称在<designLink>外观设计</designLink>里设置。",
+    "ProjectSettingsScreen.project-name.label": "名称",
+    "ProjectSettingsScreen.project-name.hint": "留空则显示项目 ID。",
+    "ProjectSettingsScreen.project-name.error.too-long": "最多 {max} 个字符。",
+    "ProjectSettingsScreen.project-name.error.invalid": "名称过长，或包含不允许的字符。",
+    "ProjectSettingsScreen.details.title": "项目信息",
+    "ProjectSettingsScreen.project-id.label": "项目 ID",
+    "ProjectSettingsScreen.project-id.hint": "用于默认域名和 API 请求，建好后不能修改。",
+    "ProjectSettingsScreen.public-origin.label": "登录域名",
+    "ProjectSettingsScreen.public-origin.hint": "可以在<domainsLink>自定义域名</domainsLink>里更换。"
   }
 }

@@ -124,6 +124,7 @@ var DependencySet = wire.NewSet(
 	wire.Bind(new(graphql.AppResourceManagerFactory), new(*appresource.ManagerFactory)),
 	wire.Bind(new(graphql.AnalyticChartService), new(*analytic.ChartService)),
 	wire.Bind(new(graphql.TutorialService), new(*tutorial.Service)),
+	wire.Bind(new(graphql.AppProfileService), new(*service.AppProfileService)),
 	wire.Bind(new(graphql.StripeService), new(*libstripe.Service)),
 	wire.Bind(new(graphql.SubscriptionService), new(*service.SubscriptionService)),
 	wire.Bind(new(graphql.UsageService), new(*service.UsageService)),

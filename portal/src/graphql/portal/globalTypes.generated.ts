@@ -72,6 +72,8 @@ export type App = Node & {
   isProcessingSubscription: Scalars['Boolean']['output'];
   lastStripeError?: Maybe<Scalars['StripeError']['output']>;
   planName: Scalars['String']['output'];
+  /** The name collaborators know the project by; null when unset (Authany) */
+  projectName?: Maybe<Scalars['String']['output']>;
   rawAppConfig: Scalars['AppConfig']['output'];
   rawAppConfigChecksum: Scalars['String']['output'];
   resources: Array<AppResource>;
@@ -112,6 +114,7 @@ export type AppUsageArgs = {
 export type AppListItem = {
   __typename?: 'AppListItem';
   appID: Scalars['String']['output'];
+  projectName?: Maybe<Scalars['String']['output']>;
   publicOrigin: Scalars['String']['output'];
 };
 
@@ -422,6 +425,8 @@ export type Mutation = {
   skipAppTutorialProgress: SkipAppTutorialProgressPayload;
   /** Update app */
   updateApp: UpdateAppPayload;
+  /** Update the name collaborators know the project by (Authany) */
+  updateProjectName: UpdateProjectNamePayload;
   /** Update subscription */
   updateSubscription: UpdateSubscriptionPayload;
   /** Request verification of a domain of target app */
@@ -551,6 +556,11 @@ export type MutationSkipAppTutorialProgressArgs = {
 
 export type MutationUpdateAppArgs = {
   input: UpdateAppInput;
+};
+
+
+export type MutationUpdateProjectNameArgs = {
+  input: UpdateProjectNameInput;
 };
 
 
@@ -1244,6 +1254,18 @@ export type UpdateAppInput = {
 
 export type UpdateAppPayload = {
   __typename?: 'UpdateAppPayload';
+  app: App;
+};
+
+export type UpdateProjectNameInput = {
+  /** App ID to update. */
+  appID: Scalars['ID']['input'];
+  /** The new project name. An empty string removes it. */
+  projectName: Scalars['String']['input'];
+};
+
+export type UpdateProjectNamePayload = {
+  __typename?: 'UpdateProjectNamePayload';
   app: App;
 };
 

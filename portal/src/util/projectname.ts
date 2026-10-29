@@ -105,3 +105,24 @@ export function processCompanyName(companyName: string): string {
     .join("-")
     .toLowerCase();
 }
+
+interface NamedProject {
+  appID: string;
+  projectName?: string | null;
+}
+
+// The name a project is shown by in the portal: its project name, else its ID.
+// (Authany)
+export function projectDisplayName(project: NamedProject): string {
+  return project.projectName ?? project.appID;
+}
+
+export function compareProjectsByDisplayName(
+  a: NamedProject,
+  b: NamedProject
+): number {
+  return (
+    projectDisplayName(a).localeCompare(projectDisplayName(b)) ||
+    a.appID.localeCompare(b.appID)
+  );
+}
