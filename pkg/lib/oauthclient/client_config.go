@@ -36,6 +36,9 @@ func (c *Client) ToClientConfig(defaults *config.OAuthDynamicClientTokenLifetime
 		IssueJWTAccessToken:            c.Kind == model.OAuthClientKindFirstParty, // per client.md — Mapping from DCR
 		IsDynamic:                      true,                                      // every client built by ToClientConfig is DCR/CIMD-resolved, regardless of Kind
 		DynamicSource:                  c.Source,
+		// Every dynamic client is public (no client_secret is ever issued), and
+		// OAuth 2.1 §4.3.1 requires a public client's refresh tokens to rotate.
+		RefreshTokenRotationEnabled: true,
 	}
 	// nil here means this source has no token-lifetimes config concept at
 	// all (see ResolveTokenLifetimes's default case, e.g. model.OAuthClientSourceStatic

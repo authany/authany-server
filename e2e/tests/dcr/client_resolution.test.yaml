@@ -716,7 +716,41 @@ steps:
       json_body: |
         {
           "access_token": "[[string]]",
+          "refresh_token": "[[string]]",
           "token_type": "Bearer"
+        }
+
+  # A DCR client is public, so its refresh token rotates: the one just
+  # presented is spent, and the one the refresh returned works.
+  - name: refresh_with_spent_token
+    action: http_request
+    http_request_method: POST
+    http_request_url: http://{{ .AppID }}.authgeare2e.localhost:4000/oauth2/token
+    http_request_form_urlencoded_body:
+      grant_type: refresh_token
+      client_id: "{{ .steps.register.result.http_json_body.client_id }}"
+      refresh_token: "{{ .steps.exchange_code.result.refresh_token }}"
+    http_output:
+      http_status: 400
+      json_body: |
+        {
+          "error": "invalid_grant"
+        }
+
+  - name: refresh_with_rotated_token
+    action: http_request
+    http_request_method: POST
+    http_request_url: http://{{ .AppID }}.authgeare2e.localhost:4000/oauth2/token
+    http_request_form_urlencoded_body:
+      grant_type: refresh_token
+      client_id: "{{ .steps.register.result.http_json_body.client_id }}"
+      refresh_token: "{{ .steps.refresh.result.http_json_body.refresh_token }}"
+    http_output:
+      http_status: 200
+      json_body: |
+        {
+          "access_token": "[[string]]",
+          "refresh_token": "[[string]]"
         }
 
   - name: userinfo

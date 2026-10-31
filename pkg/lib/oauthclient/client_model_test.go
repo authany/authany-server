@@ -36,7 +36,7 @@ func TestClientToModel(t *testing.T) {
 			So(*m.ClientName, ShouldEqual, "PR #123 preview")
 			So(m.IsConfidential, ShouldBeFalse)
 			So(m.IsServiceClient, ShouldBeFalse)
-			So(m.RefreshTokenRotationEnabled, ShouldBeFalse)
+			So(m.RefreshTokenRotationEnabled, ShouldBeTrue)
 			So(m.IssueJWTAccessToken, ShouldBeFalse)
 			So(m.MaxConcurrentSession, ShouldEqual, 0)
 			So(m.CustomUIURI, ShouldBeNil)

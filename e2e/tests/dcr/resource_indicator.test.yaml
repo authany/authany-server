@@ -999,9 +999,11 @@ steps:
           }
         }
 
+  # Refresh tokens of a DCR client rotate: each step presents the one the
+  # previous refresh returned.
   - name: refresh_with_correct_resource
     action: oauth_refresh_token
-    oauth_refresh_token_refresh_token: "{{ .steps.exchange_code.result.refresh_token }}"
+    oauth_refresh_token_refresh_token: "{{ .steps.refresh_without_resource.result.refresh_token }}"
     oauth_refresh_token_client_id: "{{ .steps.register.result.http_json_body.client_id }}"
     oauth_refresh_token_resource: https://api.example.com/orders
     output:
@@ -1020,7 +1022,7 @@ steps:
     http_request_form_urlencoded_body:
       grant_type: refresh_token
       client_id: "{{ .steps.register.result.http_json_body.client_id }}"
-      refresh_token: "{{ .steps.exchange_code.result.refresh_token }}"
+      refresh_token: "{{ .steps.refresh_with_correct_resource.result.refresh_token }}"
       resource: https://api.example.com/inventory
     http_output:
       http_status: 400

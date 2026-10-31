@@ -18,6 +18,14 @@ make logs-summary A=2026-01-01.0 B=2026-02-01.0
 
 ## [Unreleased]
 
+### Refresh tokens of DCR and CIMD clients now rotate
+
+Every client registered through Dynamic Client Registration or resolved from a Client ID Metadata Document is public, and OAuth 2.1 requires a public client's refresh tokens to rotate. A refresh with such a client's refresh token now returns a new `refresh_token`, and the refresh token that was presented stops working.
+
+**Affects** a DCR or CIMD client that keeps using its first refresh token instead of the one each refresh returns. Its second refresh fails with `invalid_grant`, and the user has to authorize it again. A client that stores the `refresh_token` from every token response, as RFC 6749 §6 expects, is unaffected.
+
+**What to do:** nothing on the server. A client that breaks must store the newest `refresh_token`.
+
 ## [2026-09-23.0]
 
 ### Outbound requests to private and loopback addresses are refused

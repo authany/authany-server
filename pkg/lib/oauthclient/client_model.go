@@ -38,7 +38,7 @@ func (c *Client) ToModel(tokenLifetimes *config.OAuthDynamicClientTokenLifetimes
 		RefreshTokenLifetimeSeconds:    int(cfg.RefreshTokenLifetime),
 		RefreshTokenIdleTimeoutEnabled: *cfg.RefreshTokenIdleTimeoutEnabled, // non-nil after SetDefaults()
 		RefreshTokenIdleTimeoutSeconds: int(cfg.RefreshTokenIdleTimeout),
-		RefreshTokenRotationEnabled:    false,
+		RefreshTokenRotationEnabled:    cfg.RefreshTokenRotationEnabled,
 		IssueJWTAccessToken:            cfg.IssueJWTAccessToken,
 		MaxConcurrentSession:           0,
 		// all remaining "static clients only" fields (CustomUIURI, App2appEnabled,
