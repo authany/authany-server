@@ -130,6 +130,17 @@ func TestConsentViewModelForClient(t *testing.T) {
 			}
 			vm := consentViewModelForClient(client, nil)
 			So(vm.ClientIDHostname, ShouldBeEmpty)
+			So(vm.ClientUnverified, ShouldBeTrue)
+		})
+
+		Convey("ClientUnverified is for DCR clients only: a CIMD client has a verified domain, a static client is the project's own", func() {
+			cimd := consentViewModelForClient(&config.OAuthClientConfig{
+				ClientID:      "https://mcp-client.example.com/oauth/client-metadata.json",
+				DynamicSource: model.OAuthClientSourceCIMD,
+			}, nil)
+			So(cimd.ClientUnverified, ShouldBeFalse)
+			static := consentViewModelForClient(&config.OAuthClientConfig{ClientID: "static", Name: "Static"}, nil)
+			So(static.ClientUnverified, ShouldBeFalse)
 		})
 
 		Convey("a CIMD client with logo_uri, no endpoints supplied: ClientLogoURI is the raw logo_uri", func() {
@@ -227,4 +238,44 @@ func (stubConsentClientLogoEndpoint) ClientLogoURL(clientID string) *url.URL {
 	q.Set("client_id", clientID)
 	u.RawQuery = q.Encode()
 	return u
+}
+
+func TestConsentRedirectHost(t *testing.T) {
+	Convey("consentRedirectHost", t, func() {
+		host := func(raw string) (string, bool) {
+			u, err := url.Parse(raw)
+			So(err, ShouldBeNil)
+			return consentRedirectHost(u)
+		}
+
+		Convey("an https redirect URI shows its hostname, without the port", func() {
+			h, loopback := host("https://gateway.example.com:8443/oauth/mcp/callback")
+			So(h, ShouldEqual, "gateway.example.com")
+			So(loopback, ShouldBeFalse)
+		})
+
+		Convey("loopback redirect URIs are marked, in every form RFC 8252 allows", func() {
+			for _, raw := range []string{"http://127.0.0.1:33418/callback", "http://localhost:3000/cb", "http://LOCALHOST/cb", "http://[::1]:5000/cb", "http://127.1.2.3/cb"} {
+				_, loopback := host(raw)
+				So(loopback, ShouldBeTrue)
+			}
+		})
+
+		Convey("a host that only looks local is not loopback", func() {
+			_, loopback := host("https://localhost.example.com/cb")
+			So(loopback, ShouldBeFalse)
+		})
+
+		Convey("a custom-scheme redirect URI shows its scheme", func() {
+			h, loopback := host("com.example.app:/oauth/callback")
+			So(h, ShouldEqual, "com.example.app")
+			So(loopback, ShouldBeFalse)
+		})
+
+		Convey("no redirect URI shows nothing", func() {
+			h, loopback := consentRedirectHost(nil)
+			So(h, ShouldBeEmpty)
+			So(loopback, ShouldBeFalse)
+		})
+	})
 }

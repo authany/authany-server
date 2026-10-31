@@ -3,8 +3,10 @@ package oauth
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/authgear/authgear-server/pkg/api/model"
 	"github.com/authgear/authgear-server/pkg/auth/handler/webapp"
@@ -80,7 +82,16 @@ type ConsentViewModel struct {
 	// value on this screen that the client did not assert about itself: it
 	// is the host Authgear actually fetched the metadata document from,
 	// over verified TLS. See docs/specs/cimd.md § Phishing Mitigation.
-	ClientIDHostname    string
+	ClientIDHostname string
+	// ClientUnverified is true for a DCR client: its name and logo are all
+	// self-asserted, and unlike a CIMD client there is no domain behind them.
+	ClientUnverified bool
+	// RedirectHost is where consenting sends the user: the redirect URI's
+	// hostname, or its scheme for a custom-scheme URI. RedirectIsLoopback
+	// marks a loopback redirect URI, which anything on the device can listen
+	// on, so the screen warns about it.
+	RedirectHost        string
+	RedirectIsLoopback  bool
 	Scopes              []string
 	CustomScopes        []ConsentScope
 	IdentityDisplayName string
@@ -186,6 +197,7 @@ func (h *ConsentHandler) renderConsentPage(ctx context.Context, rw http.Response
 	userProfile := webapp.GetUserProfile(user)
 
 	viewModel := consentViewModelForClient(consentRequired.Client, h.Endpoints)
+	viewModel.RedirectHost, viewModel.RedirectIsLoopback = consentRedirectHost(consentRequired.RedirectURI)
 	viewModel.Scopes = consentRequired.Scopes
 	for _, s := range consentRequired.Scopes {
 		if displayText, ok := consentRequired.ScopeDisplayNames[s]; ok {
@@ -253,6 +265,23 @@ func consentViewModelForClient(client *config.OAuthClientConfig, endpoints Conse
 		if u, err := url.Parse(client.ClientID); err == nil {
 			viewModel.ClientIDHostname = u.Hostname()
 		}
+	} else if client.DynamicSource == model.OAuthClientSourceDCR {
+		viewModel.ClientUnverified = true
 	}
 	return viewModel
+}
+
+func consentRedirectHost(u *url.URL) (host string, isLoopback bool) {
+	if u == nil {
+		return "", false
+	}
+	host = u.Hostname()
+	if host == "" {
+		// A custom-scheme redirect URI (native app) has no host; the scheme
+		// is what names the app.
+		return u.Scheme, false
+	}
+	ip := net.ParseIP(host)
+	isLoopback = strings.EqualFold(host, "localhost") || (ip != nil && ip.IsLoopback())
+	return host, isLoopback
 }

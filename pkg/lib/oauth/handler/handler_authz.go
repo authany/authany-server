@@ -345,6 +345,10 @@ type ConsentRequired struct {
 	// every other scope (openid, profile, email, offline_access, etc.) is
 	// rendered by the template's own hardcoded, translated copy instead.
 	ScopeDisplayNames map[string]string
+	// RedirectURI is where the user is sent after consenting, so the consent
+	// screen can show it (MCP authorization: the redirect URI's hostname MUST
+	// be displayed).
+	RedirectURI *url.URL
 }
 
 func (h *AuthorizationHandler) doHandleConsent(ctx context.Context, req *http.Request, withUserConsent bool) (httputil.Result, *ConsentRequired) {
@@ -385,6 +389,7 @@ func (h *AuthorizationHandler) doHandleConsent(ctx context.Context, req *http.Re
 				Scopes:            consentRequest.OAuthSessionEntry.T.AuthorizationRequest.Scope(),
 				Client:            consentRequest.Client,
 				ScopeDisplayNames: h.resourceScopeDisplayNames(ctx, consentRequest.Client, consentRequest.OAuthSessionEntry.T.AuthorizationRequest),
+				RedirectURI:       consentRequest.RedirectURI,
 			}
 		}
 
