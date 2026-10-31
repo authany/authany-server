@@ -325,7 +325,7 @@ The resulting `OAuthClient` object is:
   "refreshTokenLifetimeSeconds": 2592000,
   "refreshTokenIdleTimeoutEnabled": true,
   "refreshTokenIdleTimeoutSeconds": 1209600,
-  "refreshTokenRotationEnabled": false,
+  "refreshTokenRotationEnabled": true,
   "issueJWTAccessToken": true,
   "maxConcurrentSession": 0,
   "customUIURI": null,
@@ -352,7 +352,7 @@ Token lifetime fields are populated from `oauth.dynamic_client_registration.defa
 
 Each field falls back independently, so a `default_client_config` that sets only `access_token_lifetime_seconds` leaves the other three at the defaults above. Note that the example object shown earlier in this section reflects the `default_client_config` in [dcr.md's Configuration](./dcr.md#configuration), not these defaults.
 
-All Authgear extension fields are fixed for DCR clients and cannot be changed at registration time. Each is fixed at its zero value except `issueJWTAccessToken`, which follows `kind`: `true` for `FIRST_PARTY`, `false` for `THIRD_PARTY`.
+All Authgear extension fields are fixed for DCR clients and cannot be changed at registration time. Each is fixed at its zero value except `issueJWTAccessToken`, which follows `kind`: `true` for `FIRST_PARTY`, `false` for `THIRD_PARTY`; and `refreshTokenRotationEnabled`, which is always `true`: a DCR client is always public, and [OAuth 2.1 §4.3.1](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13#section-4.3.1) requires a public client's refresh tokens to be rotated. Each refresh returns a new refresh token and the one presented stops working.
 
 Static clients are implicitly bounded — each one requires a project admin to edit and deploy `authgear.yaml`. DCR-registered and CIMD-resolved clients are not, since neither requires a per-client admin action; each source defines its own `authgear.features.yaml` limit — see [dcr.md — Client Limit](./dcr.md#client-limit) and [cimd.md — Client Limit](./cimd.md#client-limit).
 

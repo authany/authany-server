@@ -43,6 +43,22 @@
       <p class="text-center text-sm text-[var(--color-neutral-600)]">
         {{ include "v2.page.consent.default.client-hostname-desc" (dict "hostname" $.ClientIDHostname) }}
       </p>
+    {{ else if $.ClientUnverified }}
+      <p class="text-center text-sm text-[var(--color-neutral-600)]">
+        {{ include "v2.page.consent.default.client-unverified-desc" nil }}
+      </p>
+    {{ end }}
+    {{/* Where consenting sends the user. A loopback address is any program on
+         the device that started this sign-in, so the warning asks the user to
+         go on only if they started it themselves. */}}
+    {{ if $.RedirectHost }}
+      <p class="text-center text-sm text-[var(--color-neutral-600)]">
+        {{ if $.RedirectIsLoopback }}
+          {{ include "v2.page.consent.default.redirect-loopback-desc" (dict "host" $.RedirectHost) }}
+        {{ else }}
+          {{ include "v2.page.consent.default.redirect-desc" (dict "host" $.RedirectHost) }}
+        {{ end }}
+      </p>
     {{ end }}
     <div class="consent-body">
       <p class="consent-identity">

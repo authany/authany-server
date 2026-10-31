@@ -44,6 +44,11 @@ See [DCR spec](./dcr.md) for the full registration flow.
 
 The consent screen is shown when a user authorizes a third-party client for the first time, or after the user has revoked a previous authorization. It displays the client name, the requested permissions, and optionally a privacy policy and terms of service link.
 
+Because the client name is self-asserted, the screen also states what the user can check:
+
+- **Who the client is.** A CIMD client shows the hostname of its `client_id` URL, the one value the client did not assert about itself (see [CIMD — Phishing Mitigation](./cimd.md#phishing-mitigation)). A DCR client has no such value, so the screen says its name has not been verified.
+- **Where consenting sends the user.** The hostname of this request's `redirect_uri` (or its scheme, for a custom-scheme URI), as the [MCP authorization spec](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/security-considerations#localhost-redirect-uri-risks) requires. When it is a loopback address, the screen warns the user to continue only if they started the sign-in themselves: any program on the device can listen on a loopback port, so a loopback redirect URI proves nothing about which program receives the code.
+
 The consent screen is **not** shown if there is an existing valid authorization record for the same user, client, and scope set.
 
 ## Supported Flows

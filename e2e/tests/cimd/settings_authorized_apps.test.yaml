@@ -225,7 +225,8 @@ steps:
           "errors": null
         }
 
-  # The client's refresh token no longer works -- proof the revoke actually
+  # The client's current refresh token (the one refresh_before_revoke rotated
+  # to) no longer works -- proof the revoke actually
   # deleted the offline grant/refresh tokens, not just the authorization row.
   - name: refresh_after_revoke
     action: http_request
@@ -234,7 +235,7 @@ steps:
     http_request_form_urlencoded_body:
       grant_type: refresh_token
       client_id: http://localhost:2727/settings-authorized-apps-{{ .AppID }}.json
-      refresh_token: "{{ .steps.exchange_code.result.refresh_token }}"
+      refresh_token: "{{ .steps.refresh_before_revoke.result.http_json_body.refresh_token }}"
     http_output:
       http_status: 400
       json_body: |

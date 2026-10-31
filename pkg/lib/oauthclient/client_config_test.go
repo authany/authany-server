@@ -104,6 +104,10 @@ func TestClientToClientConfigCIMD(t *testing.T) {
 			So(cfg.IsCIMDClient(), ShouldBeTrue)
 		})
 
+		Convey("rotates refresh tokens, as a public client must", func() {
+			So(cfg.RefreshTokenRotationEnabled, ShouldBeTrue)
+		})
+
 		Convey("does not issue JWT access tokens", func() {
 			So(cfg.IssueJWTAccessToken, ShouldBeFalse)
 		})
