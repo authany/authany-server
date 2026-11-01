@@ -1,5 +1,7 @@
 import { describe, it, expect } from "@jest/globals";
 import {
+  COMPACT_PROJECT_ID_LENGTH,
+  compactProjectID,
   compareProjectsByDisplayName,
   deterministicProjectID,
   extractBits,
@@ -107,5 +109,20 @@ describe("compareProjectsByDisplayName", () => {
     expect(
       [...apps].sort(compareProjectsByDisplayName).map((a) => a.appID)
     ).toEqual(["accounts", "pride-4yxj8q", "b", "brain-4mkg21", "smoke"]);
+  });
+});
+
+describe("compactProjectID", () => {
+  it("is 12 lowercase letters and digits starting with a letter", () => {
+    const ids = new Set<string>();
+    for (let i = 0; i < 500; i++) {
+      const id = compactProjectID();
+      expect(id).toHaveLength(COMPACT_PROJECT_ID_LENGTH);
+      expect(id).toMatch(/^[a-z][a-z0-9]{11}$/);
+      // The server's project ID rule (pkg/portal/service/app.go).
+      expect(id).toMatch(/^[a-z0-9][a-z0-9-]{2,30}[a-z0-9]$/);
+      ids.add(id);
+    }
+    expect(ids.size).toEqual(500);
   });
 });

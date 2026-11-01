@@ -83,6 +83,35 @@ export function deterministicProjectID(fortyEightBits: Uint8Array): string {
   return `${firstRandomString}-${alphaNumericString}`;
 }
 
+const COMPACT_ID_LETTERS = "abcdefghijklmnopqrstuvwxyz";
+const COMPACT_ID_ALPHABET = COMPACT_ID_LETTERS + "0123456789";
+export const COMPACT_PROJECT_ID_LENGTH = 12;
+
+// One character of alphabet from a uniform random byte; bytes past the last
+// whole multiple of alphabet.length are rejected so no character is favoured.
+function randomCharOf(alphabet: string): string {
+  const limit = 256 - (256 % alphabet.length);
+  const buf = new Uint8Array(1);
+  for (;;) {
+    window.crypto.getRandomValues(buf);
+    if (buf[0] < limit) {
+      return alphabet[buf[0] % alphabet.length];
+    }
+  }
+}
+
+// The default project ID in the wizard (Authany): 12 lowercase letters and
+// digits, starting with a letter, e.g. k7qm3xw9fa2t. No hyphen and nothing
+// derived from the company name. The word-based helpers in this file are
+// upstream's and are kept so upstream merges stay clean.
+export function compactProjectID(): string {
+  let id = randomCharOf(COMPACT_ID_LETTERS);
+  while (id.length < COMPACT_PROJECT_ID_LENGTH) {
+    id += randomCharOf(COMPACT_ID_ALPHABET);
+  }
+  return id;
+}
+
 export function randomProjectID(): string {
   return deterministicProjectID(getRandom48Bits());
 }

@@ -140,8 +140,8 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
           // Match the metrics of a Radix size-2 menu (e.g. the avatar
           // DropdownMenu) so the two popovers read consistently.
           style={{
-            minWidth: 200,
-            maxWidth: 280,
+            minWidth: 240,
+            maxWidth: 360,
             padding: "var(--space-2)",
             borderRadius: "var(--radius-4)",
           }}
@@ -150,21 +150,16 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
             <div className={styles.sectionHeader}>
               <FormattedMessage id="ScreenHeader.projectSelector.current-project" />
             </div>
-            {currentProjectName != null ? (
-              <div className={styles.currentProjectName}>
-                {currentProjectName}
-              </div>
-            ) : null}
             <div className={styles.currentProjectRow}>
               <span
-                className={
-                  currentProjectName != null
-                    ? styles.currentProjectSecondaryID
-                    : styles.currentProjectID
-                }
+                className={styles.currentProjectID}
+                title={currentProjectName ?? displayAppID}
               >
-                {displayAppID}
+                {currentProjectName ?? displayAppID}
               </span>
+              {currentProjectName != null ? (
+                <span className={styles.projectListItemID}>{displayAppID}</span>
+              ) : null}
               <CopyIconButton textToCopy={displayAppID} />
             </div>
           </section>
@@ -183,7 +178,10 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
                       className={styles.projectListItem}
                       onClick={() => onSelectProject(app.appID)}
                     >
-                      <span className={styles.projectListItemLabel}>
+                      <span
+                        className={styles.projectListItemLabel}
+                        title={projectDisplayName(app)}
+                      >
                         {projectDisplayName(app)}
                       </span>
                       {app.projectName != null ? (
