@@ -87,7 +87,8 @@
     "FeatureConfig.phone-input.allowlist.restricted": "To send SMS/WhatsApp to other countries, contact hello@authany.com.",
     "AppsScreen.project-quota-reached": "Your account has reached its project limit. For more projects or higher limits, email hello@authany.com with a note on what you are building; we usually reply within one business day.",
     "DesignScreen.configuration.authgearBranding.upgradeNow": "Contact us",
-    "IntegrationsConfigurationScreen.add-on.gtm.description-rich": "Connect your container to Authany for conversion tracking, site analytics, retargeting, and more. See <DocLink>integration guide</DocLink> if you need help."
+    "IntegrationsConfigurationScreen.add-on.gtm.description-rich": "Connect your container to Authany for conversion tracking, site analytics, retargeting, and more. See <DocLink>integration guide</DocLink> if you need help.",
+    "ProjectWizardScreen.step1.fields.projectID.placeholder": "k7qm3xw9fa2t"
   },
   "zh-CN": {
     "error.failed-to-initialize-app": "应用初始化失败，请刷新此页面重试。",
@@ -2431,7 +2432,7 @@
     "ProjectWizardScreen.step1.fields.projectName.placeholder": "例如：Acme Corporation",
     "ProjectWizardScreen.step1.fields.projectID.label": "端点域名",
     "ProjectWizardScreen.step1.fields.projectID.hint": "这是您的应用程序所使用的 Authany 端点。一旦选定即无法更改。您可以稍后设置带有您品牌的自定义域名。",
-    "ProjectWizardScreen.step1.fields.projectID.placeholder": "acme-corporation",
+    "ProjectWizardScreen.step1.fields.projectID.placeholder": "k7qm3xw9fa2t",
     "ProjectWizardScreen.step2.header": "正在设置 {projectName}",
     "ProjectWizardScreen.step2.fields.loginMethods.label": "选择终端用户登录您应用程序的方式",
     "ProjectWizardScreen.step2.fields.authMethod.label": "选择用户登录时使用的身份验证方式",

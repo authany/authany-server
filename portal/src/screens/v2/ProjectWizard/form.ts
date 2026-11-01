@@ -5,10 +5,8 @@ import { produce } from "immer";
 import { parse as parseCSS } from "postcss";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  compactProjectID,
   isProjectNameTooLong,
-  processCompanyName,
-  projectIDFromCompanyName,
-  randomProjectID,
 } from "../../../util/projectname";
 import { useCreateAppMutation } from "../../../graphql/portal/mutations/createAppMutation";
 import { useOptionalAppContext } from "../../../context/AppContext";
@@ -155,19 +153,12 @@ function makeDefaultState({
   projectID?: string;
   companyName?: string;
 }): FormState {
-  const processedCompanyName = companyName
-    ? processCompanyName(companyName)
-    : null;
   return {
     completed: false,
     step: ProjectWizardStep.step1,
 
     projectName: companyName ? companyName : "",
-    projectID: projectID
-      ? projectID
-      : processedCompanyName
-      ? projectIDFromCompanyName(processedCompanyName)
-      : randomProjectID(),
+    projectID: projectID ? projectID : compactProjectID(),
 
     loginMethods: [LoginMethod.Email],
     authMethods: [AuthMethod.Passwordless],
