@@ -3,6 +3,7 @@ import {
   COMPACT_PROJECT_ID_LENGTH,
   compactProjectID,
   compareProjectsByDisplayName,
+  duplicatedDisplayNames,
   deterministicProjectID,
   extractBits,
   projectIDFromCompanyName,
@@ -124,5 +125,18 @@ describe("compactProjectID", () => {
       ids.add(id);
     }
     expect(ids.size).toEqual(500);
+  });
+});
+
+describe("duplicatedDisplayNames", () => {
+  it("lists only the names more than one project shows", () => {
+    expect(
+      duplicatedDisplayNames([
+        { appID: "a1", projectName: "Ondue" },
+        { appID: "a2", projectName: "Ondue" },
+        { appID: "a3", projectName: "Modeltaps" },
+        { appID: "smoke", projectName: null },
+      ])
+    ).toEqual(new Set(["Ondue"]));
   });
 });

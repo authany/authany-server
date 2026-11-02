@@ -153,6 +153,21 @@ export function projectDisplayName(project: NamedProject): string {
   return project.projectName ?? project.appID;
 }
 
+// Display names shared by more than one project: only those rows show the
+// project ID too, so two projects with one name stay distinguishable.
+export function duplicatedDisplayNames(projects: NamedProject[]): Set<string> {
+  const seen = new Set<string>();
+  const duplicated = new Set<string>();
+  for (const project of projects) {
+    const name = projectDisplayName(project);
+    if (seen.has(name)) {
+      duplicated.add(name);
+    }
+    seen.add(name);
+  }
+  return duplicated;
+}
+
 export function compareProjectsByDisplayName(
   a: NamedProject,
   b: NamedProject

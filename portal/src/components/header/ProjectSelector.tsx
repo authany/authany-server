@@ -12,9 +12,9 @@ import { toTypedID } from "../../util/graphql";
 import { isProjectQuotaReached } from "../../util/projectQuota";
 import {
   compareProjectsByDisplayName,
+  duplicatedDisplayNames,
   projectDisplayName,
 } from "../../util/projectname";
-import { CopyIconButton } from "../v2/CopyIconButton/CopyIconButton";
 import styles from "./ProjectSelector.module.css";
 
 interface ProjectSelectorProps {
@@ -55,6 +55,11 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
         .filter((app) => app.appID !== displayAppID)
         .sort(compareProjectsByDisplayName);
     }, [filteredApps, displayAppID]);
+
+    const duplicatedNames = useMemo(
+      () => duplicatedDisplayNames(filteredApps),
+      [filteredApps]
+    );
 
     const currentProjectName = useMemo(() => {
       return (
@@ -128,15 +133,6 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
         <Popover.Content
           align="start"
           sideOffset={4}
-          // Don't auto-focus the first item (the copy button) on open, which
-          // would otherwise trigger its focus tooltip ("Copy") without the
-          // user hovering. Focus stays on the trigger; Tab still enters.
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          // The copy button copies via a temporary <textarea> appended to
-          // <body>, whose .select() steals focus out of the popover. Without
-          // this, that focus-out would dismiss the popover on every copy.
-          // Click-outside and Escape still close it.
-          onFocusOutside={(e) => e.preventDefault()}
           // Match the metrics of a Radix size-2 menu (e.g. the avatar
           // DropdownMenu) so the two popovers read consistently.
           style={{
@@ -152,15 +148,15 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
             </div>
             <div className={styles.currentProjectRow}>
               <span
-                className={styles.currentProjectID}
+                className={styles.currentProjectLabel}
                 title={currentProjectName ?? displayAppID}
               >
                 {currentProjectName ?? displayAppID}
               </span>
-              {currentProjectName != null ? (
+              {currentProjectName != null &&
+              duplicatedNames.has(currentProjectName) ? (
                 <span className={styles.projectListItemID}>{displayAppID}</span>
               ) : null}
-              <CopyIconButton textToCopy={displayAppID} />
             </div>
           </section>
           {otherApps.length > 0 ? (
@@ -184,7 +180,8 @@ const ProjectSelector: React.VFC<ProjectSelectorProps> =
                       >
                         {projectDisplayName(app)}
                       </span>
-                      {app.projectName != null ? (
+                      {app.projectName != null &&
+                      duplicatedNames.has(app.projectName) ? (
                         <span className={styles.projectListItemID}>
                           {app.appID}
                         </span>

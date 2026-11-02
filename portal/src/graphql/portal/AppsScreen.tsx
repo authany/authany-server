@@ -29,11 +29,16 @@ import { useCapture } from "../../gtm_v2";
 import { toTypedID } from "../../util/graphql";
 import { useSystemConfig } from "../../context/SystemConfigContext";
 import { shouldShowSurvey } from "../../util/survey";
-import { compareProjectsByDisplayName } from "../../util/projectname";
+import {
+  compareProjectsByDisplayName,
+  duplicatedDisplayNames,
+} from "../../util/projectname";
 
 interface AppRowData {
   appID: string;
   projectName: string | null;
+  // Only when another project has the same name.
+  showAppID: boolean;
   publicOrigin: string;
   url: string;
 }
@@ -68,6 +73,7 @@ const AppRow: React.VFC<AppRowProps> = function AppRow(props: AppRowProps) {
   const {
     appID,
     projectName,
+    showAppID,
     publicOrigin,
     url,
     optionID,
@@ -112,7 +118,7 @@ const AppRow: React.VFC<AppRowProps> = function AppRow(props: AppRowProps) {
         <Text as="p" size="2" weight="medium" className={styles.rowAppID}>
           {projectName ?? appID}
         </Text>
-        {projectName != null ? (
+        {showAppID ? (
           <Text as="p" size="1" className={styles.rowSecondaryAppID}>
             {appID}
           </Text>
@@ -181,6 +187,7 @@ const AppListPanel: React.VFC<AppListPanelProps> = function AppListPanel(
   const [searchKeyword, setSearchKeyword] = useState("");
 
   const appRowsData: AppRowData[] = useMemo(() => {
+    const duplicatedNames = duplicatedDisplayNames(apps);
     // Sorted by the name shown in each row; the API sorts by app ID.
     return [...apps].sort(compareProjectsByDisplayName).map((app) => {
       const appID = app.appID;
@@ -189,6 +196,8 @@ const AppListPanel: React.VFC<AppListPanelProps> = function AppListPanel(
       return {
         appID,
         projectName: app.projectName ?? null,
+        showAppID:
+          app.projectName != null && duplicatedNames.has(app.projectName),
         publicOrigin: app.publicOrigin,
         url: relPath,
       };
