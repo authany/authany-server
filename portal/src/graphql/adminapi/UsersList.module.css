@@ -1,3 +1,10 @@
+/*
+ * Every row is a grid with the same tracks, so columns stretch with the list
+ * and spare width goes to user and email. As the list narrows, UsersList sets
+ * a fold class and columns move into the user cell (see "Folding");
+ * horizontal scroll is the last resort.
+ */
+
 .root {
   display: flex;
   flex-direction: column;
@@ -8,123 +15,159 @@
 .tableWrapper {
   flex: 0 1 auto;
   min-height: 0;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--gray-a6);
   border-radius: var(--radius-3);
 }
 
 .table {
-  width: max-content;
-  min-width: 100%;
+  --col-user: minmax(15rem, 2fr);
+  --col-username: minmax(7.5rem, 1fr);
+  --col-email: minmax(12rem, 2fr);
+  --col-phone: minmax(7.5rem, 1fr);
+  --col-roles: 0;
+  --col-groups: 0;
+  --col-created: 9.5rem;
+  --col-last-login: 9.5rem;
+  --col-action: 3.5rem;
+
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* The narrowest fold's minimum; below it the wrapper scrolls. */
+  min-width: 23.5rem;
+}
+
+.table--withRoles {
+  --col-roles: minmax(7.5rem, 1fr);
+  --col-groups: minmax(7.5rem, 1fr);
+}
+
+/* Nobody on this page has the value: shrink the column to its header. */
+.table--noUsername {
+  --col-username: 7rem;
+}
+
+.table--noPhone {
+  --col-phone: 7rem;
 }
 
 .tableHeader,
-.tableRow,
-.shimmerRow {
-  display: flex;
-  align-items: center;
-  min-width: 100%;
+.tableRow {
+  display: grid;
+  grid-template-columns:
+    var(--col-user) var(--col-username) var(--col-email) var(--col-phone)
+    var(--col-roles) var(--col-groups) var(--col-created) var(--col-last-login)
+    var(--col-action);
+  align-items: stretch;
 }
 
 .tableHeader {
-  min-height: 2.75rem;
   position: sticky;
   top: 0;
   z-index: 2;
+  min-height: 2.75rem;
   background-color: var(--gray-2);
-  border-top-left-radius: var(--radius-3);
-  border-top-right-radius: var(--radius-3);
 }
 
 .tableRow {
   min-height: 4rem;
   border-top: 1px solid var(--gray-a6);
   cursor: pointer;
+  transition: background-color 120ms ease-out;
 }
 
 .tableRow:hover {
-  /* Opaque so the sticky ID column can match without showing scrolled cells. */
+  /* Opaque so the sticky user column can match without showing scrolled cells. */
   background-color: var(--gray-2);
 }
 
-.tableHeaderCellInfo,
-.tableHeaderCellStandard,
-.tableHeaderCellPhone,
-.tableHeaderCellDate,
-.tableHeaderCellAction,
-.tableCellInfo,
-.tableCellStandard,
-.tableCellPhone,
-.tableCellDate,
-.tableCellAction {
+.cell,
+.headerCell {
   display: flex;
   align-items: center;
-  flex-shrink: 0;
+  min-width: 0;
   padding: 12px 16px;
   color: var(--gray-12);
 }
 
-.tableHeaderCellInfo,
-.tableHeaderCellStandard,
-.tableHeaderCellPhone,
-.tableHeaderCellDate,
-.tableHeaderCellAction {
+.headerCell {
   min-height: 2.75rem;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
+  color: var(--gray-11);
+  white-space: nowrap;
 }
 
-.tableHeaderCellInfo,
-.tableCellInfo {
-  width: 18.75rem;
+.cell--user,
+.headerCell--user {
   position: sticky;
   left: 0;
 }
 
-.tableHeaderCellInfo {
+.headerCell--user {
   z-index: 3;
   background-color: var(--gray-2);
 }
 
-.tableCellInfo {
+.cell--user {
   z-index: 1;
   /* Must be opaque: this cell is sticky and covers horizontally scrolled cells. */
   background-color: var(--color-background);
 }
 
-.tableRow:hover .tableCellInfo {
+.tableRow:hover .cell--user {
   background-color: var(--gray-2);
 }
 
-.tableHeaderCellStandard,
-.tableCellStandard {
-  width: 9.375rem;
+.cell--date {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
-.tableHeaderCellPhone,
-.tableCellPhone {
-  width: 7.5rem;
-}
-
-.tableHeaderCellDate,
-.tableCellDate {
-  width: 15rem;
-}
-
-.tableHeaderCellAction,
-.tableCellAction {
-  width: 3.5rem;
+.cell--action,
+.headerCell--action {
   justify-content: flex-end;
+  padding-left: 0;
+  padding-right: 12px;
 }
 
-.tableCellStandard,
-.tableCellPhone,
-.tableCellDate,
-.tableCellAction {
-  min-height: 4rem;
-  overflow: hidden;
+/* Fixed tracks, so a hidden column never shifts the cells after it. */
+.col--user {
+  grid-column: 1;
+}
+
+.col--username {
+  grid-column: 2;
+}
+
+.col--email {
+  grid-column: 3;
+}
+
+.col--phone {
+  grid-column: 4;
+}
+
+.col--roles {
+  grid-column: 5;
+}
+
+.col--groups {
+  grid-column: 6;
+}
+
+.col--created {
+  grid-column: 7;
+}
+
+.col--last-login {
+  grid-column: 8;
+}
+
+.col--action {
+  grid-column: 9;
 }
 
 .cellText {
@@ -132,21 +175,29 @@
   min-width: 0;
 }
 
+/* ── User cell ── */
+
 .userInfo {
   display: grid;
-  column-gap: 12px;
   grid-template-columns: 40px minmax(0, 1fr);
-  grid-template-rows: repeat(2, 20px);
+  column-gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
 }
 
 .userInfoPicture {
-  grid-column: 1 / span 1;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 3;
+}
+
+.userInfoLines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .userInfoDisplayName {
-  grid-column: 2 / span 1;
-  grid-row: 1 / span 1;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -162,19 +213,55 @@
   flex-shrink: 0;
 }
 
+.userInfoID {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 20px;
+}
+
 .userInfoRawID {
-  grid-column: 2 / span 1;
-  grid-row: 2 / span 1;
-  align-self: center;
   @apply truncate;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
 }
 
-.anonymousUserLabel {
-  font-style: italic;
+.copyID {
+  display: inline-flex;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
 }
 
+.tableRow:hover .copyID,
+.tableRow:focus-within .copyID {
+  opacity: 1;
+}
+
+/* Values of folded columns, shown in the user cell when narrow. */
+.userInfoMeta {
+  display: none;
+  flex-wrap: wrap;
+  column-gap: 12px;
+  min-width: 0;
+}
+
+.metaItem {
+  display: none;
+  @apply truncate;
+  max-width: 100%;
+}
+
+.anonymousUserLabel,
 .anonymizedUserLabel {
-  font-style: italic;
+  color: var(--gray-11);
+}
+
+/* ── Sorting ── */
+
+.headerCell--sort {
+  padding: 0;
 }
 
 .sortButton {
@@ -186,14 +273,16 @@
   padding: 12px 16px;
   border: 0;
   background: transparent;
-  color: var(--gray-12);
-  font-size: 14px;
-  font-weight: 600;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
   cursor: pointer;
+  transition: color 120ms ease-out;
 }
 
-.sortButton:hover {
-  color: var(--accent-11);
+.sortButton:hover,
+.sortButton--active {
+  color: var(--gray-12);
 }
 
 .sortIcon {
@@ -204,21 +293,20 @@
   background-color: transparent;
 }
 
-.tableHeaderCellDate {
-  padding: 0;
-}
+/* ── Empty and loading ── */
 
 .emptyRow {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 100%;
   min-height: 4rem;
   padding: 16px;
   border-top: 1px solid var(--gray-a6);
 }
 
 .shimmerRow {
+  display: flex;
+  align-items: center;
   min-height: 4rem;
   padding: 12px 16px;
   border-top: 1px solid var(--gray-a6);
@@ -250,4 +338,70 @@
 
 .empty {
   @apply hidden;
+}
+
+/* ── Folding ── */
+
+/* 1. Username and phone move into the user cell. */
+.table--fold1,
+.table--fold2,
+.table--fold3 {
+  --col-username: 0;
+  --col-phone: 0;
+}
+
+.table--fold1 .col--username,
+.table--fold1 .col--phone,
+.table--fold2 .col--username,
+.table--fold2 .col--phone,
+.table--fold3 .col--username,
+.table--fold3 .col--phone {
+  display: none;
+}
+
+.table--fold1 .userInfoMeta,
+.table--fold2 .userInfoMeta,
+.table--fold3 .userInfoMeta {
+  display: flex;
+}
+
+.table--fold1 .metaItem--username,
+.table--fold1 .metaItem--phone,
+.table--fold2 .metaItem--username,
+.table--fold2 .metaItem--phone,
+.table--fold3 .metaItem--username,
+.table--fold3 .metaItem--phone {
+  display: block;
+}
+
+/* 2. Signed-up date goes; the details page still shows it. */
+.table--fold2,
+.table--fold3 {
+  --col-created: 0;
+}
+
+.table--fold2 .col--created,
+.table--fold3 .col--created {
+  display: none;
+}
+
+/* 3. Phone-sized: user and last login only. */
+.table--fold3 {
+  --col-user: minmax(12rem, 1fr);
+  --col-last-login: 8.5rem;
+  --col-action: 3rem;
+  --col-email: 0;
+  --col-roles: 0;
+  --col-groups: 0;
+}
+
+.table--fold3 .col--email,
+.table--fold3 .col--roles,
+.table--fold3 .col--groups {
+  display: none;
+}
+
+.table--fold3 .metaItem--email,
+.table--fold3 .metaItem--roles {
+  display: block;
 }

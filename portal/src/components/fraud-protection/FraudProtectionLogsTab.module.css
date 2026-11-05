@@ -190,15 +190,13 @@
   background-color: var(--color-panel-solid);
 }
 
+/* Below the column minimums (set inline) the wrapper scrolls. */
 .table {
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
 }
 
 .tableHeader {
   @apply flex items-stretch;
-  width: max-content;
-  min-width: 100%;
   min-height: 2.75rem;
   background-color: var(--gray-2);
 }
@@ -208,15 +206,13 @@
   box-sizing: border-box;
   padding: 12px 16px;
   font-size: 14px;
-  font-weight: 600;
-  color: var(--gray-12);
+  font-weight: 500;
+  color: var(--gray-11);
   white-space: nowrap;
 }
 
 .tableRow {
   @apply flex items-center cursor-pointer;
-  width: max-content;
-  min-width: 100%;
   min-height: 3.25rem;
   border-top: 1px solid var(--gray-a6);
   transition: background-color 0.12s ease;
@@ -268,8 +264,6 @@
 
 .shimmerRow {
   @apply flex items-center;
-  width: max-content;
-  min-width: 100%;
   min-height: 3.25rem;
   border-top: 1px solid var(--gray-a6);
   animation: shimmer-pulse 1.5s ease-in-out infinite;

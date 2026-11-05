@@ -25,11 +25,12 @@
 }
 
 /* ── Table ── */
-/* Column min widths: 24 + 18 + 18 + 2.75 = 62.75rem */
+/* Columns stretch with the list; below the minimums
+   (14 + 11 + 18 + 2.75 = 45.75rem) the wrapper scrolls. */
 
 .table {
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
+  min-width: 45.75rem;
 }
 
 /* ── Header row ── */
@@ -37,8 +38,7 @@
 .tableHeader {
   display: flex;
   align-items: stretch;
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
   min-height: 2.75rem;
   background-color: var(--gray-2);
   border-top-left-radius: var(--radius-3);
@@ -70,25 +70,23 @@
   box-sizing: border-box;
   padding: 12px 16px;
   font-size: 14px;
-  font-weight: 600;
-  color: var(--gray-12);
+  font-weight: 500;
+  color: var(--gray-11);
   background-color: var(--gray-2);
 }
 
 .headerCellUser {
-  width: 24rem;
-  flex-shrink: 0;
-  min-width: 0;
+  flex: 3 1 0;
+  min-width: 14rem;
 }
 
 .headerCellActivityType {
-  width: 18rem;
-  flex-shrink: 0;
+  flex: 2 1 0;
+  min-width: 11rem;
 }
 
 .headerCellCreatedAt {
-  flex: 1 1 0;
-  min-width: 18rem;
+  flex: 0 0 18rem;
   padding: 0;
   align-self: stretch;
 }
@@ -111,16 +109,15 @@
   border: none;
   cursor: pointer;
   padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--gray-12);
+  font: inherit;
+  color: inherit;
   width: 100%;
   min-height: 100%;
   white-space: nowrap;
 }
 
 .sortButton:hover {
-  color: var(--accent-11);
+  color: var(--gray-12);
 }
 
 .sortIcon {
@@ -133,8 +130,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
   min-height: 3.25rem;
 }
 
@@ -173,8 +169,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
   min-height: 3.25rem;
   padding: 16px;
 }
@@ -196,9 +191,8 @@
 }
 
 .cellUser {
-  width: 24rem;
-  flex-shrink: 0;
-  min-width: 0;
+  flex: 3 1 0;
+  min-width: 14rem;
   overflow: hidden;
 }
 
@@ -232,8 +226,8 @@
 }
 
 .cellActivityType {
-  width: 18rem;
-  flex-shrink: 0;
+  flex: 2 1 0;
+  min-width: 11rem;
 }
 
 .activityTypeLink {
@@ -245,12 +239,9 @@
 }
 
 .cellCreatedAt {
-  flex: 1 1 0;
-  min-width: 18rem;
-}
-
-.cellCreatedAt .cellText {
-  white-space: nowrap;
+  flex: 0 0 18rem;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .cellChevron {
@@ -264,14 +255,66 @@
   color: var(--gray-9);
 }
 
+/* Phone: each entry stacks user, activity and time beside the chevron, and
+   the header keeps only the sort control. */
+/* stylelint-disable-next-line media-query-no-invalid */
+@media screen(mobile) {
+  .table {
+    min-width: 0;
+  }
+
+  .headerCellUser,
+  .headerCellActivityType {
+    display: none;
+  }
+
+  .headerCellCreatedAt {
+    flex: 1 1 auto;
+  }
+
+  .tableRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2.75rem;
+    grid-template-areas:
+      "user chevron"
+      "activity chevron"
+      "time chevron";
+    align-items: center;
+    padding: 12px 0;
+  }
+
+  .cellUser,
+  .cellActivityType,
+  .cellCreatedAt {
+    min-width: 0;
+    padding: 2px 16px;
+  }
+
+  .cellUser {
+    grid-area: user;
+  }
+
+  .cellActivityType {
+    grid-area: activity;
+  }
+
+  .cellCreatedAt {
+    grid-area: time;
+    color: var(--gray-11);
+  }
+
+  .cellChevron {
+    grid-area: chevron;
+  }
+}
+
 /* ── Shimmer skeleton ── */
 
 .shimmerRow {
   position: relative;
   display: flex;
   align-items: center;
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
   min-height: 3.25rem;
   animation: shimmer-pulse 1.5s ease-in-out infinite;
 }
@@ -309,13 +352,15 @@
 }
 
 .shimmerUser {
-  width: 10rem;
-  flex-shrink: 0;
+  flex: 3 1 0;
+  min-width: 0;
+  max-width: 10rem;
 }
 
 .shimmerActivityType {
-  width: 12rem;
-  flex-shrink: 0;
+  flex: 2 1 0;
+  min-width: 0;
+  max-width: 12rem;
 }
 
 .shimmerCreatedAt {

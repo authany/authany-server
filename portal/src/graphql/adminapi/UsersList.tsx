@@ -1,4 +1,10 @@
-import React, { useMemo, useContext, useState, useCallback } from "react";
+import React, {
+  useMemo,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import cn from "classnames";
 import {
   Avatar,
@@ -37,9 +43,11 @@ import { extractRawID } from "../../util/graphql";
 import { formatDatetime } from "../../util/formatDatetime";
 import { formatDateOnly } from "../../util/formatDateOnly";
 import { Tooltip } from "../../components/v2/Tooltip/Tooltip";
+import { CopyIconButton } from "../../components/v2/CopyIconButton/CopyIconButton";
 
 import styles from "./UsersList.module.css";
 import { useDebounced } from "../../hook/useDebounced";
+import { useElementWidth } from "../../hook/useElementWidth";
 
 interface UsersListProps {
   className?: string;
@@ -103,8 +111,26 @@ interface DisableUserDialogData {
 
 const USER_LIST_PLACEHOLDER = "-";
 
+// List widths (px) below which columns fold into the user cell: the sum of
+// the column minimums in UsersList.module.css at each stage.
+const FOLD_WIDTHS = [1056, 800, 656];
+const FOLD_WIDTHS_WITH_ROLES = [1296, 1040, 896];
+
+function foldLevel(width: number, showRolesAndGroups: boolean): number {
+  if (width === 0) {
+    return 0;
+  }
+  const thresholds = showRolesAndGroups ? FOLD_WIDTHS_WITH_ROLES : FOLD_WIDTHS;
+  return thresholds.filter((threshold) => width < threshold).length;
+}
+
 interface UserInfoProps {
   item: UserListItem;
+  showRolesAndGroups: boolean;
+}
+
+function stopPropagation(e: React.SyntheticEvent) {
+  e.stopPropagation();
 }
 
 function UserInfo(props: UserInfoProps) {
@@ -117,8 +143,15 @@ function UserInfo(props: UserInfoProps) {
       isAnonymous,
       isAnonymized,
       isDisabled,
+      username,
+      phone,
+      email,
+      roles,
+      groups,
     },
+    showRolesAndGroups,
   } = props;
+  const nameText = formattedName ?? endUserAccountID ?? rawID;
   const displayName = isAnonymous ? (
     <Text className={styles.anonymousUserLabel}>
       <FormattedMessage id="UsersList.anonymous-user" />
@@ -128,13 +161,15 @@ function UserInfo(props: UserInfoProps) {
       <FormattedMessage id="UsersList.anonymized-user" />
     </Text>
   ) : (
-    formattedName ?? endUserAccountID ?? rawID
+    nameText
   );
-  const fallback =
-    (formattedName ?? endUserAccountID ?? rawID)
-      .trim()
-      .charAt(0)
-      .toUpperCase() || "?";
+  const fallback = nameText.trim().charAt(0).toUpperCase() || "?";
+  const relatedItemsText = showRolesAndGroups
+    ? [roles, groups]
+        .filter((related) => related.totalCount > 0)
+        .map(getRelatedItemsText)
+        .join(" · ")
+    : "";
 
   return (
     <div className={styles.userInfo}>
@@ -145,28 +180,64 @@ function UserInfo(props: UserInfoProps) {
         src={profilePictureURL ?? undefined}
         fallback={fallback}
       />
-      <div className={styles.userInfoDisplayName}>
-        <Text
-          size="2"
-          weight="medium"
-          className={styles.userInfoDisplayNameText}
-        >
-          {displayName}
-        </Text>
-        {isDisabled && !isAnonymized ? (
-          <Badge
-            color="red"
-            size="1"
-            radius="small"
-            className={styles.disabledBadge}
+      <div className={styles.userInfoLines}>
+        <div className={styles.userInfoDisplayName}>
+          <Text
+            size="2"
+            weight="medium"
+            className={styles.userInfoDisplayNameText}
           >
-            <FormattedMessage id="AccountStatusBadge.disabled" />
-          </Badge>
-        ) : null}
+            {displayName}
+          </Text>
+          {isDisabled && !isAnonymized ? (
+            <Badge
+              color="red"
+              size="1"
+              radius="small"
+              className={styles.disabledBadge}
+            >
+              <FormattedMessage id="AccountStatusBadge.disabled" />
+            </Badge>
+          ) : null}
+        </div>
+        {/* Values of columns folded away on narrow lists; hidden otherwise. */}
+        <Text size="1" color="gray" className={styles.userInfoMeta}>
+          {email != null && email !== nameText ? (
+            <span className={cn(styles.metaItem, styles["metaItem--email"])}>
+              {email}
+            </span>
+          ) : null}
+          {username != null ? (
+            <span className={cn(styles.metaItem, styles["metaItem--username"])}>
+              {username}
+            </span>
+          ) : null}
+          {phone != null ? (
+            <span className={cn(styles.metaItem, styles["metaItem--phone"])}>
+              {phone}
+            </span>
+          ) : null}
+          {relatedItemsText !== "" ? (
+            <span className={cn(styles.metaItem, styles["metaItem--roles"])}>
+              {relatedItemsText}
+            </span>
+          ) : null}
+        </Text>
+        <div className={styles.userInfoID}>
+          <Tooltip content={rawID}>
+            <Text size="1" color="gray" className={styles.userInfoRawID}>
+              {rawID}
+            </Text>
+          </Tooltip>
+          <span
+            className={styles.copyID}
+            onClick={stopPropagation}
+            onKeyDown={stopPropagation}
+          >
+            <CopyIconButton textToCopy={rawID} />
+          </span>
+        </div>
       </div>
-      <Text size="1" color="gray" className={styles.userInfoRawID}>
-        {rawID}
-      </Text>
     </div>
   );
 }
@@ -179,9 +250,15 @@ function CellText({ value }: { value: string | null }) {
   );
 }
 
-function UserTextCell({ value }: { value: string | null }) {
+function UserTextCell({
+  value,
+  column,
+}: {
+  value: string | null;
+  column: string;
+}) {
   return (
-    <div className={styles.tableCellStandard}>
+    <div className={cn(styles.cell, styles[`col--${column}`])}>
       <CellText value={value} />
     </div>
   );
@@ -191,19 +268,26 @@ function UserTextCell({ value }: { value: string | null }) {
 function DateCell({
   dateOnly,
   datetime,
+  column,
 }: {
   dateOnly: string | null;
   datetime: string | null;
+  column: string;
 }) {
+  const className = cn(
+    styles.cell,
+    styles["cell--date"],
+    styles[`col--${column}`]
+  );
   if (dateOnly == null || datetime == null) {
     return (
-      <div className={styles.tableCellDate}>
+      <div className={className}>
         <CellText value={dateOnly} />
       </div>
     );
   }
   return (
-    <div className={styles.tableCellDate}>
+    <div className={className}>
       <Tooltip content={datetime}>
         <Text size="2" className={styles.cellText}>
           {dateOnly}
@@ -243,7 +327,11 @@ function SortHeader({
     ? CaretUpIcon
     : CaretDownIcon;
   return (
-    <button type="button" className={styles.sortButton} onClick={onClick}>
+    <button
+      type="button"
+      className={cn(styles.sortButton, active && styles["sortButton--active"])}
+      onClick={onClick}
+    >
       {children}
       <SortIcon className={styles.sortIcon} />
     </button>
@@ -267,6 +355,8 @@ const UsersList: React.VFC<UsersListProps> = function UsersList(props) {
   const edges = props.users?.edges;
 
   const [loading] = useDebounced(rawLoading, 500);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const rootWidth = useElementWidth(rootRef);
 
   const { renderToString, locale } = useContext(Context);
   const { appID } = useParams() as { appID: string };
@@ -400,36 +490,51 @@ const UsersList: React.VFC<UsersListProps> = function UsersList(props) {
   }, []);
 
   const isEmpty = !loading && items.length === 0;
+  const fold = foldLevel(rootWidth, showRolesAndGroups);
+  const hasUsername = items.some((item) => item.username != null);
+  const hasPhone = items.some((item) => item.phone != null);
+  const headerCell = (column: string, extra?: string) =>
+    cn(styles.headerCell, styles[`col--${column}`], extra);
 
   return (
     <>
-      <div className={cn(styles.root, className)}>
+      <div ref={rootRef} className={cn(styles.root, className)}>
         <div className={styles.tableWrapper}>
-          <div className={styles.table}>
+          <div
+            className={cn(
+              styles.table,
+              showRolesAndGroups && styles["table--withRoles"],
+              !loading && !hasUsername && styles["table--noUsername"],
+              !loading && !hasPhone && styles["table--noPhone"],
+              fold > 0 && styles[`table--fold${fold}`]
+            )}
+          >
             <div className={styles.tableHeader}>
-              <div className={styles.tableHeaderCellInfo}>
+              <div className={headerCell("user", styles["headerCell--user"])}>
                 <FormattedMessage id="UsersList.column.raw-id" />
               </div>
-              <div className={styles.tableHeaderCellStandard}>
+              <div className={headerCell("username")}>
                 <FormattedMessage id="UsersList.column.username" />
               </div>
-              <div className={styles.tableHeaderCellStandard}>
+              <div className={headerCell("email")}>
                 <FormattedMessage id="UsersList.column.email" />
               </div>
-              <div className={styles.tableHeaderCellPhone}>
+              <div className={headerCell("phone")}>
                 <FormattedMessage id="UsersList.column.phone" />
               </div>
               {showRolesAndGroups ? (
                 <>
-                  <div className={styles.tableHeaderCellStandard}>
+                  <div className={headerCell("roles")}>
                     <FormattedMessage id="UsersList.column.roles" />
                   </div>
-                  <div className={styles.tableHeaderCellStandard}>
+                  <div className={headerCell("groups")}>
                     <FormattedMessage id="UsersList.column.groups" />
                   </div>
                 </>
               ) : null}
-              <div className={styles.tableHeaderCellDate}>
+              <div
+                className={headerCell("created", styles["headerCell--sort"])}
+              >
                 <SortHeader
                   active={sortBy === UserSortBy.CreatedAt}
                   sortDirection={sortDirection}
@@ -438,7 +543,9 @@ const UsersList: React.VFC<UsersListProps> = function UsersList(props) {
                   <FormattedMessage id="UsersList.column.signed-up" />
                 </SortHeader>
               </div>
-              <div className={styles.tableHeaderCellDate}>
+              <div
+                className={headerCell("last-login", styles["headerCell--sort"])}
+              >
                 <SortHeader
                   active={sortBy === UserSortBy.LastLoginAt}
                   sortDirection={sortDirection}
@@ -447,7 +554,9 @@ const UsersList: React.VFC<UsersListProps> = function UsersList(props) {
                   <FormattedMessage id="UsersList.column.last-login-at" />
                 </SortHeader>
               </div>
-              <div className={styles.tableHeaderCellAction} />
+              <div
+                className={headerCell("action", styles["headerCell--action"])}
+              />
             </div>
             {loading
               ? Array.from({ length: 5 }).map((_, index) => (
@@ -471,32 +580,49 @@ const UsersList: React.VFC<UsersListProps> = function UsersList(props) {
                       }
                     }}
                   >
-                    <div className={styles.tableCellInfo}>
-                      <UserInfo item={item} />
+                    <div
+                      className={cn(
+                        styles.cell,
+                        styles["cell--user"],
+                        styles["col--user"]
+                      )}
+                    >
+                      <UserInfo
+                        item={item}
+                        showRolesAndGroups={showRolesAndGroups}
+                      />
                     </div>
-                    <UserTextCell value={item.username} />
-                    <UserTextCell value={item.email} />
-                    <div className={styles.tableCellPhone}>
-                      <CellText value={item.phone} />
-                    </div>
+                    <UserTextCell value={item.username} column="username" />
+                    <UserTextCell value={item.email} column="email" />
+                    <UserTextCell value={item.phone} column="phone" />
                     {showRolesAndGroups ? (
                       <>
-                        <UserTextCell value={getRelatedItemsText(item.roles)} />
+                        <UserTextCell
+                          value={getRelatedItemsText(item.roles)}
+                          column="roles"
+                        />
                         <UserTextCell
                           value={getRelatedItemsText(item.groups)}
+                          column="groups"
                         />
                       </>
                     ) : null}
                     <DateCell
                       dateOnly={item.createdAtDateOnly}
                       datetime={item.createdAt}
+                      column="created"
                     />
                     <DateCell
                       dateOnly={item.lastLoginAtDateOnly}
                       datetime={item.lastLoginAt}
+                      column="last-login"
                     />
                     <div
-                      className={styles.tableCellAction}
+                      className={cn(
+                        styles.cell,
+                        styles["cell--action"],
+                        styles["col--action"]
+                      )}
                       onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => e.stopPropagation()}
                     >
