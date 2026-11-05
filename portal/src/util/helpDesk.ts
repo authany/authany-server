@@ -1,5 +1,6 @@
-// Short.io redirect to the help desk; it forwards the query string.
-const HELP_DESK_URL = "https://go.authgear.com/portal-support";
+// Authany: upstream sends these requests to its own help desk form; ours go to
+// hello@authany.com as an email with the known details prefilled.
+const HELP_DESK_EMAIL = "hello@authany.com";
 
 export type HelpDeskPurpose =
   | "project-limit"
@@ -15,19 +16,24 @@ export interface HelpDeskURLOptions {
   fullName?: string | null;
 }
 
-// Unknown values are omitted so the help desk form leaves those fields blank.
+// Unknown values are omitted so the email leaves those lines out.
 export function makeHelpDeskURL(options: HelpDeskURLOptions): string {
   const { purpose, projectID, email, fullName } = options;
-  const url = new URL(HELP_DESK_URL);
+  const lines: string[] = [];
   if (projectID) {
-    url.searchParams.set("project", projectID);
+    lines.push(`Project: ${projectID}`);
   }
   if (email) {
-    url.searchParams.set("email", email);
+    lines.push(`Email: ${email}`);
   }
   if (fullName) {
-    url.searchParams.set("name", fullName);
+    lines.push(`Name: ${fullName}`);
   }
-  url.searchParams.set("purpose", purpose);
-  return url.toString();
+  lines.push(`Purpose: ${purpose}`);
+  const subject = `Authany console request: ${purpose}`;
+  return (
+    `mailto:${HELP_DESK_EMAIL}` +
+    `?subject=${encodeURIComponent(subject)}` +
+    `&body=${encodeURIComponent(lines.join("\n") + "\n\n")}`
+  );
 }
