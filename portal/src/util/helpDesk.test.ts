@@ -11,7 +11,7 @@ describe("makeHelpDeskURL", () => {
         fullName: "Chan Tai Man",
       })
     ).toEqual(
-      "https://go.authgear.com/portal-support?project=myapp&email=user%2B1%40example.com&name=Chan+Tai+Man&purpose=sms-otp"
+      "mailto:hello@authany.com?subject=Authany%20console%20request%3A%20sms-otp&body=Project%3A%20myapp%0AEmail%3A%20user%2B1%40example.com%0AName%3A%20Chan%20Tai%20Man%0APurpose%3A%20sms-otp%0A%0A"
     );
   });
 
@@ -24,7 +24,7 @@ describe("makeHelpDeskURL", () => {
         fullName: "",
       })
     ).toEqual(
-      "https://go.authgear.com/portal-support?email=user%40example.com&purpose=project-limit"
+      "mailto:hello@authany.com?subject=Authany%20console%20request%3A%20project-limit&body=Email%3A%20user%40example.com%0APurpose%3A%20project-limit%0A%0A"
     );
   });
 });
