@@ -66,6 +66,7 @@ interface UserDetailsAccountSecurityProps {
 interface PasskeyIdentityData {
   id: string;
   displayName: string;
+  providerName: string | null;
   addedOn: string;
 }
 
@@ -175,6 +176,9 @@ function constructPasskeyIdentityData(
     displayName: (identity.claims[
       "https://authgear.com/claims/passkey/display_name"
     ] ?? "") as string,
+    providerName: (identity.claims[
+      "https://authgear.com/claims/passkey/provider_name"
+    ] ?? null) as string | null,
     addedOn,
   };
 }
@@ -570,8 +574,14 @@ const SecondaryAuthenticatorTableCell: React.VFC<SecondaryAuthenticatorTableCell
 
 const PasskeyIdentityCell: React.VFC<PasskeyIdentityCellProps> =
   function PasskeyIdentityCell(props: PasskeyIdentityCellProps) {
-    const { id, displayName, addedOn, showConfirmationDialog, withTopSpacing } =
-      props;
+    const {
+      id,
+      displayName,
+      providerName,
+      addedOn,
+      showConfirmationDialog,
+      withTopSpacing,
+    } = props;
     const onRemoveClicked = useCallback(() => {
       showConfirmationDialog({
         id,
@@ -597,6 +607,15 @@ const PasskeyIdentityCell: React.VFC<PasskeyIdentityCellProps> =
           size="2"
           weight="medium"
           className={cn(styles.cellLabel, styles.passkeyCellLabel)}
+        >
+          {providerName ?? (
+            <FormattedMessage id="UserDetails.account-security.passkey.unknown-provider" />
+          )}
+        </Text>
+        <Text
+          size="2"
+          color="gray"
+          className={cn(styles.cellDesc, styles.passkeyCellDisplayName)}
         >
           {displayName}
         </Text>
@@ -1046,6 +1065,20 @@ const UserDetailsAccountSecurity: React.VFC<UserDetailsAccountSecurityProps> =
       return true;
     }, [authenticationConfig, globalGracePeriodEndAt, userMFAGracePeriodEndAt]);
 
+    // The server rejects a grace period ending more than 90 days from now, so
+    // offer "extend" only while another 10 days stays within that.
+    const extensionWithinLimit = useMemo(() => {
+      if (userMFAGracePeriodEndAt == null) {
+        return true;
+      }
+      const now = DateTime.now();
+      const fromDate = DateTime.max(
+        now,
+        DateTime.fromISO(userMFAGracePeriodEndAt)
+      );
+      return fromDate.plus({ days: 10 }) <= now.plus({ days: 90 });
+    }, [userMFAGracePeriodEndAt]);
+
     const showConfirmationDialog = useCallback(
       (options: RemoveConfirmationDialogData) => {
         setConfirmationDialogData(options);
@@ -1455,7 +1488,11 @@ const UserDetailsAccountSecurity: React.VFC<UserDetailsAccountSecurityProps> =
                 {canExtendMFAGracePeriod ? (
                   <div className={styles.updateMFAGracePeriodContainer}>
                     <FormattedMessage
-                      id="UserDetails.account-security.secondary.update-existing-grace-period"
+                      id={
+                        extensionWithinLimit
+                          ? "UserDetails.account-security.secondary.update-existing-grace-period"
+                          : "UserDetails.account-security.secondary.cancel-existing-grace-period"
+                      }
                       values={{
                         extend: onRenderExtendedMFAGracePeriod,
                         cancel: onRenderCancelMFAGracePeriod,
@@ -1664,7 +1701,11 @@ const UserDetailsAccountSecurity: React.VFC<UserDetailsAccountSecurityProps> =
                 {canExtendMFAGracePeriod ? (
                   <div className={styles.updateMFAGracePeriodContainer}>
                     <FormattedMessage
-                      id="UserDetails.account-security.secondary.update-existing-grace-period"
+                      id={
+                        extensionWithinLimit
+                          ? "UserDetails.account-security.secondary.update-existing-grace-period"
+                          : "UserDetails.account-security.secondary.cancel-existing-grace-period"
+                      }
                       values={{
                         extend: onRenderExtendedMFAGracePeriod,
                         cancel: onRenderCancelMFAGracePeriod,

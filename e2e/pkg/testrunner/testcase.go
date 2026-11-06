@@ -922,6 +922,17 @@ func (tc *TestCase) executeStep(
 			}
 		}
 
+	case StepActionGoTest:
+		output, err := cmd.RunGoTest(step.GoTestPackage, step.GoTestRun)
+		if err != nil {
+			t.Errorf("go test in '%s' failed: %v\n%s", step.Name, err, output)
+			return nil, state, false
+		}
+		result = &StepResult{
+			Result: nil,
+			Error:  nil,
+		}
+
 	default:
 		t.Errorf("unknown action in '%s': %s", step.Name, step.Action)
 		return nil, state, false
@@ -1071,6 +1082,13 @@ func makeTemplateFuncMap(cmd *End2EndCmd) texttemplate.FuncMap {
 	}
 	templateFuncMap["generatePasskeyAttestation"] = func(options any, origin string) string {
 		response, err := GeneratePasskeyAttestation(options, origin)
+		if err != nil {
+			panic(err)
+		}
+		return response
+	}
+	templateFuncMap["generatePasskeyAttestationWithAAGUID"] = func(options any, origin string, aaguid string) string {
+		response, err := GeneratePasskeyAttestationWithAAGUID(options, origin, aaguid)
 		if err != nil {
 			panic(err)
 		}
