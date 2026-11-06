@@ -2,6 +2,8 @@
   "en": {
     "system.name": "Authany",
     "system.title": "Authany Portal",
+    "system.logo-uri": "/img/logo.png",
+    "system.logo-inverted-uri": "/img/logo-inverted.png",
     "error.client-quota-exceeded": "Application quota exceeded. To add more, contact hello@authany.com.",
     "errors.alchemy-protocol": "We have some problem with this NFT collection. Please contact us at <externalLink>hello@authany.com</externalLink>.",
     "AddUserScreen.password-creation-type.auto-generate.description": "Authany will create a secure password and email it to the user.",
