@@ -88,7 +88,8 @@
     "AppsScreen.project-quota-reached": "Your account has reached its project limit. For more projects or higher limits, email hello@authany.com with a note on what you are building; we usually reply within one business day.",
     "DesignScreen.configuration.authgearBranding.upgradeNow": "Contact us",
     "IntegrationsConfigurationScreen.add-on.gtm.description-rich": "Connect your container to Authany for conversion tracking, site analytics, retargeting, and more. See <DocLink>integration guide</DocLink> if you need help.",
-    "ProjectWizardScreen.step1.fields.projectID.placeholder": "k7qm3xw9fa2t"
+    "ProjectWizardScreen.step1.fields.projectID.placeholder": "k7qm3xw9fa2t",
+    "UsersList.column.raw-id": "User"
   },
   "zh-CN": {
     "error.failed-to-initialize-app": "应用初始化失败，请刷新此页面重试。",
@@ -429,7 +430,7 @@
     "AddUserGroupsDialog.selectGroups": "选择群组",
     "AddUserRolesDialog.title": "为用户 {userName} 添加角色",
     "AddUserRolesDialog.selectRoles": "选择角色",
-    "UsersList.column.raw-id": "ID",
+    "UsersList.column.raw-id": "用户",
     "UsersList.column.username": "用户名",
     "UsersList.column.email": "邮箱",
     "UsersList.column.phone": "电话",

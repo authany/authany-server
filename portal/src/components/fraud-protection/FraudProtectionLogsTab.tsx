@@ -188,9 +188,8 @@ interface ColumnDef {
   alwaysShown: boolean;
   defaultVisible: boolean;
   minWidth: number;
-  grow?: boolean;
-  /** Caps a grow column so long content truncates instead of widening it. */
-  maxWidth?: number;
+  /** Share of the width left over once every column has its minimum. */
+  grow: number;
 }
 
 const COLUMN_DEFS: ColumnDef[] = [
@@ -199,61 +198,63 @@ const COLUMN_DEFS: ColumnDef[] = [
     alwaysShown: true,
     defaultVisible: true,
     minWidth: 210,
+    grow: 0,
   },
   {
     key: "action",
     alwaysShown: true,
     defaultVisible: true,
     minWidth: 96,
+    grow: 1,
   },
   {
     key: "result",
     alwaysShown: true,
     defaultVisible: true,
     minWidth: 100,
+    grow: 0,
   },
   {
     key: "reasonCodes",
     alwaysShown: false,
     defaultVisible: true,
     minWidth: 200,
-    grow: true,
-    maxWidth: 320,
+    grow: 3,
   },
   {
     key: "ip",
     alwaysShown: true,
     defaultVisible: true,
     minWidth: 140,
+    grow: 1,
   },
   {
     key: "ipCountry",
     alwaysShown: false,
     defaultVisible: true,
     minWidth: 120,
+    grow: 1,
   },
   {
     key: "phone",
     alwaysShown: false,
     defaultVisible: false,
     minWidth: 160,
+    grow: 1,
   },
   {
     key: "phoneCountry",
     alwaysShown: false,
     defaultVisible: false,
     minWidth: 120,
+    grow: 1,
   },
 ];
 
+// Columns start at their minimum and share the spare width; long content
+// truncates in the cell, so it never widens the table.
 function columnStyle(def: ColumnDef): React.CSSProperties {
-  if (def.grow === true) {
-    // maxWidth caps the flex item so long content truncates (via the cell's
-    // overflow:hidden + .cellText) instead of stretching the table and
-    // pushing later columns (IP, country) out of view.
-    return { flex: "1 1 0", minWidth: def.minWidth, maxWidth: def.maxWidth };
-  }
-  return { width: def.minWidth, minWidth: def.minWidth, flexShrink: 0 };
+  return { flex: `${def.grow} 0 ${def.minWidth}px`, minWidth: def.minWidth };
 }
 
 const FRAUD_PROTECTION_LOGS_COLUMNS_STORAGE_KEY_PREFIX =
@@ -901,7 +902,15 @@ const FraudProtectionLogsTab: React.VFC = function FraudProtectionLogsTab() {
       </div>
 
       <div className={styles.tableWrapper}>
-        <div className={styles.table}>
+        <div
+          className={styles.table}
+          style={{
+            minWidth: visibleColumns.reduce(
+              (sum, def) => sum + def.minWidth,
+              0
+            ),
+          }}
+        >
           <div className={styles.tableHeader}>
             {visibleColumns.map((def) => (
               <div
