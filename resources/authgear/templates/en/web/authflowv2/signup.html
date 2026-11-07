@@ -59,6 +59,11 @@
       {{ end }}
     {{ end }}
   {{ end }}
+  {{/* Authany: the combined signup/login page offers "Continue with passkey" when the flow allows passkey
+       login (signup_login flow); count it as an alternative like login.html does, or the button is never shown. */}}
+  {{ if $.PasskeyEnabled }}
+    {{ $has_alternatives = true }}
+  {{ end }}
   {{ $appName := (translate "app.name" nil) }}
   {{ $clientName := or $.ClientName "null" }}
   {{ $isContinue := $.HasXStep }}
