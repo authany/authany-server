@@ -103,7 +103,6 @@ import (
 	"github.com/authgear/authgear-server/pkg/lib/search/pgsearch"
 	"github.com/authgear/authgear-server/pkg/lib/search/reindex"
 	"github.com/authgear/authgear-server/pkg/lib/session"
-	"github.com/authgear/authgear-server/pkg/lib/session/access"
 	"github.com/authgear/authgear-server/pkg/lib/session/idpsession"
 	"github.com/authgear/authgear-server/pkg/lib/sessionlisting"
 	"github.com/authgear/authgear-server/pkg/lib/telemetry/auditlogstreaming"
@@ -1111,13 +1110,6 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -1133,7 +1125,6 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -1147,7 +1138,6 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -1209,7 +1199,6 @@ func newOAuthAuthorizeHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -2203,13 +2192,6 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -2225,7 +2207,6 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -2239,7 +2220,6 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -2301,7 +2281,6 @@ func newOAuthConsentHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -2552,13 +2531,6 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 		AppID: appID,
 		Clock: clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	analyticredisHandle := appProvider.AnalyticRedis
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
@@ -2576,7 +2548,6 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -2630,7 +2601,6 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     provider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store,
 	}
@@ -2646,7 +2616,6 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     provider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store,
 	}
@@ -3628,7 +3597,6 @@ func newOAuthTokenHandler(p *deps.RequestProvider) http.Handler {
 		OfflineGrants:       store,
 		AccessGrants:        store,
 		OfflineGrantService: oauthOfflineGrantService,
-		AccessEvents:        eventProvider,
 		AccessTokenIssuer:   oauthAccessTokenEncoding,
 		GenerateToken:       tokenGenerator,
 		Clock:               clockClock,
@@ -3747,13 +3715,6 @@ func newOAuthRevokeHandler(p *deps.RequestProvider) http.Handler {
 	oAuthConfig := appConfig.OAuth
 	remoteIP := deps.ProvideRemoteIP(request, trustProxy)
 	userAgentString := deps.ProvideUserAgentString(request)
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	analyticredisHandle := appProvider.AnalyticRedis
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
@@ -3770,7 +3731,6 @@ func newOAuthRevokeHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -3826,7 +3786,6 @@ func newOAuthRevokeHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     provider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store,
 	}
@@ -4263,7 +4222,6 @@ func newOAuthRevokeHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     provider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store,
 	}
@@ -5723,13 +5681,6 @@ func newOAuthJWKSHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -5745,7 +5696,6 @@ func newOAuthJWKSHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -5759,7 +5709,6 @@ func newOAuthJWKSHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -6638,13 +6587,6 @@ func newOAuthUserInfoHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -6660,7 +6602,6 @@ func newOAuthUserInfoHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -6674,7 +6615,6 @@ func newOAuthUserInfoHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -6823,13 +6763,6 @@ func newOAuthEndSessionHandler(p *deps.RequestProvider) http.Handler {
 	}
 	remoteIP := deps.ProvideRemoteIP(request, trustProxy)
 	userAgentString := deps.ProvideUserAgentString(request)
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	analyticredisHandle := appProvider.AnalyticRedis
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
@@ -6846,7 +6779,6 @@ func newOAuthEndSessionHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -6860,7 +6792,6 @@ func newOAuthEndSessionHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     provider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -7660,7 +7591,6 @@ func newOAuthEndSessionHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     provider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -7752,13 +7682,6 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 		AppID: appID,
 		Clock: clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	analyticredisHandle := appProvider.AnalyticRedis
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
@@ -7776,7 +7699,6 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -7830,7 +7752,6 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     provider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store,
 	}
@@ -7846,7 +7767,6 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     provider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store,
 	}
@@ -8828,7 +8748,6 @@ func newOAuthAppSessionTokenHandler(p *deps.RequestProvider) http.Handler {
 		OfflineGrants:       store,
 		AccessGrants:        store,
 		OfflineGrantService: oauthOfflineGrantService,
-		AccessEvents:        eventProvider,
 		AccessTokenIssuer:   oauthAccessTokenEncoding,
 		GenerateToken:       tokenGenerator,
 		Clock:               clockClock,
@@ -9747,13 +9666,6 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 		Cookies:   cookieManager,
 		CookieDef: cookieDef,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -9769,7 +9681,6 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -9783,7 +9694,6 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -9968,7 +9878,6 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -10035,7 +9944,6 @@ func newAPIAnonymousUserSignupHandler(p *deps.RequestProvider) http.Handler {
 		OfflineGrants:       redisStore,
 		AccessGrants:        redisStore,
 		OfflineGrantService: oauthOfflineGrantService,
-		AccessEvents:        eventProvider,
 		AccessTokenIssuer:   accessTokenEncoding,
 		GenerateToken:       tokenGenerator,
 		Clock:               clockClock,
@@ -10884,13 +10792,6 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 		Cookies:   cookieManager,
 		CookieDef: cookieDef,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -10906,7 +10807,6 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -10920,7 +10820,6 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -11105,7 +11004,6 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -11172,7 +11070,6 @@ func newAPIAnonymousUserPromotionCodeHandler(p *deps.RequestProvider) http.Handl
 		OfflineGrants:       redisStore,
 		AccessGrants:        redisStore,
 		OfflineGrantService: oauthOfflineGrantService,
-		AccessEvents:        eventProvider,
 		AccessTokenIssuer:   accessTokenEncoding,
 		GenerateToken:       tokenGenerator,
 		Clock:               clockClock,
@@ -12597,13 +12494,6 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -12619,7 +12509,6 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -12633,7 +12522,6 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -12918,7 +12806,6 @@ func newWebAppAuthflowV2VerifyBotProtectionHandler(p *deps.RequestProvider) http
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -13841,13 +13728,6 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -13863,7 +13743,6 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -13877,7 +13756,6 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -14162,7 +14040,6 @@ func newWebAppAuthflowV2SelectAccountHandler(p *deps.RequestProvider) http.Handl
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -15092,13 +14969,6 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -15114,7 +14984,6 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -15128,7 +14997,6 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -15413,7 +15281,6 @@ func newWebAppAuthflowV2SSOCallbackHandler(p *deps.RequestProvider) http.Handler
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -16367,13 +16234,6 @@ func newWechatCallbackHandler(p *deps.RequestProvider) http.Handler {
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -16389,7 +16249,6 @@ func newWechatCallbackHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -16403,7 +16262,6 @@ func newWechatCallbackHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -17505,13 +17363,6 @@ func newWebAppAuthflowV2VerifyLoginLinkOTPHandler(p *deps.RequestProvider) http.
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -17527,7 +17378,6 @@ func newWebAppAuthflowV2VerifyLoginLinkOTPHandler(p *deps.RequestProvider) http.
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -17541,7 +17391,6 @@ func newWebAppAuthflowV2VerifyLoginLinkOTPHandler(p *deps.RequestProvider) http.
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -18653,13 +18502,6 @@ func newWebAppAuthflowV2SettingsHandler(p *deps.RequestProvider) http.Handler {
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -18675,7 +18517,6 @@ func newWebAppAuthflowV2SettingsHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -18689,7 +18530,6 @@ func newWebAppAuthflowV2SettingsHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -19820,13 +19660,6 @@ func newWebAppAuthflowV2SettingsProfileEditHandler(p *deps.RequestProvider) http
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -19842,7 +19675,6 @@ func newWebAppAuthflowV2SettingsProfileEditHandler(p *deps.RequestProvider) http
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -19856,7 +19688,6 @@ func newWebAppAuthflowV2SettingsProfileEditHandler(p *deps.RequestProvider) http
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -20980,13 +20811,6 @@ func newWebAppAuthflowV2SettingsBiometricHandler(p *deps.RequestProvider) http.H
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -21002,7 +20826,6 @@ func newWebAppAuthflowV2SettingsBiometricHandler(p *deps.RequestProvider) http.H
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -21016,7 +20839,6 @@ func newWebAppAuthflowV2SettingsBiometricHandler(p *deps.RequestProvider) http.H
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -22155,13 +21977,6 @@ func newWebAppAuthflowV2SettingsMFAHandler(p *deps.RequestProvider) http.Handler
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -22177,7 +21992,6 @@ func newWebAppAuthflowV2SettingsMFAHandler(p *deps.RequestProvider) http.Handler
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -22191,7 +22005,6 @@ func newWebAppAuthflowV2SettingsMFAHandler(p *deps.RequestProvider) http.Handler
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -23302,13 +23115,6 @@ func newWebAppAuthflowV2SettingsMFAViewRecoveryCodeHandler(p *deps.RequestProvid
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -23324,7 +23130,6 @@ func newWebAppAuthflowV2SettingsMFAViewRecoveryCodeHandler(p *deps.RequestProvid
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -23338,7 +23143,6 @@ func newWebAppAuthflowV2SettingsMFAViewRecoveryCodeHandler(p *deps.RequestProvid
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -24476,13 +24280,6 @@ func newWebAppAuthflowV2SettingsMFACreatePasswordHandler(p *deps.RequestProvider
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -24498,7 +24295,6 @@ func newWebAppAuthflowV2SettingsMFACreatePasswordHandler(p *deps.RequestProvider
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -24512,7 +24308,6 @@ func newWebAppAuthflowV2SettingsMFACreatePasswordHandler(p *deps.RequestProvider
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -25649,13 +25444,6 @@ func newWebAppAuthflowV2SettingsMFAPasswordHandler(p *deps.RequestProvider) http
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -25671,7 +25459,6 @@ func newWebAppAuthflowV2SettingsMFAPasswordHandler(p *deps.RequestProvider) http
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -25685,7 +25472,6 @@ func newWebAppAuthflowV2SettingsMFAPasswordHandler(p *deps.RequestProvider) http
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -26822,13 +26608,6 @@ func newWebAppAuthflowV2SettingsMFAChangePasswordHandler(p *deps.RequestProvider
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -26844,7 +26623,6 @@ func newWebAppAuthflowV2SettingsMFAChangePasswordHandler(p *deps.RequestProvider
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -26858,7 +26636,6 @@ func newWebAppAuthflowV2SettingsMFAChangePasswordHandler(p *deps.RequestProvider
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -27984,13 +27761,6 @@ func newWebAppAuthflowV2SettingsTOTPHandler(p *deps.RequestProvider) http.Handle
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -28006,7 +27776,6 @@ func newWebAppAuthflowV2SettingsTOTPHandler(p *deps.RequestProvider) http.Handle
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -28020,7 +27789,6 @@ func newWebAppAuthflowV2SettingsTOTPHandler(p *deps.RequestProvider) http.Handle
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -29166,13 +28934,6 @@ func newWebAppAuthflowV2SettingsMFACreateTOTPHandler(p *deps.RequestProvider) ht
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -29188,7 +28949,6 @@ func newWebAppAuthflowV2SettingsMFACreateTOTPHandler(p *deps.RequestProvider) ht
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -29202,7 +28962,6 @@ func newWebAppAuthflowV2SettingsMFACreateTOTPHandler(p *deps.RequestProvider) ht
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -30339,13 +30098,6 @@ func newWebAppAuthflowV2SettingsMFAEnterTOTPHandler(p *deps.RequestProvider) htt
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -30361,7 +30113,6 @@ func newWebAppAuthflowV2SettingsMFAEnterTOTPHandler(p *deps.RequestProvider) htt
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -30375,7 +30126,6 @@ func newWebAppAuthflowV2SettingsMFAEnterTOTPHandler(p *deps.RequestProvider) htt
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -31513,13 +31263,6 @@ func newWebAppAuthflowV2SettingsOOBOTPHandler(p *deps.RequestProvider) http.Hand
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -31535,7 +31278,6 @@ func newWebAppAuthflowV2SettingsOOBOTPHandler(p *deps.RequestProvider) http.Hand
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -31549,7 +31291,6 @@ func newWebAppAuthflowV2SettingsOOBOTPHandler(p *deps.RequestProvider) http.Hand
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -32696,13 +32437,6 @@ func newWebAppAuthflowV2SettingsMFACreateOOBOTPHandler(p *deps.RequestProvider) 
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -32718,7 +32452,6 @@ func newWebAppAuthflowV2SettingsMFACreateOOBOTPHandler(p *deps.RequestProvider) 
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -32732,7 +32465,6 @@ func newWebAppAuthflowV2SettingsMFACreateOOBOTPHandler(p *deps.RequestProvider) 
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -33869,13 +33601,6 @@ func newWebAppAuthflowV2SettingsMFAEnterOOBOTPHandler(p *deps.RequestProvider) h
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -33891,7 +33616,6 @@ func newWebAppAuthflowV2SettingsMFAEnterOOBOTPHandler(p *deps.RequestProvider) h
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -33905,7 +33629,6 @@ func newWebAppAuthflowV2SettingsMFAEnterOOBOTPHandler(p *deps.RequestProvider) h
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -35034,13 +34757,6 @@ func newWebAppAuthflowV2SettingsChangePasskeyHandler(p *deps.RequestProvider) ht
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -35056,7 +34772,6 @@ func newWebAppAuthflowV2SettingsChangePasskeyHandler(p *deps.RequestProvider) ht
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -35070,7 +34785,6 @@ func newWebAppAuthflowV2SettingsChangePasskeyHandler(p *deps.RequestProvider) ht
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -36229,13 +35943,6 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -36251,7 +35958,6 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -36265,7 +35971,6 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -36539,7 +36244,6 @@ func newWebAppAuthflowV2SettingsSessionsHandler(p *deps.RequestProvider) http.Ha
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -37393,13 +37097,6 @@ func newWebAppAuthflowV2SettingsAuthorizedAppsHandler(p *deps.RequestProvider) h
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -37415,7 +37112,6 @@ func newWebAppAuthflowV2SettingsAuthorizedAppsHandler(p *deps.RequestProvider) h
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -37429,7 +37125,6 @@ func newWebAppAuthflowV2SettingsAuthorizedAppsHandler(p *deps.RequestProvider) h
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -37703,7 +37398,6 @@ func newWebAppAuthflowV2SettingsAuthorizedAppsHandler(p *deps.RequestProvider) h
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -38568,13 +38262,6 @@ func newWebAppAuthflowV2SettingsAuthorizedAppHandler(p *deps.RequestProvider) ht
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -38590,7 +38277,6 @@ func newWebAppAuthflowV2SettingsAuthorizedAppHandler(p *deps.RequestProvider) ht
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -38604,7 +38290,6 @@ func newWebAppAuthflowV2SettingsAuthorizedAppHandler(p *deps.RequestProvider) ht
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -38878,7 +38563,6 @@ func newWebAppAuthflowV2SettingsAuthorizedAppHandler(p *deps.RequestProvider) ht
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -39746,13 +39430,6 @@ func newWebAppAuthflowV2SettingsChangePasswordHandler(p *deps.RequestProvider) h
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -39768,7 +39445,6 @@ func newWebAppAuthflowV2SettingsChangePasswordHandler(p *deps.RequestProvider) h
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -39782,7 +39458,6 @@ func newWebAppAuthflowV2SettingsChangePasswordHandler(p *deps.RequestProvider) h
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -40908,13 +40583,6 @@ func newWebAppAuthflowV2SettingsDeleteAccountHandler(p *deps.RequestProvider) ht
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -40930,7 +40598,6 @@ func newWebAppAuthflowV2SettingsDeleteAccountHandler(p *deps.RequestProvider) ht
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -40944,7 +40611,6 @@ func newWebAppAuthflowV2SettingsDeleteAccountHandler(p *deps.RequestProvider) ht
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -42066,13 +41732,6 @@ func newWebAppAuthflowV2SettingsDeleteAccountSuccessHandler(p *deps.RequestProvi
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -42088,7 +41747,6 @@ func newWebAppAuthflowV2SettingsDeleteAccountSuccessHandler(p *deps.RequestProvi
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -42102,7 +41760,6 @@ func newWebAppAuthflowV2SettingsDeleteAccountSuccessHandler(p *deps.RequestProvi
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -43204,13 +42861,6 @@ func newWebAppAuthflowV2SettingsAdvancedSettingsHandler(p *deps.RequestProvider)
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -43226,7 +42876,6 @@ func newWebAppAuthflowV2SettingsAdvancedSettingsHandler(p *deps.RequestProvider)
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -43240,7 +42889,6 @@ func newWebAppAuthflowV2SettingsAdvancedSettingsHandler(p *deps.RequestProvider)
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -44338,13 +43986,6 @@ func newWebAppLogoutHandler(p *deps.RequestProvider) http.Handler {
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -44360,7 +44001,6 @@ func newWebAppLogoutHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -44374,7 +44014,6 @@ func newWebAppLogoutHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -44662,7 +44301,6 @@ func newWebAppLogoutHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -45577,13 +45215,6 @@ func newWebAppReturnHandler(p *deps.RequestProvider) http.Handler {
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -45599,7 +45230,6 @@ func newWebAppReturnHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -45613,7 +45243,6 @@ func newWebAppReturnHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -46704,13 +46333,6 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -46726,7 +46348,6 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -46740,7 +46361,6 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -47025,7 +46645,6 @@ func newWebAppAuthflowV2ErrorHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -47948,13 +47567,6 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -47970,7 +47582,6 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -47984,7 +47595,6 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -48269,7 +47879,6 @@ func newWebAppCSRFErrorInstructionHandler(p *deps.RequestProvider) http.Handler 
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -49199,13 +48808,6 @@ func newWebAppAuthflowV2NotFoundHandler(p *deps.RequestProvider) http.Handler {
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -49221,7 +48823,6 @@ func newWebAppAuthflowV2NotFoundHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -49235,7 +48836,6 @@ func newWebAppAuthflowV2NotFoundHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -50349,13 +49949,6 @@ func newWebAppPasskeyCreationOptionsHandler(p *deps.RequestProvider) http.Handle
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -50371,7 +49964,6 @@ func newWebAppPasskeyCreationOptionsHandler(p *deps.RequestProvider) http.Handle
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -50385,7 +49977,6 @@ func newWebAppPasskeyCreationOptionsHandler(p *deps.RequestProvider) http.Handle
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -51424,13 +51015,6 @@ func newWebAppPasskeyRequestOptionsHandler(p *deps.RequestProvider) http.Handler
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -51446,7 +51030,6 @@ func newWebAppPasskeyRequestOptionsHandler(p *deps.RequestProvider) http.Handler
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -51460,7 +51043,6 @@ func newWebAppPasskeyRequestOptionsHandler(p *deps.RequestProvider) http.Handler
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -53013,13 +52595,6 @@ func newWebAppFeatureDisabledHandler(p *deps.RequestProvider) http.Handler {
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -53035,7 +52610,6 @@ func newWebAppFeatureDisabledHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -53049,7 +52623,6 @@ func newWebAppFeatureDisabledHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -54147,13 +53720,6 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -54169,7 +53735,6 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -54183,7 +53748,6 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -54453,7 +54017,6 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -54533,7 +54096,6 @@ func newWebAppTesterHandler(p *deps.RequestProvider) http.Handler {
 		OfflineGrants:       redisStore,
 		AccessGrants:        redisStore,
 		OfflineGrantService: oauthOfflineGrantService,
-		AccessEvents:        eventProvider,
 		AccessTokenIssuer:   oauthAccessTokenEncoding,
 		GenerateToken:       tokenGenerator,
 		Clock:               clockClock,
@@ -55448,13 +55010,6 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -55470,7 +55025,6 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -55484,7 +55038,6 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -55689,7 +55242,6 @@ func newAPIWorkflowNewHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -56536,13 +56088,6 @@ func newAPIWorkflowGetHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -56558,7 +56103,6 @@ func newAPIWorkflowGetHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -56572,7 +56116,6 @@ func newAPIWorkflowGetHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -57574,13 +57117,6 @@ func newAPIWorkflowInputHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -57596,7 +57132,6 @@ func newAPIWorkflowInputHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -57610,7 +57145,6 @@ func newAPIWorkflowInputHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -58644,13 +58178,6 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -58666,7 +58193,6 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -58680,7 +58206,6 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -58885,7 +58410,6 @@ func newAPIWorkflowV2Handler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -59732,13 +59256,6 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -59754,7 +59271,6 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -59768,7 +59284,6 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -60049,7 +59564,6 @@ func newAPIAuthenticationFlowV1CreateHandler(p *deps.RequestProvider) http.Handl
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -60897,13 +60411,6 @@ func newAPIAuthenticationFlowV1InputHandler(p *deps.RequestProvider) http.Handle
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -60919,7 +60426,6 @@ func newAPIAuthenticationFlowV1InputHandler(p *deps.RequestProvider) http.Handle
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -60933,7 +60439,6 @@ func newAPIAuthenticationFlowV1InputHandler(p *deps.RequestProvider) http.Handle
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -62032,13 +61537,6 @@ func newAPIAuthenticationFlowV1GetHandler(p *deps.RequestProvider) http.Handler 
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -62054,7 +61552,6 @@ func newAPIAuthenticationFlowV1GetHandler(p *deps.RequestProvider) http.Handler 
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -62068,7 +61565,6 @@ func newAPIAuthenticationFlowV1GetHandler(p *deps.RequestProvider) http.Handler 
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -63218,13 +62714,6 @@ func newAPIAccountManagementV1IdentificationHandler(p *deps.RequestProvider) htt
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -63240,7 +62729,6 @@ func newAPIAccountManagementV1IdentificationHandler(p *deps.RequestProvider) htt
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -63254,7 +62742,6 @@ func newAPIAccountManagementV1IdentificationHandler(p *deps.RequestProvider) htt
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store5,
 	}
@@ -64183,13 +63670,6 @@ func newAPIAccountManagementV1IdentificationOAuthHandler(p *deps.RequestProvider
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -64205,7 +63685,6 @@ func newAPIAccountManagementV1IdentificationOAuthHandler(p *deps.RequestProvider
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -64219,7 +63698,6 @@ func newAPIAccountManagementV1IdentificationOAuthHandler(p *deps.RequestProvider
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store5,
 	}
@@ -65134,13 +64612,6 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -65156,7 +64627,6 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -65170,7 +64640,6 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -65455,7 +64924,6 @@ func newWebAppAuthflowV2LoginHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -66402,13 +65870,6 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -66424,7 +65885,6 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -66438,7 +65898,6 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -66723,7 +66182,6 @@ func newWebAppAuthflowV2SignupHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -67663,13 +67121,6 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -67685,7 +67136,6 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -67699,7 +67149,6 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -67984,7 +67433,6 @@ func newWebAppAuthflowV2PromoteHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -68914,13 +68362,6 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -68936,7 +68377,6 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -68950,7 +68390,6 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -69235,7 +68674,6 @@ func newWebAppAuthflowV2EnterPasswordHandler(p *deps.RequestProvider) http.Handl
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -70162,13 +69600,6 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -70184,7 +69615,6 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -70198,7 +69628,6 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -70483,7 +69912,6 @@ func newWebAppAuthflowV2EnterOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -71414,13 +70842,6 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -71436,7 +70857,6 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -71450,7 +70870,6 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -71735,7 +71154,6 @@ func newWebAppAuthflowV2CreatePasswordHandler(p *deps.RequestProvider) http.Hand
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -72664,13 +72082,6 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -72686,7 +72097,6 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -72700,7 +72110,6 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -72985,7 +72394,6 @@ func newWebAppAuthflowV2EnterTOTPHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -73912,13 +73320,6 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -73934,7 +73335,6 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -73948,7 +73348,6 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -74233,7 +73632,6 @@ func newWebAppAuthflowV2SetupTOTPHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -75156,13 +74554,6 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -75178,7 +74569,6 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -75192,7 +74582,6 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -75477,7 +74866,6 @@ func newWebAppAuthflowV2ViewRecoveryCodeHandler(p *deps.RequestProvider) http.Ha
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -76386,13 +75774,6 @@ func newWebAppAuthflowV2FillFormHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -76408,7 +75789,6 @@ func newWebAppAuthflowV2FillFormHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -76422,7 +75802,6 @@ func newWebAppAuthflowV2FillFormHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -76707,7 +76086,6 @@ func newWebAppAuthflowV2FillFormHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -77630,13 +77008,6 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -77652,7 +77023,6 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -77666,7 +77036,6 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -77951,7 +77320,6 @@ func newWebAppAuthflowV2OOBOTPLinkHandler(p *deps.RequestProvider) http.Handler 
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -78879,13 +78247,6 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -78901,7 +78262,6 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -78915,7 +78275,6 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -79200,7 +78559,6 @@ func newWebAppAuthflowV2ChangePasswordHandler(p *deps.RequestProvider) http.Hand
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -80129,13 +79487,6 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -80151,7 +79502,6 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -80165,7 +79515,6 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -80450,7 +79799,6 @@ func newWebAppAuthflowV2ChangePasswordSuccessHandler(p *deps.RequestProvider) ht
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -81373,13 +80721,6 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -81395,7 +80736,6 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -81409,7 +80749,6 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -81694,7 +81033,6 @@ func newWebAppAuthflowV2UsePasskeyHandler(p *deps.RequestProvider) http.Handler 
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -82621,13 +81959,6 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -82643,7 +81974,6 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -82657,7 +81987,6 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -82942,7 +82271,6 @@ func newWebAppAuthflowV2PromptCreatePasskeyHandler(p *deps.RequestProvider) http
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -83865,13 +83193,6 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -83887,7 +83208,6 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -83901,7 +83221,6 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -84186,7 +83505,6 @@ func newWebAppAuthflowV2EnterRecoveryCodeHandler(p *deps.RequestProvider) http.H
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -85109,13 +84427,6 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -85131,7 +84442,6 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -85145,7 +84455,6 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -85430,7 +84739,6 @@ func newWebAppAuthflowV2SetupOOBOTPHandler(p *deps.RequestProvider) http.Handler
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -86353,13 +85661,6 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -86375,7 +85676,6 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -86389,7 +85689,6 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -86674,7 +85973,6 @@ func newWebAppAuthflowV2TerminateOtherSessionsHandler(p *deps.RequestProvider) h
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -87597,13 +86895,6 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -87619,7 +86910,6 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -87633,7 +86923,6 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -87918,7 +87207,6 @@ func newWebAppAuthflowV2ForgotPasswordHandler(p *deps.RequestProvider) http.Hand
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -88848,13 +88136,6 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -88870,7 +88151,6 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -88884,7 +88164,6 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -89169,7 +88448,6 @@ func newWebAppAuthflowV2ForgotPasswordOTPHandler(p *deps.RequestProvider) http.H
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -90094,13 +89372,6 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -90116,7 +89387,6 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -90130,7 +89400,6 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -90415,7 +89684,6 @@ func newWebAppAuthflowV2ForgotPasswordLinkSentHandler(p *deps.RequestProvider) h
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -91339,13 +90607,6 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -91361,7 +90622,6 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -91375,7 +90635,6 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -91660,7 +90919,6 @@ func newWebAppAuthflowV2ReauthHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -92589,13 +91847,6 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -92611,7 +91862,6 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -92625,7 +91875,6 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -93046,7 +92295,6 @@ func newWebAppAuthflowV2ResetPasswordHandler(p *deps.RequestProvider) http.Handl
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -93920,13 +93168,6 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -93942,7 +93183,6 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -93956,7 +93196,6 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -94241,7 +93480,6 @@ func newWebAppAuthflowV2ResetPasswordSuccessHandler(p *deps.RequestProvider) htt
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -95724,13 +94962,6 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -95746,7 +94977,6 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -95760,7 +94990,6 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -96045,7 +95274,6 @@ func newWebAppAuthflowV2OAuthProviderDemoCredentialHandler(p *deps.RequestProvid
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -96968,13 +96196,6 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -96990,7 +96211,6 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -97004,7 +96224,6 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -97289,7 +96508,6 @@ func newWebAppAuthflowV2FinishFlowHandler(p *deps.RequestProvider) http.Handler 
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -98212,13 +97430,6 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -98234,7 +97445,6 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -98248,7 +97458,6 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -98533,7 +97742,6 @@ func newWebAppAuthflowV2AccountLinkingHandler(p *deps.RequestProvider) http.Hand
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -99596,13 +98804,6 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -99618,7 +98819,6 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -99632,7 +98832,6 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -99917,7 +99116,6 @@ func newWebAppAuthflowV2WechatHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -100842,13 +100040,6 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -100864,7 +100055,6 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -100878,7 +100068,6 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -101163,7 +100352,6 @@ func newWebAppAuthflowV2LDAPLoginHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -102081,13 +101269,6 @@ func newSAMLMetadataHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -102103,7 +101284,6 @@ func newSAMLMetadataHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -102117,7 +101297,6 @@ func newSAMLMetadataHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -102180,7 +101359,6 @@ func newSAMLMetadataHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -103025,13 +102203,6 @@ func newSAMLLoginHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -103047,7 +102218,6 @@ func newSAMLLoginHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -103061,7 +102231,6 @@ func newSAMLLoginHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -103124,7 +102293,6 @@ func newSAMLLoginHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -103999,13 +103167,6 @@ func newSAMLLoginFinishHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -104021,7 +103182,6 @@ func newSAMLLoginFinishHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -104035,7 +103195,6 @@ func newSAMLLoginFinishHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -104098,7 +103257,6 @@ func newSAMLLoginFinishHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -104966,13 +104124,6 @@ func newSAMLLogoutHandler(p *deps.RequestProvider) http.Handler {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -104988,7 +104139,6 @@ func newSAMLLogoutHandler(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -105002,7 +104152,6 @@ func newSAMLLogoutHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -105065,7 +104214,6 @@ func newSAMLLogoutHandler(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -105949,13 +105097,6 @@ func newWebAppAuthflowV2SettingsProfile(p *deps.RequestProvider) http.Handler {
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -105971,7 +105112,6 @@ func newWebAppAuthflowV2SettingsProfile(p *deps.RequestProvider) http.Handler {
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -105985,7 +105125,6 @@ func newWebAppAuthflowV2SettingsProfile(p *deps.RequestProvider) http.Handler {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -107099,13 +106238,6 @@ func newWebAppAuthflowV2SettingsIdentityAddEmailHandler(p *deps.RequestProvider)
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -107121,7 +106253,6 @@ func newWebAppAuthflowV2SettingsIdentityAddEmailHandler(p *deps.RequestProvider)
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -107135,7 +106266,6 @@ func newWebAppAuthflowV2SettingsIdentityAddEmailHandler(p *deps.RequestProvider)
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -108265,13 +107395,6 @@ func newWebAppAuthflowV2SettingsIdentityEditEmailHandler(p *deps.RequestProvider
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -108287,7 +107410,6 @@ func newWebAppAuthflowV2SettingsIdentityEditEmailHandler(p *deps.RequestProvider
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -108301,7 +107423,6 @@ func newWebAppAuthflowV2SettingsIdentityEditEmailHandler(p *deps.RequestProvider
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -109430,13 +108551,6 @@ func newWebAppAuthflowV2SettingsIdentityListEmailHandler(p *deps.RequestProvider
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -109452,7 +108566,6 @@ func newWebAppAuthflowV2SettingsIdentityListEmailHandler(p *deps.RequestProvider
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -109466,7 +108579,6 @@ func newWebAppAuthflowV2SettingsIdentityListEmailHandler(p *deps.RequestProvider
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -110584,13 +109696,6 @@ func newWebAppAuthflowV2SettingsIdentityVerifyEmailHandler(p *deps.RequestProvid
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -110606,7 +109711,6 @@ func newWebAppAuthflowV2SettingsIdentityVerifyEmailHandler(p *deps.RequestProvid
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -110620,7 +109724,6 @@ func newWebAppAuthflowV2SettingsIdentityVerifyEmailHandler(p *deps.RequestProvid
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -111755,13 +110858,6 @@ func newWebAppAuthflowV2SettingsIdentityViewEmailHandler(p *deps.RequestProvider
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -111777,7 +110873,6 @@ func newWebAppAuthflowV2SettingsIdentityViewEmailHandler(p *deps.RequestProvider
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -111791,7 +110886,6 @@ func newWebAppAuthflowV2SettingsIdentityViewEmailHandler(p *deps.RequestProvider
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -112932,13 +112026,6 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryEmailHandler(p *deps.Reques
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -112954,7 +112041,6 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryEmailHandler(p *deps.Reques
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -112968,7 +112054,6 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryEmailHandler(p *deps.Reques
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -114091,13 +113176,6 @@ func newWebAppAuthflowV2SettingsIdentityAddPhoneHandler(p *deps.RequestProvider)
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -114113,7 +113191,6 @@ func newWebAppAuthflowV2SettingsIdentityAddPhoneHandler(p *deps.RequestProvider)
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -114127,7 +113204,6 @@ func newWebAppAuthflowV2SettingsIdentityAddPhoneHandler(p *deps.RequestProvider)
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -115258,13 +114334,6 @@ func newWebAppAuthflowV2SettingsIdentityEditPhoneHandler(p *deps.RequestProvider
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -115280,7 +114349,6 @@ func newWebAppAuthflowV2SettingsIdentityEditPhoneHandler(p *deps.RequestProvider
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -115294,7 +114362,6 @@ func newWebAppAuthflowV2SettingsIdentityEditPhoneHandler(p *deps.RequestProvider
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -116424,13 +115491,6 @@ func newWebAppAuthflowV2SettingsIdentityListPhoneHandler(p *deps.RequestProvider
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -116446,7 +115506,6 @@ func newWebAppAuthflowV2SettingsIdentityListPhoneHandler(p *deps.RequestProvider
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -116460,7 +115519,6 @@ func newWebAppAuthflowV2SettingsIdentityListPhoneHandler(p *deps.RequestProvider
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -117578,13 +116636,6 @@ func newWebAppAuthflowV2SettingsIdentityViewPhoneHandler(p *deps.RequestProvider
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -117600,7 +116651,6 @@ func newWebAppAuthflowV2SettingsIdentityViewPhoneHandler(p *deps.RequestProvider
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -117614,7 +116664,6 @@ func newWebAppAuthflowV2SettingsIdentityViewPhoneHandler(p *deps.RequestProvider
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -118750,13 +117799,6 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryPhoneHandler(p *deps.Reques
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -118772,7 +117814,6 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryPhoneHandler(p *deps.Reques
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -118786,7 +117827,6 @@ func newWebAppAuthflowV2SettingsIdentityChangePrimaryPhoneHandler(p *deps.Reques
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -119909,13 +118949,6 @@ func newWebAppAuthflowV2SettingsIdentityVerifyPhoneHandler(p *deps.RequestProvid
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -119931,7 +118964,6 @@ func newWebAppAuthflowV2SettingsIdentityVerifyPhoneHandler(p *deps.RequestProvid
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -119945,7 +118977,6 @@ func newWebAppAuthflowV2SettingsIdentityVerifyPhoneHandler(p *deps.RequestProvid
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -121076,13 +120107,6 @@ func newWebAppAuthflowV2SettingsIdentityListUsernameHandler(p *deps.RequestProvi
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -121098,7 +120122,6 @@ func newWebAppAuthflowV2SettingsIdentityListUsernameHandler(p *deps.RequestProvi
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -121112,7 +120135,6 @@ func newWebAppAuthflowV2SettingsIdentityListUsernameHandler(p *deps.RequestProvi
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -122226,13 +121248,6 @@ func newWebAppAuthflowV2SettingsIdentityNewUsernameHandler(p *deps.RequestProvid
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -122248,7 +121263,6 @@ func newWebAppAuthflowV2SettingsIdentityNewUsernameHandler(p *deps.RequestProvid
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -122262,7 +121276,6 @@ func newWebAppAuthflowV2SettingsIdentityNewUsernameHandler(p *deps.RequestProvid
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store4,
 	}
@@ -123393,13 +122406,6 @@ func newWebAppAuthflowV2SettingsIdentityViewUsernameHandler(p *deps.RequestProvi
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -123415,7 +122421,6 @@ func newWebAppAuthflowV2SettingsIdentityViewUsernameHandler(p *deps.RequestProvi
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -123429,7 +122434,6 @@ func newWebAppAuthflowV2SettingsIdentityViewUsernameHandler(p *deps.RequestProvi
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store4,
 	}
@@ -124563,13 +123567,6 @@ func newWebAppAuthflowV2SettingsIdentityEditUsernameHandler(p *deps.RequestProvi
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -124585,7 +123582,6 @@ func newWebAppAuthflowV2SettingsIdentityEditUsernameHandler(p *deps.RequestProvi
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -124599,7 +123595,6 @@ func newWebAppAuthflowV2SettingsIdentityEditUsernameHandler(p *deps.RequestProvi
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store4,
 	}
@@ -125721,13 +124716,6 @@ func newWebAppAuthflowV2SettingsIdentityListOAuthHandler(p *deps.RequestProvider
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -125743,7 +124731,6 @@ func newWebAppAuthflowV2SettingsIdentityListOAuthHandler(p *deps.RequestProvider
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -125757,7 +124744,6 @@ func newWebAppAuthflowV2SettingsIdentityListOAuthHandler(p *deps.RequestProvider
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -126711,13 +125697,6 @@ func newSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		AppID: appID,
 		Clock: clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	analyticredisHandle := appProvider.AnalyticRedis
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
@@ -126734,7 +125713,6 @@ func newSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -127550,7 +126528,6 @@ func newSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		Clock:           clockClock,
 		IDPSessions:     provider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store,
 	}
@@ -127621,7 +126598,6 @@ func newSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		Clock:           clockClock,
 		IDPSessions:     provider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   store,
 	}
@@ -127643,7 +126619,6 @@ func newSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		Cookies:                    cookieManager,
 		IDPSessionResolver:         resolver,
 		AccessTokenSessionResolver: oauthResolver,
-		AccessEvents:               eventProvider,
 		Users:                      userQueries,
 		Database:                   appdbHandle,
 		MeterService:               meterService,
@@ -128485,13 +127460,6 @@ func newWebAppSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		Cookies:   cookieManager,
 		CookieDef: cookieDef2,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -128507,7 +127475,6 @@ func newWebAppSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -128521,7 +127488,6 @@ func newWebAppSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -128743,7 +127709,6 @@ func newWebAppSessionMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  resolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -129614,13 +128579,6 @@ func newWebAppUIParamMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: handle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -129636,7 +128594,6 @@ func newWebAppUIParamMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		AppID:           appID,
 		Redis:           handle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -129650,7 +128607,6 @@ func newWebAppUIParamMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -129713,7 +128669,6 @@ func newWebAppUIParamMiddleware(p *deps.RequestProvider) httproute.Middleware {
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
@@ -130624,13 +129579,6 @@ func newSettingsSubRoutesMiddleware(p *deps.RequestProvider) httproute.Middlewar
 		SQLExecutor: sqlExecutor,
 		Clock:       clockClock,
 	}
-	eventStoreRedis := &access.EventStoreRedis{
-		Redis: appredisHandle,
-		AppID: appID,
-	}
-	eventProvider := &access.EventProvider{
-		Store: eventStoreRedis,
-	}
 	writeStoreRedis := &meter.WriteStoreRedis{
 		Redis: analyticredisHandle,
 		AppID: appID,
@@ -130646,7 +129594,6 @@ func newSettingsSubRoutesMiddleware(p *deps.RequestProvider) httproute.Middlewar
 		AppID:           appID,
 		Redis:           appredisHandle,
 		Store:           storeRedis,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		TrustProxy:      trustProxy,
 		Config:          sessionConfig,
@@ -130660,7 +129607,6 @@ func newSettingsSubRoutesMiddleware(p *deps.RequestProvider) httproute.Middlewar
 		Clock:           clockClock,
 		IDPSessions:     idpsessionProvider,
 		ClientResolver:  oauthclientResolver,
-		AccessEvents:    eventProvider,
 		MeterService:    meterService,
 		OfflineGrants:   redisStore,
 	}
