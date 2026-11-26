@@ -151,6 +151,7 @@ var AuthorizationHandlerLogger = slogutil.NewLogger("oauth-authz")
 type AuthorizationHandler struct {
 	AppID                 config.AppID
 	Config                *config.OAuthConfig
+	UIConfig              *config.UIConfig
 	AccountDeletionConfig *config.AccountDeletionConfig
 	HTTPConfig            *config.HTTPConfig
 	HTTPProto             httputil.HTTPProto
@@ -481,7 +482,7 @@ func (h *AuthorizationHandler) prepareConsentRequest(ctx context.Context, req *h
 	// Restore uiparam into context.
 	uiparam.WithUIParam(ctx, &uiParam)
 
-	redirectURI, errResp := parseRedirectURI(client, h.HTTPProto, h.HTTPOrigin, h.AppDomains, []string{}, r)
+	redirectURI, errResp := parseRedirectURI(ctx, client, h.HTTPProto, h.HTTPOrigin, h.AppDomains, []string{}, r)
 	if errResp != nil {
 		err = protocol.NewErrorWithErrorResponse(errResp)
 		return ctx, nil, err
@@ -766,7 +767,7 @@ func (h *AuthorizationHandler) doHandlePreAuthenticatedURLAfterTx(
 	return authorizationResultCode{
 		RedirectURI:  redirectURI,
 		ResponseMode: r.ResponseMode(),
-		UseHTTP200:   client.UseHTTP200(),
+		UseHTTP200:   client.UseHTTP200(h.UIConfig),
 		Response:     resp,
 		Cookies:      []*http.Cookie{cookie},
 	}, nil
@@ -835,7 +836,7 @@ func (h *AuthorizationHandler) finishSettingsAction(
 	return authorizationResultCode{
 		RedirectURI:  redirectURI,
 		ResponseMode: r.ResponseMode(),
-		UseHTTP200:   client.UseHTTP200(),
+		UseHTTP200:   client.UseHTTP200(h.UIConfig),
 		Response:     resp,
 		Cookies:      cookies,
 	}, nil
@@ -917,7 +918,7 @@ func (h *AuthorizationHandler) finishAuthorization(
 	return authorizationResultCode{
 		RedirectURI:  opts.RedirectURI,
 		ResponseMode: opts.AuthorizationRequest.ResponseMode(),
-		UseHTTP200:   opts.Client.UseHTTP200(),
+		UseHTTP200:   opts.Client.UseHTTP200(h.UIConfig),
 		Response:     resp,
 		Cookies:      opts.Cookies,
 	}, nil
@@ -1066,7 +1067,7 @@ func (h *AuthorizationHandler) ValidateRequestWithoutTx(
 		originWhitelist = client.PreAuthenticatedURLAllowedOrigins
 	}
 
-	redirectURI, errResp := parseRedirectURI(client, h.HTTPProto, h.HTTPOrigin, h.AppDomains, originWhitelist, r)
+	redirectURI, errResp := parseRedirectURI(ctx, client, h.HTTPProto, h.HTTPOrigin, h.AppDomains, originWhitelist, r)
 	if errResp != nil {
 		return ctx, nil, &AuthorizationResultError{
 			ResponseMode: r.ResponseMode(),
@@ -1332,8 +1333,11 @@ func (h *AuthorizationHandler) prepareConsentErrInvalidOAuthResponse(ctx context
 	if oauthError.Type() == "invalid_request" && client != nil {
 		redirectURI, err := url.Parse(req.URL.Query().Get("redirect_uri"))
 		if err == nil {
-			err = validateRedirectURI(client, h.HTTPProto, h.HTTPOrigin, h.AppDomains, []string{}, redirectURI)
+			onlyCustomUIOrigin, err := validateRedirectURI(client, h.HTTPProto, h.HTTPOrigin, h.AppDomains, []string{}, redirectURI)
 			if err == nil {
+				if onlyCustomUIOrigin {
+					logCustomUIOriginRedirectURI(ctx, []string{client.ClientID}, redirectURI)
+				}
 				resultErr.RedirectURI = redirectURI
 			}
 		}
